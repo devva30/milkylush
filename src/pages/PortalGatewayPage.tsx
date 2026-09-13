@@ -5,7 +5,7 @@ import logoImg from '../assets/logo.png';
 interface PortalGatewayPageProps {
   selectedHubId: string;
   onSelectHub: (hubId: string) => void;
-  onSelectConsole: (consoleType: 'catalog' | 'delivery' | 'commercial') => void;
+  onSelectConsole: (consoleType: 'catalog' | 'delivery' | 'commercial' | 'admin-access') => void;
   onLogout: () => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   ordersCount: number;

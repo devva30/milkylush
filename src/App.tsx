@@ -125,7 +125,7 @@ function AppContent() {
 
   const handleUpdateOrderDriver = async (orderId: string, agentId: string) => {
     try {
-      const agent = deliveryAgents.find((a) => a.id === agentId);
+      const agent = hubDeliveryAgents.find((a: DeliveryAgent) => a.id === agentId);
       const isSub = orderId.startsWith('SUB_') || orderId.startsWith('DISPATCH_');
       const targetCol = isSub ? 'subscriptions' : 'orders';
       const realId = orderId.replace('SUB_', '').replace('DISPATCH_', '');

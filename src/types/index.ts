@@ -37,7 +37,11 @@ export interface User {
   bottlesAtHome?: number;
   password?: string;
   createdAt?: string;
+  assignedDeliveryAgentId?: string;
+  assignedDeliveryAgentName?: string;
 }
+
+export type UserProfile = User;
 
 export interface CartItem {
   id: string;
@@ -52,13 +56,21 @@ export interface CartItem {
 export interface Order {
   id: string;
   userId: string;
+  customerName?: string;
+  customerPhone?: string;
+  proofImageUrl?: string;
+  assignedPartner?: string;
+  assignedRiderId?: string;
+  assignedRiderEmail?: string;
   items: CartItem[];
   orderDate: string;
   estimatedDelivery?: string;
   totalAmount: number;
-  status: 'packed' | 'outForDelivery' | 'delivered' | 'cancelled';
+  status: 'packed' | 'outForDelivery' | 'delivered' | 'cancelled' | 'pending' | 'assigned';
   isSubscriptionDelivery?: boolean;
-  orderType?: 'one-time' | 'subscription';
+  orderType?: 'one-time' | 'subscription' | string;
+  subscriptionId?: string;
+  updatedAt?: string | number;
   bottlesReturned?: number;
   bottleCreditsApplied?: number;
   deliveryAgentId?: string;
