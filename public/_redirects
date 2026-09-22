@@ -1,1 +1,5 @@
-/* /index.html 200
+# Netlify processes this file before netlify.toml, so the API routes must be
+# listed here too — otherwise the SPA fallback answers /api/* with index.html
+# and the app fails with "Unexpected token '<'".
+/api/*  /.netlify/functions/:splat  200
+/*      /index.html                 200

@@ -22,7 +22,10 @@ export default function DispatchRegisterPartnerPage({
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formAddress, setFormAddress] = useState('');
-  const [formZone, setFormZone] = useState('');
+  const [formVehicleNumber, setFormVehicleNumber] = useState('');
+  const [formVehicleType, setFormVehicleType] = useState('Electric Scooter');
+  const [formLicenseNumber, setFormLicenseNumber] = useState('');
+  const [formLicenseValidity, setFormLicenseValidity] = useState('');
   const [formHubId, setFormHubId] = useState(selectedHubId || 'hub_hosur');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +55,12 @@ export default function DispatchRegisterPartnerPage({
         email: formEmail,
         password: pass,
         address: formAddress || '',
-        assignedZone: formZone || 'General Delivery Route',
+        vehicleNumber: formVehicleNumber || 'TN 29 AB 4521',
+        vehicleType: formVehicleType || 'Electric Scooter',
+        assignedVehicle: `${formVehicleNumber || 'TN 29 AB 4521'} • ${formVehicleType || 'Electric Scooter'}`,
+        licenseNumber: formLicenseNumber || 'DL-90823411',
+        licenseValidity: formLicenseValidity || '2030',
+        drivingLicense: `${formLicenseNumber || 'DL-90823411'} • ${formLicenseValidity || 'Valid till 2030'}`,
         hubId: targetHub,
         assignedHubId: targetHub,
         isOnline: false,
@@ -168,15 +176,55 @@ export default function DispatchRegisterPartnerPage({
               />
             </div>
 
-            <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Assigned Delivery Zone</label>
-              <input
-                type="text"
-                value={formZone}
-                onChange={(e) => setFormZone(e.target.value)}
-                placeholder="e.g. Sector 1 & 2 / E-City Phase 1"
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.88rem', marginTop: '6px', outline: 'none' }}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+              <div>
+                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Vehicle Reg. Number</label>
+                <input
+                  type="text"
+                  value={formVehicleNumber}
+                  onChange={(e) => setFormVehicleNumber(e.target.value)}
+                  placeholder="e.g. TN 29 AB 4521"
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.88rem', marginTop: '6px', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Vehicle Type</label>
+                <select
+                  value={formVehicleType}
+                  onChange={(e) => setFormVehicleType(e.target.value)}
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.88rem', marginTop: '6px', backgroundColor: '#FFFFFF', outline: 'none' }}
+                >
+                  <option value="Electric Scooter">Electric Scooter</option>
+                  <option value="Motorbike">Motorbike</option>
+                  <option value="EV Mini Van">EV Mini Van</option>
+                  <option value="Bicycle">Bicycle</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+              <div>
+                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Driving License</label>
+                <input
+                  type="text"
+                  value={formLicenseNumber}
+                  onChange={(e) => setFormLicenseNumber(e.target.value)}
+                  placeholder="e.g. DL-90823411"
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.88rem', marginTop: '6px', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>License Validity</label>
+                <input
+                  type="text"
+                  value={formLicenseValidity}
+                  onChange={(e) => setFormLicenseValidity(e.target.value)}
+                  placeholder="e.g. Valid till 2030"
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.88rem', marginTop: '6px', outline: 'none' }}
+                />
+              </div>
             </div>
 
             <div>

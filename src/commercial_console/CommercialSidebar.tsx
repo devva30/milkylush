@@ -96,7 +96,6 @@ export default function CommercialSidebar({
     {
       title: 'COUNTER & OPERATIONS',
       items: [
-        { id: 'counter-sales', label: 'Counter Sales POS', icon: ShoppingBag },
         { id: 'daily-sales-load', label: 'Daily Sales Load Sheet', icon: Truck },
         { id: 'sales-requirement', label: 'Sales Requirement Demand', icon: Clock },
       ]

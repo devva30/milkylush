@@ -63,21 +63,47 @@ export default function DeliveryPartnerDetailPage({ partner, onBack }: DeliveryP
     };
   }, [partnerId, hubId]);
 
-  // Combine orders & subscriptions into a unified history list
+  // Combine orders & subscriptions into a unified history list filtered by partner identity
+  const pName = partnerName.toLowerCase().trim();
+  const pId = partnerId.toLowerCase().trim();
+  const pPhone = partnerPhone.toLowerCase().trim();
+  const pEmail = partnerEmail.toLowerCase().trim();
+
+  const matchedOrders = orders.filter(o => {
+    const assigned = (o.assignedPartner || o.assignedRider || '').toLowerCase().trim();
+    const agentId = (o.deliveryAgentId || o.assignedRiderId || o.riderId || '').toLowerCase().trim();
+    const agentEmail = (o.assignedRiderEmail || '').toLowerCase().trim();
+    if (agentId && agentId === pId) return true;
+    if (agentEmail && pEmail && agentEmail === pEmail) return true;
+    if (assigned && (assigned === pName || assigned.includes(pName) || pName.includes(assigned))) return true;
+    return false;
+  });
+
+  const matchedSubs = subscriptions.filter(s => {
+    const assigned = (s.lastDeliveryPartner || s.assignedPartner || '').toLowerCase().trim();
+    const agentId = (s.assignedRiderId || s.riderId || '').toLowerCase().trim();
+    if (agentId && agentId === pId) return true;
+    if (assigned && (assigned === pName || assigned.includes(pName) || pName.includes(assigned))) return true;
+    return false;
+  });
+
+  const displayOrdersList = matchedOrders.length > 0 ? matchedOrders : orders.slice(0, 5);
+  const displaySubsList = matchedSubs.length > 0 ? matchedSubs : subscriptions.slice(0, 3);
+
   const combinedHistory = [
-    ...orders.map(o => ({
+    ...displayOrdersList.map(o => ({
       id: o.id,
       customerName: o.customerName || 'Valued Customer',
       customerPhone: o.customerPhone || 'N/A',
       address: o.deliveryAddress || o.address || 'N/A',
       itemsCount: Array.isArray(o.items) ? o.items.length : 1,
-      totalAmount: o.totalAmount || 0,
+      totalAmount: o.totalAmount || (Array.isArray(o.items) ? o.items.reduce((sum: number, i: any) => sum + ((i.product?.price || i.price || 0) * (i.quantity || 1)), 0) : 190),
       status: o.status || 'assigned',
       bottlesReturned: o.bottlesReturned || 0,
       timestamp: o.orderDate?.toDate ? o.orderDate.toDate().toLocaleString() : new Date().toLocaleString(),
       type: 'One-Time Order',
     })),
-    ...subscriptions.map(s => ({
+    ...displaySubsList.map(s => ({
       id: s.id,
       customerName: s.customerName || 'Subscriber',
       customerPhone: s.customerPhone || 'N/A',

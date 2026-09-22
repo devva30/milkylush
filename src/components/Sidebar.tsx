@@ -124,8 +124,8 @@ export default function Sidebar({
         style={{
           width: sidebarWidth,
           height: '100vh',
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid #F1F5F9',
+          backgroundColor: 'var(--bg-sidebar)',
+          borderRight: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
@@ -144,16 +144,16 @@ export default function Sidebar({
           display: 'flex',
           alignItems: 'center',
           justifyContent: isCollapsed ? 'center' : 'flex-start',
-          borderBottom: '1px solid #F1F5F9'
+          borderBottom: '1px solid var(--border-color)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <img src={logoImg} alt="MilkyLush Logo" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'contain' }} />
             {!isCollapsed && (
               <div>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1.1rem', color: '#044E35', lineHeight: 1.1 }}>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.1 }}>
                   MilkyLush
                 </div>
-                <div style={{ fontSize: '0.65rem', color: '#059669', fontWeight: 600, letterSpacing: '0.05em' }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--primary-light)', fontWeight: 600, letterSpacing: '0.05em' }}>
                   DAIRY ADMIN
                 </div>
               </div>
@@ -169,7 +169,7 @@ export default function Sidebar({
               display: 'flex',
               alignItems: 'center'
             }}>
-              <Search size={14} style={{ position: 'absolute', left: '10px', color: '#9CA3AF' }} />
+              <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
               <input
                 type="text"
                 placeholder="Filter menu..."
@@ -179,10 +179,10 @@ export default function Sidebar({
                   width: '100%',
                   padding: '0.45rem 0.75rem 0.45rem 30px',
                   borderRadius: '8px',
-                  border: '1px solid #F1F5F9',
-                  backgroundColor: '#F8FAFC',
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-main)',
                   fontSize: '0.8rem',
-                  color: '#334155',
+                  color: 'var(--text-main)',
                   outline: 'none',
                   fontFamily: "'Poppins', sans-serif"
                 }}
@@ -206,7 +206,7 @@ export default function Sidebar({
                   <div style={{
                     fontSize: '0.68rem',
                     fontWeight: 700,
-                    color: '#94A3B8',
+                    color: 'var(--text-muted)',
                     letterSpacing: '0.06em',
                     padding: '0.45rem 0.65rem 0.2rem 0.65rem',
                     textTransform: 'uppercase',
@@ -233,9 +233,9 @@ export default function Sidebar({
                         width: '100%',
                         padding: isCollapsed ? '0.65rem 0' : '0.55rem 0.75rem',
                         borderRadius: '10px',
-                        border: isActive ? '1px solid #A7F3D0' : '1px solid transparent',
-                        backgroundColor: isActive ? '#ECFDF5' : 'transparent',
-                        color: isActive ? '#047857' : '#475569',
+                        border: isActive ? '1px solid var(--primary-light)' : '1px solid transparent',
+                        backgroundColor: isActive ? 'var(--nav-active-bg, rgba(4, 120, 87, 0.15))' : 'transparent',
+                        color: isActive ? 'var(--primary-light)' : 'var(--text-main)',
                         fontWeight: isActive ? 700 : 500,
                         fontSize: '0.85rem',
                         cursor: 'pointer',
@@ -245,16 +245,16 @@ export default function Sidebar({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <IconComp size={18} style={{ color: isActive ? '#047857' : '#94A3B8', transition: 'color 0.2s ease' }} />
-                        {!isCollapsed && <span style={{ color: isActive ? '#047857' : '#475569', fontWeight: isActive ? 700 : 500 }}>{item.label}</span>}
+                        <IconComp size={18} style={{ color: isActive ? 'var(--primary-light)' : 'var(--text-muted)', transition: 'color 0.2s ease' }} />
+                        {!isCollapsed && <span style={{ color: isActive ? 'var(--primary-light)' : 'var(--text-main)', fontWeight: isActive ? 700 : 500 }}>{item.label}</span>}
                       </div>
 
                       {!isCollapsed && item.badge && (
                         <span style={{
                           fontSize: '0.65rem',
                           fontWeight: 700,
-                          backgroundColor: isActive ? '#047857' : '#ECFDF5',
-                          color: isActive ? '#FFFFFF' : '#047857',
+                          backgroundColor: isActive ? '#047857' : 'var(--bg-main)',
+                          color: isActive ? '#FFFFFF' : 'var(--primary-light)',
                           padding: '2px 6px',
                           borderRadius: '6px'
                         }}>

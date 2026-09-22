@@ -59,7 +59,7 @@ export default function CommercialConsoleLayout({
       />
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, marginLeft: '260px' }}>
+      <div className="main-content-viewport">
         <Header
           activeTab={activeTab}
           selectedHubId={selectedHubId}
@@ -90,7 +90,9 @@ export default function CommercialConsoleLayout({
             <ProfitLossPage
               selectedHubId={selectedHubId}
               orders={hubOrders}
+              products={products}
               totalRevenue={totalRevenue}
+              viewMode={activeTab as 'profit-loss' | 'products-analytics' | 'expenses'}
             />
           )}
 

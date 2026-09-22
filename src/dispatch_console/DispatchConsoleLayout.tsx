@@ -50,6 +50,7 @@ export default function DispatchConsoleLayout({
   const [activeTab, setActiveTab] = useState<string>('dispatch-dashboard');
   const [selectedPartner, setSelectedPartner] = useState<DeliveryAgent | null>(null);
   const [isHubModalOpen, setIsHubModalOpen] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   const handleUpdateStatus = (orderId: string, status: Order['status']) => {
     if (onUpdateOrderStatus) {
@@ -75,10 +76,12 @@ export default function DispatchConsoleLayout({
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         onExitConsole={onExitConsole}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div className="main-content-viewport">
         
         {/* Top Header Navbar - Standard Catalog & Orders Header */}
         <Header
@@ -87,7 +90,7 @@ export default function DispatchConsoleLayout({
           onOpenHubModal={() => setIsHubModalOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
-          onToggleMobileSidebar={() => {}}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           adminUsername={adminUsername}
           onLogout={onExitConsole}
         />

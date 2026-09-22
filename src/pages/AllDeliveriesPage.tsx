@@ -3,6 +3,7 @@ import { Download, Search, ChevronLeft, ChevronRight, ArrowLeft, ExternalLink, F
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Order, Subscription, DeliveryAgent, User, Product } from '../types';
+import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 
 interface AllDeliveriesPageProps {
   selectedHubId: string;
@@ -114,8 +115,8 @@ export default function AllDeliveriesPage({
       const isSubOrder = o.isSubscriptionDelivery || o.orderType === 'subscription';
 
       const prodNames = o.items && o.items.length > 0
-        ? o.items.map((i) => `${i.product?.name || 'Item'} (x${i.quantity})`).join(', ')
-        : 'Fresh Organic Milk';
+        ? o.items.map((i) => `${i.product?.name || 'Item'} - ${i.product?.unit || '500ml'} (x${i.quantity})`).join(', ')
+        : 'Fresh Organic Milk - 500ml (x1)';
 
       entries.push({
         id: o.id,
@@ -143,7 +144,8 @@ export default function AllDeliveriesPage({
       const userObj = users.find((u) => u.id === s.userId);
       const startDate = new Date(s.startDate || Date.now());
       const prodName = s.productName || s.product?.name || 'Fresh Organic A2 Milk';
-      const prodDetails = `${prodName} (x${s.quantity || 1}) - ${s.frequency || 'Daily'}`;
+      const prodUnit = s.product?.unit || '500ml';
+      const prodDetails = `${prodName} - ${prodUnit} (x${s.quantity || 1})`;
 
       // Check if entry already added via order object
       const existsInOrders = entries.some((e) => e.rawObject?.userId === s.userId && e.isSub);
@@ -162,7 +164,7 @@ export default function AllDeliveriesPage({
           isSub: true,
           deliveryInstructions: s.deliveryInstructions || '',
           rawObject: s,
-          items: [{ product: s.product || { name: prodName, price: 95, unit: '750ml Glass Bottle', imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80' }, quantity: s.quantity || 1 }],
+          items: [{ product: s.product || { name: prodName, price: 95, unit: prodUnit, imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80' }, quantity: s.quantity || 1 }],
         });
       }
     });
@@ -201,9 +203,9 @@ export default function AllDeliveriesPage({
         if (customEndDate && item.dateStr > customEndDate) return false;
       }
 
-      // 2. Order Type Filter
-      if (typeFilter === 'subscription' && item.orderType !== 'Subscription') return false;
-      if (typeFilter === 'onetime' && item.orderType !== 'One-time') return false;
+      // 2. Order Type Filter (Strict Check)
+      if (typeFilter === 'subscription' && !item.isSub && item.orderType !== 'Subscription') return false;
+      if (typeFilter === 'onetime' && (item.isSub || item.orderType === 'Subscription')) return false;
 
       // 3. Status Filter
       if (statusFilter === 'packed' && item.status !== 'packed') return false;
@@ -267,675 +269,46 @@ export default function AllDeliveriesPage({
     showToast(`Exported ${filteredEntries.length} pending delivery entries to CSV!`, 'success');
   };
 
-  // =========================================================
-  // RENDER FULL-PAGE FULFILLMENT SHEET VIEW MATCHING SCREENSHOT
-  // =========================================================
+  // RENDER FULL-PAGE FULFILLMENT SHEET VIEW
   if (selectedEntry) {
-    const entry = selectedEntry;
-    const assignedAgent = deliveryAgents.find((a) => a.id === entry.deliveryAgentId);
-    const subtotal = entry.totalAmount || 110;
-
-    const handleSaveInstructions = async (newText: string) => {
-      setSavingInstruction(true);
-      try {
-        if (entry.type === 'Subscription') {
-          const subId = entry.id.replace('DISPATCH_', '').replace('SUB_', '');
-          await updateDoc(doc(db, 'subscriptions', subId), { deliveryInstructions: newText });
-        } else {
-          const orderId = entry.rawObject?.id || entry.id;
-          await updateDoc(doc(db, 'orders', orderId), { deliveryInstructions: newText });
-        }
-      } catch (e) {
-        console.log('Offline / local fallback save for delivery instructions', e);
-      }
-      setSelectedEntry({
-        ...entry,
-        deliveryInstructions: newText,
-      });
-      setSavingInstruction(false);
-      showToast('Delivery instructions updated by admin! 📝', 'success');
+    const targetOrder: Order = selectedEntry.rawObject && selectedEntry.rawObject.status ? selectedEntry.rawObject : {
+      id: selectedEntry.id,
+      userId: selectedEntry.rawObject?.userId || 'cust_1',
+      items: selectedEntry.items || [],
+      totalAmount: selectedEntry.totalAmount,
+      status: selectedEntry.status as Order['status'],
+      deliveryAddress: selectedEntry.address,
+      address: selectedEntry.address,
+      orderDate: selectedEntry.dateStr,
+      deliveryAgentId: selectedEntry.deliveryAgentId,
+      deliveryInstructions: selectedEntry.deliveryInstructions,
+      isSubscriptionDelivery: selectedEntry.isSub,
+      orderType: selectedEntry.orderType === 'Subscription' ? 'subscription' : 'one-time',
     };
 
     return (
-      <div id="printable-bill-invoice" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', width: '100%' }}>
-        
-        {/* Top Header Card matching Reference Screenshot */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
-          padding: '1.25rem 1.5rem',
-          border: '1px solid var(--border-color)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button
-              className="no-print"
-              onClick={() => setSelectedEntry(null)}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--bg-main)',
-                color: 'var(--text-main)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}
-              title="Back to Deliveries List"
-            >
-              <ArrowLeft size={18} />
-            </button>
-
-            <div>
-              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                Fulfillment Sheet: {entry.id}
-              </h2>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                Created on {entry.dateStr} • Hub: {selectedHubId}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-
-            <span style={{
-              backgroundColor: entry.status === 'outForDelivery' ? '#FEF3C7' : '#ECFDF5',
-              color: entry.status === 'outForDelivery' ? '#D97706' : '#047857',
-              border: entry.status === 'outForDelivery' ? '1px solid #FDE68A' : '1px solid #A7F3D0',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '0.82rem',
-              fontWeight: 800
-            }}>
-              {entry.status === 'outForDelivery' ? 'Out for Delivery' : 'Packed'}
-            </span>
-          </div>
-        </div>
-
-        {/* Two Column Grid matching Reference Screenshot */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(300px, 1fr)', gap: '1.25rem' }}>
-          
-          {/* Left Column: Products & Fulfillment Action Panel */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            
-            {/* Card 1: Products & Items Spec */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1rem 0', color: 'var(--text-main)' }}>
-                Products &amp; Items Spec
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {entry.items && entry.items.length > 0 ? (
-                  entry.items.map((item: any, idx: number) => {
-                    const prodName = item.product?.name || 'Fresh Organic Milk';
-                    return (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img
-                            src={item.product?.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'}
-                            alt={prodName}
-                            style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }}
-                          />
-                          <div>
-                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>
-                              {prodName}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {item.quantity || 1}x ₹{item.product?.price || 95} ({item.product?.unit || '750ml Glass Bottle'})
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                          ₹{(item.quantity || 1) * (item.product?.price || 95)}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img
-                        src="https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80"
-                        alt="Dairy Item"
-                        style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>
-                          {entry.products}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          1x ₹{subtotal} (750ml Glass Bottle)
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                      ₹{subtotal}
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem', marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                    <span>Subtotal</span>
-                    <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>₹{subtotal}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                    <span>Delivery Charges</span>
-                    <span style={{ color: '#047857', fontWeight: 800 }}>FREE</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.35rem' }}>
-                    <span>Total Amount</span>
-                    <span>₹{subtotal}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Fulfillment Action Panel */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: '0 0 0.25rem 0', color: 'var(--text-main)' }}>
-                Fulfillment Action Panel
-              </h3>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                Update route delivery stage and assign logistical personnel.
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                
-                {/* Field 1: Status Dropdown */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
-                    Transition Delivery Status
-                  </label>
-                  <select
-                    value={entry.status}
-                    onChange={(e) => {
-                      const nextStatus = e.target.value as Order['status'];
-                      if (onUpdateOrderStatus && entry.rawObject?.id) {
-                        onUpdateOrderStatus(entry.rawObject.id, nextStatus);
-                      }
-                      setSelectedEntry({ ...entry, status: nextStatus as any });
-                      showToast(`Updated status to ${nextStatus}`, 'success');
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'var(--bg-main)',
-                      color: 'var(--text-main)',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="packed">Packed</option>
-                    <option value="outForDelivery">Out For Delivery</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                {/* Field 2: Fulfillment Rider Info */}
-                <div style={{
-                  backgroundColor: 'var(--bg-main)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '10px',
-                  padding: '0.85rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.65rem'
-                }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Truck size={15} style={{ color: '#047857' }} /> FULFILLMENT RIDER INFORMATION (REAL-TIME)
-                  </div>
-                  
-                  {assignedAgent ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          backgroundColor: '#0284C7',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800,
-                          fontSize: '0.8rem'
-                        }}>
-                          {assignedAgent.name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>
-                            {assignedAgent.name}
-                          </div>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                            📞 {assignedAgent.phone || '9876543210'} • Zone: {assignedAgent.assignedZone || 'Hosur Route'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <select
-                        value={entry.deliveryAgentId || ''}
-                        onChange={(e) => {
-                          const nextAgentId = e.target.value;
-                          if (onUpdateOrderDriver && entry.rawObject?.id) {
-                            onUpdateOrderDriver(entry.rawObject.id, nextAgentId);
-                          }
-                          setSelectedEntry({ ...entry, deliveryAgentId: nextAgentId });
-                          showToast(`Updated live driver for ${entry.id}`, 'success');
-                        }}
-                        style={{
-                          padding: '0.38rem 0.65rem',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          backgroundColor: '#FFFFFF',
-                          color: 'var(--text-main)',
-                          fontSize: '0.76rem',
-                          fontWeight: 600,
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <option value="">-- Change Rider --</option>
-                        {deliveryAgents.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name} ({a.phone || 'Rider'})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <div style={{ fontSize: '0.76rem', color: '#D97706', fontWeight: 700 }}>
-                        ⚠️ No rider assigned to this dispatch order yet.
-                      </div>
-                      <select
-                        value={entry.deliveryAgentId || ''}
-                        onChange={(e) => {
-                          const nextAgentId = e.target.value;
-                          if (onUpdateOrderDriver && entry.rawObject?.id) {
-                            onUpdateOrderDriver(entry.rawObject.id, nextAgentId);
-                          }
-                          setSelectedEntry({ ...entry, deliveryAgentId: nextAgentId });
-                          showToast(`Assigned rider to ${entry.id}`, 'success');
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          backgroundColor: '#FFFFFF',
-                          color: 'var(--text-main)',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <option value="">-- Select Active Logistics Rider --</option>
-                        {deliveryAgents.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name} ({a.phone || 'Rider'})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                {/* Field 3: Cancel Job */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
-                    Cancel Job Order
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      placeholder="Specify cancellation logs..."
-                      value={cancellationReason}
-                      onChange={(e) => setCancellationReason(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--bg-main)',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-main)',
-                        outline: 'none'
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        if (onUpdateOrderStatus && entry.rawObject?.id) {
-                          onUpdateOrderStatus(entry.rawObject.id, 'cancelled');
-                        }
-                        setSelectedEntry({ ...entry, status: 'cancelled' });
-                        showToast(`Cancelled job order #${entry.id}`, 'error');
-                      }}
-                      style={{
-                        backgroundColor: '#FEE2E2',
-                        color: '#EF4444',
-                        border: '1px solid #FCA5A5',
-                        borderRadius: '8px',
-                        padding: '0.5rem 0.85rem',
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Cancel Job
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-
-          {/* Right Column: Customer Details & Map Preview */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            
-            {/* Card 3: Customer Details */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                  Customer Details
-                </h3>
-                <button
-                  onClick={() => onNavigateTab && onNavigateTab('customers', entry.rawObject?.userId)}
-                  style={{
-                    padding: '0.35rem 0.65rem',
-                    borderRadius: '8px',
-                    border: '1px solid #A7F3D0',
-                    backgroundColor: '#ECFDF5',
-                    color: '#047857',
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  View Customer Profile ➔
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  backgroundColor: '#047857',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '0.8rem'
-                }}>
-                  {entry.customerName.substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>
-                    {entry.customerName}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    📞 {entry.phone}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    DELIVERY LOCATION
-                  </div>
-                  <a
-                    href="https://maps.google.com/?q=12.867598,77.666966"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      color: '#047857',
-                      textDecoration: 'none',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '2px 8px'
-                    }}
-                  >
-                    📍 Map Link <ExternalLink size={12} />
-                  </a>
-                </div>
-
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-main)', lineHeight: 1.4, marginBottom: '0.85rem' }}>
-                  📍 {entry.address} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>[GPS Verified] | Hub: {hubCodeName}</span>
-                </div>
-
-                <div style={{
-                  height: '180px',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border-color)',
-                  position: 'relative'
-                }}>
-                  <iframe
-                    title="Customer Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    src="https://maps.google.com/maps?q=12.867598,77.666966&z=15&output=embed"
-                  ></iframe>
-                </div>
-              </div>
-            </div>
-
-            {/* Card: Delivery Instructions (Visible & Editable by Admin for both One-time and Subscription) */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <FileText size={16} style={{ color: '#047857' }} /> Delivery Instructions
-                </h3>
-                <span style={{
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  backgroundColor: entry.type === 'Subscription' ? '#FEF3C7' : '#ECFDF5',
-                  color: entry.type === 'Subscription' ? '#B45309' : '#047857',
-                  border: entry.type === 'Subscription' ? '1px solid #FDE68A' : '1px solid #A7F3D0'
-                }}>
-                  {entry.type === 'Subscription' ? 'Subscription Order' : 'One-Time Cart Order'}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {/* Non-Editable Customer Instruction Display Badge */}
-                <div style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '10px',
-                  backgroundColor: (entry.deliveryInstructions || entry.rawObject?.deliveryInstructions) ? '#FEF3C7' : '#F3F4F6',
-                  border: (entry.deliveryInstructions || entry.rawObject?.deliveryInstructions) ? '1px solid #FDE68A' : '1px solid #E5E7EB',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}>
-                  <ClipboardList size={18} style={{ color: (entry.deliveryInstructions || entry.rawObject?.deliveryInstructions) ? '#B45309' : '#6B7280' }} />
-                  <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: (entry.deliveryInstructions || entry.rawObject?.deliveryInstructions) ? '#B45309' : '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Customer Note (Checkout Choice)
-                    </div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: (entry.deliveryInstructions || entry.rawObject?.deliveryInstructions) ? '#78350F' : '#374151', marginTop: '2px' }}>
-                      {entry.deliveryInstructions || entry.rawObject?.deliveryInstructions || 'No special instructions provided (Standard delivery: Leave at doorstep / Ring bell).'}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Admin Controls: Update instruction or remove existing note
-                </div>
-
-                <textarea
-                  rows={2}
-                  defaultValue={entry.deliveryInstructions || entry.rawObject?.deliveryInstructions || ''}
-                  key={entry.id}
-                  id={`all_instr_input_${entry.id}`}
-                  placeholder="Type new instruction or admin note here..."
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-main)',
-                    color: 'var(--text-main)',
-                    fontSize: '0.84rem',
-                    outline: 'none',
-                    fontFamily: 'inherit',
-                    resize: 'vertical'
-                  }}
-                />
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  {(entry.deliveryInstructions || entry.rawObject?.deliveryInstructions) && (
-                    <button
-                      onClick={() => {
-                        const inputEl = document.getElementById(`all_instr_input_${entry.id}`) as HTMLTextAreaElement;
-                        if (inputEl) inputEl.value = '';
-                        handleSaveInstructions('');
-                      }}
-                      disabled={savingInstruction}
-                      style={{
-                        padding: '0.45rem 0.85rem',
-                        borderRadius: '8px',
-                        backgroundColor: '#FEE2E2',
-                        color: '#EF4444',
-                        fontSize: '0.76rem',
-                        fontWeight: 700,
-                        border: '1px solid #FCA5A5',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <Trash2 size={13} /> Clear Note
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      const inputEl = document.getElementById(`all_instr_input_${entry.id}`) as HTMLTextAreaElement;
-                      if (inputEl) {
-                        handleSaveInstructions(inputEl.value);
-                      }
-                    }}
-                    disabled={savingInstruction}
-                    style={{
-                      padding: '0.45rem 1rem',
-                      borderRadius: '8px',
-                      backgroundColor: '#047857',
-                      color: '#FFFFFF',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Save size={13} /> {savingInstruction ? 'Saving...' : 'Save Instructions'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Logistics History & Audit Logs */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1rem 0', color: 'var(--text-main)' }}>
-                Logistics History &amp; Audit Logs
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                  <span style={{
-                    padding: '2px 7px',
-                    borderRadius: '6px',
-                    backgroundColor: '#ECFDF5',
-                    color: '#047857',
-                    fontWeight: 800,
-                    fontSize: '0.68rem',
-                    border: '1px solid #A7F3D0'
-                  }}>
-                    Ordered
-                  </span>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>Logged &amp; Registered</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Created on {entry.dateStr}, 5:30:00 AM</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                  <span style={{
-                    padding: '2px 7px',
-                    borderRadius: '6px',
-                    backgroundColor: '#ECFDF5',
-                    color: '#047857',
-                    fontWeight: 800,
-                    fontSize: '0.68rem',
-                    border: '1px solid #A7F3D0'
-                  }}>
-                    Packed
-                  </span>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>Prepared for Dispatch</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Hub consolidation logs updated</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                  <span style={{
-                    padding: '2px 7px',
-                    borderRadius: '6px',
-                    backgroundColor: entry.status === 'outForDelivery' ? '#FEF3C7' : '#F1F5F9',
-                    color: entry.status === 'outForDelivery' ? '#D97706' : '#64748B',
-                    fontWeight: 800,
-                    fontSize: '0.68rem',
-                    border: entry.status === 'outForDelivery' ? '1px solid #FDE68A' : '1px solid #E2E8F0'
-                  }}>
-                    Transit
-                  </span>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>Out For Delivery</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Dispatched with local rider team</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
+      <FulfillmentSheetView
+        order={targetOrder}
+        users={users}
+        products={_products}
+        deliveryAgents={deliveryAgents}
+        selectedHubId={selectedHubId}
+        onClose={() => setSelectedEntry(null)}
+        onUpdateOrderStatus={(orderId, status) => {
+          if (onUpdateOrderStatus && selectedEntry.rawObject?.id) {
+            onUpdateOrderStatus(selectedEntry.rawObject.id, status);
+          }
+          setSelectedEntry((prev) => prev ? { ...prev, status: status as any } : null);
+        }}
+        onUpdateOrderDriver={(orderId, agentId) => {
+          if (onUpdateOrderDriver && selectedEntry.rawObject?.id) {
+            onUpdateOrderDriver(selectedEntry.rawObject.id, agentId);
+          }
+          setSelectedEntry((prev) => prev ? { ...prev, deliveryAgentId: agentId } : null);
+        }}
+        showToast={showToast}
+        onNavigateTab={onNavigateTab}
+      />
     );
   }
 
@@ -1201,8 +574,8 @@ export default function AllDeliveriesPage({
 
       {/* Main Deliveries Table */}
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div className="table-container" style={{ border: 'none', borderRadius: '0' }}>
+          <table className="admin-table" style={{ width: '100%' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
                 <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERY ID</th>

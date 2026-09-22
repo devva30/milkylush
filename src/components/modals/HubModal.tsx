@@ -50,10 +50,10 @@ export const HubModal: React.FC<HubModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div>
             <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-              Select Operational Hub Branch
+              Operational Hub Scoping
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-              Switch active portal scoping between Hosur and Bangalore hubs.
+              Active regional operational branch scoping for orders and inventory.
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -74,8 +74,8 @@ export const HubModal: React.FC<HubModalProps> = ({
                 style={{
                   padding: '1rem 1.25rem',
                   borderRadius: '14px',
-                  border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                  backgroundColor: isSelected ? '#ECFDF5' : 'var(--bg-main)',
+                  border: isSelected ? '2px solid var(--primary-light)' : '1px solid var(--border-color)',
+                  backgroundColor: isSelected ? 'rgba(4, 120, 87, 0.15)' : 'var(--bg-main)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -84,12 +84,12 @@ export const HubModal: React.FC<HubModalProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <MapPin size={20} style={{ color: isSelected ? 'var(--primary)' : 'var(--text-muted)' }} />
+                  <MapPin size={20} style={{ color: isSelected ? 'var(--primary-light)' : 'var(--text-muted)' }} />
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: isSelected ? '#047857' : 'var(--text-main)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: isSelected ? 'var(--primary-light)' : 'var(--text-main)' }}>
                       {hub.name}
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: isSelected ? '#059669' : 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                       {hub.address} ({hub.state})
                     </div>
                   </div>
@@ -101,7 +101,7 @@ export const HubModal: React.FC<HubModalProps> = ({
                       width: '24px',
                       height: '24px',
                       borderRadius: '50%',
-                      backgroundColor: 'var(--primary)',
+                      backgroundColor: 'var(--primary-light, #047857)',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',

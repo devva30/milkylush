@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { sendWelcomeToNewCustomer, NOTHING_TO_DO } from '../services/whatsappService';
 import type { Product, User, Order, Subscription, DeliveryAgent, Banner, OnboardingSlide, PrepaidPackage, AdminAuditLogItem, BottleRecordItem } from '../types';
 
 export const DEFAULT_CATALOG_PRODUCTS: Product[] = [
@@ -215,7 +216,7 @@ export function useMilkyLushData(selectedHubId: string) {
   });
   const [loading, setLoading] = useState<boolean>(true);
 
-  const isCurrentHosur = selectedHubId === 'hub_hosur_main';
+  const isCurrentHosur = selectedHubId.includes('hosur');
 
   useEffect(() => {
     const unsubFarmers = onSnapshot(collection(db, 'farmers'), (snapshot) => {
@@ -252,12 +253,58 @@ export function useMilkyLushData(selectedHubId: string) {
       }
     });
 
+    // Customers already registered when this panel opened, and customers whose
+    // signup this panel witnessed. Most user docs have no usable createdAt, so
+    // new signups are identified by tracking them here rather than by timestamp.
+    const existingUserIds = new Set<string>();
+    const newSignupIds = new Set<string>();
+    let primedExistingUsers = false;
+
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
       const items: User[] = [];
       snapshot.forEach((docSnap) => {
         items.push({ id: docSnap.id, ...docSnap.data() } as User);
       });
       setUsers(items);
+
+      // The first snapshot is the existing customer base. Recording it, and
+      // greeting nobody, is what stops those customers being messaged.
+      if (!primedExistingUsers) {
+        snapshot.forEach((docSnap) => existingUserIds.add(docSnap.id));
+        primedExistingUsers = true;
+        return;
+      }
+
+      for (const change of snapshot.docChanges()) {
+        if (change.type === 'removed') continue;
+
+        const userId = change.doc.id;
+        if (existingUserIds.has(userId)) continue;
+        if (change.type === 'added') newSignupIds.add(userId);
+        if (!newSignupIds.has(userId)) continue;
+
+        const user = change.doc.data() as User & {
+          welcomeWhatsappStatus?: string;
+          welcomeWhatsappSent?: boolean;
+        };
+        if (user.welcomeWhatsappStatus || user.welcomeWhatsappSent) continue;
+
+        // A manual signup has a phone and gets WhatsApp; a Google signup has only
+        // an email and gets the welcome mail. With neither there is nothing to
+        // send yet, so wait: the next update re-delivers this document.
+        const reachable =
+          user.phone || (user as any).phoneNumber || (user as any).mobile || user.email;
+        if (!reachable) continue;
+
+        sendWelcomeToNewCustomer(userId)
+          .then(({ sent, channel, reason }) => {
+            if (sent) console.log(`[MilkyLush] welcome ${channel} sent to ${user.name}`);
+            else if (reason !== NOTHING_TO_DO) {
+              console.warn(`[MilkyLush] welcome ${channel} failed for ${user.name}: ${reason}`);
+            }
+          })
+          .catch((err) => console.error('[MilkyLush] welcome error:', err));
+      }
     });
 
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {

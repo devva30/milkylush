@@ -1,0 +1,121 @@
+// Sends the welcome WhatsApp to customers who signed up in the mobile app.
+//
+// This runs on Netlify's servers on a schedule, so a customer who signs up at
+// 2am is greeted whether or not anyone has the admin panel open. That is the
+// whole point of it existing: the browser version only ran while a tab was open.
+
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
+
+const FIREBASE_CONFIG = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBLLmjVTiJ8uKlrSiy4A6yUjVbzgSqMR6g',
+  authDomain: 'milkylush-8f110.firebaseapp.com',
+  projectId: process.env.FIREBASE_PROJECT_ID || 'milkylush-8f110',
+  storageBucket: 'milkylush-8f110.firebasestorage.app',
+  messagingSenderId: '668523107428',
+  appId: '1:668523107428:web:4c5565c8ac169fd619bb71',
+};
+
+const WELCOME_TEMPLATE = process.env.GETGABS_WELCOME_TEMPLATE || '7days_free_milk';
+
+// Keeps one run well inside Netlify's execution limit; the next run picks up the rest.
+const MAX_PER_RUN = 10;
+
+const SETTINGS_PATH = ['settings', 'whatsapp_welcome'];
+
+async function connect() {
+  const app = getApps()[0] ?? initializeApp(FIREBASE_CONFIG);
+  const email = process.env.MILKYLUSH_ADMIN_EMAIL;
+  const password = process.env.MILKYLUSH_ADMIN_PASSWORD;
+  if (!email || !password) throw new Error('MILKYLUSH_ADMIN_EMAIL / MILKYLUSH_ADMIN_PASSWORD are not set');
+
+  await signInWithEmailAndPassword(getAuth(app), email, password);
+  return getFirestore(app);
+}
+
+const hasPhone = (u) => u.phone || u.phoneNumber || u.mobile;
+const alreadyHandled = (u) => u.welcomeWhatsappStatus || u.welcomeWhatsappSent;
+
+export default async () => {
+  if (!apiKey() || !campaignId()) {
+    console.error('Getgabs is not configured; set GETGABS_API_KEY and GETGABS_CAMPAIGN_ID');
+    return;
+  }
+
+  const db = await connect();
+  const settingsRef = doc(db, ...SETTINGS_PATH);
+  const settings = await getDoc(settingsRef);
+  const users = await getDocs(collection(db, 'users'));
+
+  // First ever run: everyone already registered counts as an existing customer
+  // and must not be greeted. Marking them is what stops a mass send later.
+  if (!settings.exists() || settings.data()?.initialized !== true) {
+    let marked = 0;
+    for (const snap of users.docs) {
+      if (alreadyHandled(snap.data())) continue;
+      await setDoc(snap.ref, { welcomeWhatsappStatus: 'skipped_existing' }, { merge: true });
+      marked++;
+    }
+    await setDoc(settingsRef, { initialized: true, initializedAt: new Date().toISOString(), markedExisting: marked }, { merge: true });
+    console.log(`first run: marked ${marked} existing customer(s) as skipped, greeted nobody`);
+    return;
+  }
+
+  const pending = users.docs
+    .filter((snap) => !alreadyHandled(snap.data()) && hasPhone(snap.data()))
+    .slice(0, MAX_PER_RUN);
+
+  if (pending.length === 0) {
+    console.log('no new customers to greet');
+    return;
+  }
+
+  let spec;
+  try {
+    spec = await templateSpec(WELCOME_TEMPLATE);
+  } catch (err) {
+    console.error(`could not load template ${WELCOME_TEMPLATE}: ${err.message}`);
+    return;
+  }
+
+  for (const snap of pending) {
+    // Claiming in a transaction keeps overlapping runs, or a run overlapping an
+    // open admin panel, from greeting the same customer twice.
+    const claim = await runTransaction(db, async (tx) => {
+      const fresh = await tx.get(snap.ref);
+      if (!fresh.exists()) return null;
+      const u = fresh.data();
+      if (alreadyHandled(u)) return null;
+
+      const phone = normalizePhone(u.phone || u.phoneNumber || u.mobile);
+      if (!phone) return null;
+
+      tx.update(snap.ref, { welcomeWhatsappStatus: 'sending', welcomeWhatsappClaimedAt: new Date().toISOString() });
+      return { phone, name: u.name };
+    });
+
+    if (!claim) continue;
+
+    const result = await sendTemplate(spec, claim.phone, claim.name);
+
+    await setDoc(
+      snap.ref,
+      {
+        welcomeWhatsappStatus: result.success ? 'sent' : 'failed',
+        welcomeWhatsappSentAt: new Date().toISOString(),
+        welcomeWhatsappError: result.success ? null : result.error,
+      },
+      { merge: true }
+    );
+
+    console.log(
+      result.success
+        ? `greeted ${claim.name} (${claim.phone}) - ${result.messageId}`
+        : `failed for ${claim.name} (${claim.phone}) - ${result.error}`
+    );
+  }
+};
+
+export const config = { schedule: '*/5 * * * *' };

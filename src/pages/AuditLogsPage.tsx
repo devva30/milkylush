@@ -66,11 +66,11 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             ADMIN SECURITY &amp; SYSTEM AUDIT PORTAL • {hubLabel}
           </div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
-            Admin Activity &amp; Operation Logs
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: '2px 0 0 0' }}>
+            Admin Activity &amp; Operation History Trail
           </h2>
-          <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '2px' }}>
-            Track administrative users, portal logins, security changes, price updates, and financial actions.
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+            Historical audit log of administrative user actions, security grants, catalog changes, and doorstep operations.
           </p>
         </div>
       </div>
@@ -79,65 +79,65 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
         
         {/* Card 1: TOTAL ADMIN ACTIONS */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1.5px solid #A7F3D0', borderLeft: '4px solid #059669' }}>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #059669' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-light, #047857)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               TOTAL ADMIN ACTIONS
             </span>
             <ShieldCheck size={18} style={{ color: '#059669' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            86
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+            {auditLogs.length || 86}
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Recorded administrative operations
           </div>
         </div>
 
         {/* Card 2: SECURITY & LOGINS */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1.5px solid #BFDBFE', borderLeft: '4px solid #2563EB' }}>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #2563EB' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               SECURITY &amp; LOGINS
             </span>
             <Key size={18} style={{ color: '#2563EB' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            24
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+            {auditLogs.filter(l => l.category === 'Security & Login').length || 24}
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Admin logins &amp; permission grants
           </div>
         </div>
 
         {/* Card 3: PRICING & CATALOG EDITS */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1.5px solid #FDE68A', borderLeft: '4px solid #D97706' }}>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #D97706' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               PRICING &amp; CATALOG EDITS
             </span>
             <Settings size={18} style={{ color: '#D97706' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            18
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+            {auditLogs.filter(l => l.category === 'Catalog & Pricing').length || 18}
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Product price &amp; plan overrides
           </div>
         </div>
 
         {/* Card 4: FINANCIAL & REFUND LOGS */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1.5px solid #DDD6FE', borderLeft: '4px solid #7C3AED' }}>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #7C3AED' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#5B21B6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               FINANCIAL &amp; REFUNDS
             </span>
             <FileText size={18} style={{ color: '#7C3AED' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            14
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+            {auditLogs.filter(l => l.category === 'Financials & Refunds').length || 14}
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Wallet refunds &amp; report exports
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
       </div>
 
       {/* Filter and Date Bar Toolbar */}
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         
         {/* Top Controls Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -153,16 +153,16 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
           {/* Admin User Filter Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserCheck size={16} style={{ color: '#047857' }} />
-            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#111827' }}>Filter Admin User:</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)' }}>Filter Admin User:</span>
             <select
               value={activeAdminFilter}
               onChange={(e) => setActiveAdminFilter(e.target.value)}
               style={{
                 padding: '0.4rem 0.85rem',
                 borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                backgroundColor: '#F9FAFB',
-                color: '#111827',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-main)',
+                color: 'var(--text-main)',
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 outline: 'none'
@@ -179,7 +179,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
           {/* Search Box & Export CSV */}
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', width: '260px' }}>
-              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input 
                 type="text"
                 placeholder="Search admin, action, or IP..."
@@ -189,8 +189,9 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
                   width: '100%',
                   padding: '0.45rem 0.75rem 0.45rem 30px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
-                  backgroundColor: '#F9FAFB',
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-main)',
+                  color: 'var(--text-main)',
                   fontSize: '0.82rem',
                   outline: 'none'
                 }}
@@ -221,7 +222,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
 
         {/* Category Pills Row */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', marginRight: '4px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '4px' }}>
             Category:
           </span>
           {[
@@ -239,8 +240,8 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
                 padding: '0.35rem 0.85rem',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: activeCategoryFilter === cat.id ? '#047857' : '#F3F4F6',
-                color: activeCategoryFilter === cat.id ? '#FFFFFF' : '#374151',
+                backgroundColor: activeCategoryFilter === cat.id ? '#047857' : 'var(--bg-main)',
+                color: activeCategoryFilter === cat.id ? '#FFFFFF' : 'var(--text-main)',
                 fontSize: '0.78rem',
                 fontWeight: 700,
                 cursor: 'pointer'
@@ -254,11 +255,11 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
       </div>
 
       {/* Main Admin Audit Logs Table */}
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         <div className="table-container" style={{ border: 'none', borderRadius: '0' }}>
           <table className="admin-table" style={{ width: '100%' }}>
             <thead>
-              <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
+              <tr style={{ backgroundColor: 'var(--bg-main)', textTransform: 'uppercase', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '0.85rem 1rem' }}>TIMESTAMP</th>
                 <th style={{ padding: '0.85rem 1rem' }}>ADMIN OPERATOR</th>
                 <th style={{ padding: '0.85rem 1rem' }}>CATEGORY</th>
@@ -270,18 +271,18 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
             </thead>
             <tbody>
               {paginatedLogs.map((log) => (
-                <tr key={log.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                <tr key={log.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   
                   {/* TIMESTAMP Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                     {log.timestamp}
                   </td>
                   
                   {/* ADMIN OPERATOR Column */}
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 800, color: '#111827', fontSize: '0.85rem' }}>{log.adminName}</span>
-                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>{log.adminEmail}</span>
+                      <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.85rem' }}>{log.adminName}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{log.adminEmail}</span>
                       <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '1px 6px', borderRadius: '6px', width: 'fit-content', marginTop: '3px' }}>
                         {log.adminRole}
                       </span>
@@ -304,18 +305,18 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
                   </td>
 
                   {/* ACTION DETAILS Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#111827', fontWeight: 600, maxWidth: '320px' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: 'var(--text-main)', fontWeight: 600, maxWidth: '320px' }}>
                     {log.actionSummary}
                   </td>
 
                   {/* TARGET MODULE Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#4B5563', fontSize: '0.8rem' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {log.targetEntity}
                   </td>
 
                   {/* IP & SESSION Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.78rem', color: '#6B7280' }}>
-                    <div style={{ fontWeight: 700, color: '#374151' }}>{log.ipAddress}</div>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{log.ipAddress}</div>
                     <div style={{ fontSize: '0.72rem' }}>{log.deviceSession}</div>
                   </td>
 
@@ -326,9 +327,9 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
                       style={{
                         padding: '0.35rem 0.65rem',
                         borderRadius: '6px',
-                        border: '1px solid #D1D5DB',
-                        backgroundColor: '#FFFFFF',
-                        color: '#111827',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-main)',
+                        color: 'var(--text-main)',
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         cursor: 'pointer'
@@ -342,7 +343,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
               ))}
               {paginatedLogs.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: '#9CA3AF' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No admin audit logs match your search filters.
                   </td>
                 </tr>
@@ -453,7 +454,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
           padding: '1rem'
         }}>
           <div style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '1.75rem',
             maxWidth: '520px',
@@ -461,10 +462,10 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
             boxShadow: 'var(--shadow-lg)',
             textAlign: 'left'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem', color: '#111827' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>
               Audit Log Payload: {selectedPayloadLog.id}
             </h3>
-            <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '1rem' }}>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
               Executed by {selectedPayloadLog.adminName} ({selectedPayloadLog.adminEmail}) on {selectedPayloadLog.timestamp}.
             </p>
 

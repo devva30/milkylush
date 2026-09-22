@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, ArrowLeft, Calendar, Users as UsersIcon, Printer, X, Download } from 'lucide-react';
 import type { Order, User, Product, DeliveryAgent } from '../types';
+import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 
 interface OrdersPageProps {
   selectedHubId: string;
@@ -50,6 +51,7 @@ export default function OrdersPage({
 }: OrdersPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'subscription' | 'onetime'>('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<Order | null>(null);
@@ -75,6 +77,12 @@ export default function OrdersPage({
   const deliveredToday = activeOrders.filter((o) => o.status === 'delivered').length;
 
   const filteredOrders = useMemo(() => {
+    const now = new Date();
+    const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const yDate = new Date(now);
+    yDate.setDate(yDate.getDate() - 1);
+    const yesterdayISO = `${yDate.getFullYear()}-${String(yDate.getMonth() + 1).padStart(2, '0')}-${String(yDate.getDate()).padStart(2, '0')}`;
+
     return activeOrders.filter((o) => {
       const u = users.find((usr) => usr.id === o.userId);
       const matchesSearch =
@@ -90,9 +98,12 @@ export default function OrdersPage({
       if (statusFilter === 'outForDelivery' && o.status !== 'outForDelivery') return false;
       if (statusFilter === 'delivered' && o.status !== 'delivered') return false;
 
+      // Type Filter
+      const isSub = o.isSubscriptionDelivery || o.orderType === 'subscription';
+      if (typeFilter === 'subscription' && !isSub) return false;
+      if (typeFilter === 'onetime' && isSub) return false;
+
       // Date Filter & Custom Date Picker Evaluation
-      const todayISO = '2026-09-09';
-      const yesterdayISO = '2026-09-08';
       const targetDateISO = customDate ? customDate : dateFilter === 'today' ? todayISO : dateFilter === 'yesterday' ? yesterdayISO : '';
 
       if (targetDateISO) {
@@ -102,7 +113,7 @@ export default function OrdersPage({
 
       return true;
     });
-  }, [activeOrders, users, searchQuery, statusFilter, dateFilter, customDate]);
+  }, [activeOrders, users, searchQuery, statusFilter, typeFilter, dateFilter, customDate]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const paginatedOrders = useMemo(() => {
@@ -352,304 +363,27 @@ export default function OrdersPage({
     );
   };
 
-  // Dedicated Fulfillment Sheet View (No Pop-up)
+  // Dedicated Fulfillment Sheet View
   if (selectedOrderDetail) {
-    const o = selectedOrderDetail;
-    const u = users.find((usr) => usr.id === o.userId);
-    const custName = u?.name || 'Customer';
-    const custPhone = u?.phone || 'N/A';
-    const custEmail = u?.email || 'N/A';
-    const addressText = o.address || u?.savedAddresses?.[0] || 'Address Pending';
-    const currentAgent = deliveryAgents.find((a) => a.id === o.deliveryAgentId);
-    const subtotalCalc = o.items?.reduce((sum, i) => sum + i.quantity * (i.product?.price || 90), 0) || o.totalAmount || 360;
-
-    const cgstCalc = Math.round(subtotalCalc * 0.025 * 100) / 100;
-    const sgstCalc = Math.round(subtotalCalc * 0.025 * 100) / 100;
-    const grandTotalCalc = subtotalCalc + cgstCalc + sgstCalc;
-
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
-        
-        {/* Banner Header with Back Button */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E5E7EB',
-          borderRadius: '16px',
-          padding: '1.15rem 1.35rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button
-              onClick={() => setSelectedOrderDetail(null)}
-              title="Back to Orders Console"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: '1px solid #E5E7EB',
-                backgroundColor: '#F9FAFB',
-                color: '#111827',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div>
-              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.4rem', fontWeight: 800, margin: 0, color: '#111827' }}>
-                Order Fulfillment Sheet: {o.id}
-              </h2>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
-                Created on {new Date(o.orderDate || Date.now()).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'medium' })} • Hub: {hubCodeName}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            
-            {/* PRINT TAX BILL BUTTON */}
-            <button
-              onClick={() => {
-                setActivePrintOrder(o);
-                setShowPrintBillModal(true);
-              }}
-              style={{
-                padding: '0.55rem 1.15rem',
-                borderRadius: '10px',
-                backgroundColor: '#047857',
-                color: '#FFFFFF',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 6px rgba(4, 120, 87, 0.2)'
-              }}
-            >
-              <Printer size={16} /> Print Tax Bill Invoice
-            </button>
-
-            {(o.isSubscriptionDelivery || o.orderType === 'subscription') && onNavigateTab && (
-              <button
-                onClick={() => onNavigateTab('subscriptions', o.id)}
-                style={{
-                  padding: '0.55rem 1rem',
-                  borderRadius: '10px',
-                  backgroundColor: '#ECFDF5',
-                  color: '#047857',
-                  border: '1px solid #A7F3D0',
-                  fontWeight: 700,
-                  fontSize: '0.82rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <Calendar size={14} /> View Subscription Schedule
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 2-Column Details Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
-          
-          {/* Left Column: Items Spec & Action Panel */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            {/* Products Spec */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#111827' }}>
-                  Products &amp; Items Spec
-                </h3>
-                <button
-                  onClick={() => {
-                    setActivePrintOrder(o);
-                    setShowPrintBillModal(true);
-                  }}
-                  style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <Printer size={14} /> Print Bill
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {o.items?.map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', borderRadius: '12px', backgroundColor: '#F9FAFB', border: '1px solid #F3F4F6' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img
-                        src={item.product?.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'}
-                        alt={item.product?.name}
-                        style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#111827' }}>
-                          {item.product?.name || 'Organic Farm Milk'}
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
-                          Qty: <strong>{item.quantity}</strong> x ₹{item.product?.price || 90} ({item.product?.unit || 'Glass Bottle'})
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#111827' }}>
-                      ₹{item.quantity * (item.product?.price || 90)}
-                    </div>
-                  </div>
-                ))}
-
-                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B7280' }}>
-                    <span>Subtotal Items</span>
-                    <span style={{ fontWeight: 700, color: '#111827' }}>₹{subtotalCalc}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B7280' }}>
-                    <span>CGST (2.5%) + SGST (2.5%)</span>
-                    <span style={{ fontWeight: 700, color: '#111827' }}>₹{cgstCalc + sgstCalc}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B7280' }}>
-                    <span>Doorstep Hub Delivery</span>
-                    <span style={{ fontWeight: 800, color: '#059669' }}>FREE</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.15rem', fontWeight: 800, color: '#111827', marginTop: '6px', borderTop: '1.5px solid #E5E7EB', paddingTop: '8px' }}>
-                    <span>Total Amount Payable</span>
-                    <span style={{ color: '#047857' }}>₹{grandTotalCalc}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Status Panel */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, margin: '0 0 1rem 0', color: '#111827' }}>
-                Fulfillment Operations Panel
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: '#374151' }}>UPDATE DELIVERY STATUS</label>
-                  <select
-                    value={o.status}
-                    onChange={(e) => {
-                      const nextStatus = e.target.value as Order['status'];
-                      onUpdateOrderStatus(o.id, nextStatus);
-                      setSelectedOrderDetail({ ...o, status: nextStatus });
-                      showToast(`Updated order status to ${nextStatus}`, 'success');
-                    }}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#F9FAFB', fontSize: '0.85rem', fontWeight: 700 }}
-                  >
-                    <option value="packed">Packed</option>
-                    <option value="outForDelivery">Out For Delivery</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: '#374151' }}>CANCEL ORDER</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      placeholder="Enter cancellation reason..."
-                      value={cancellationReason}
-                      onChange={(e) => setCancellationReason(e.target.value)}
-                      style={{ flex: 1, padding: '0.55rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', outline: 'none' }}
-                    />
-                    <button
-                      onClick={() => {
-                        onUpdateOrderStatus(o.id, 'cancelled');
-                        setSelectedOrderDetail({ ...o, status: 'cancelled' });
-                        showToast(`Cancelled order #${o.id}: ${cancellationReason || 'No reason provided'}`, 'error');
-                      }}
-                      style={{ backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '8px', padding: '0.55rem 1rem', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
-                    >
-                      Cancel Order
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Right Column: Customer Profile & Rider Info */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            {/* Customer Details */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#111827' }}>Customer Details</h3>
-                {onNavigateTab && (
-                  <button
-                    onClick={() => onNavigateTab('customers', u?.id || custName)}
-                    style={{ padding: '0.4rem 0.85rem', borderRadius: '8px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <UsersIcon size={14} /> View Customer Profile →
-                  </button>
-                )}
-              </div>
-              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>{custName}</div>
-              <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '2px' }}>📞 {custPhone} • ✉️ {custEmail}</div>
-              <div style={{ fontSize: '0.82rem', color: '#374151', marginTop: '6px', lineHeight: '1.4' }}>📍 {addressText}</div>
-            </div>
-
-            {/* Fulfillment Rider Info */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.85rem 0', color: '#111827' }}>
-                Fulfillment Rider Information
-              </h3>
-              {currentAgent ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#047857', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem' }}>
-                      {currentAgent.name.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#111827' }}>{currentAgent.name}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>📞 {currentAgent.phone || '9876543210'} • Route: {currentAgent.assignedZone || 'Hosur Route 1'}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700, marginTop: '2px' }}>🟢 Live Active Rider ({currentAgent.vehicle || 'EV Delivery Bike'})</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '10px', padding: '0.85rem 1rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#D97706', marginBottom: '0.35rem' }}>⚠️ No Driver Assigned Yet</div>
-                  {onUpdateOrderDriver && (
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const agentId = e.target.value;
-                        onUpdateOrderDriver(o.id, agentId);
-                        setSelectedOrderDetail({ ...o, deliveryAgentId: agentId });
-                        showToast('Assigned driver to order in real-time!', 'success');
-                      }}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #FCD34D', backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.8rem', fontWeight: 700 }}
-                    >
-                      <option value="">-- Assign Realtime Driver --</option>
-                      {deliveryAgents.map((a) => (
-                        <option key={a.id} value={a.id}>{a.name} ({a.assignedZone || 'Route'})</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              )}
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* PRINT TAX BILL INVOICE MODAL & OVERLAY */}
-        {renderPrintBillModal()}
-      </div>
+      <FulfillmentSheetView
+        order={selectedOrderDetail}
+        users={users}
+        products={products}
+        deliveryAgents={deliveryAgents}
+        selectedHubId={selectedHubId}
+        onClose={() => setSelectedOrderDetail(null)}
+        onUpdateOrderStatus={(orderId, status) => {
+          onUpdateOrderStatus(orderId, status);
+          setSelectedOrderDetail((prev) => prev ? { ...prev, status } : null);
+        }}
+        onUpdateOrderDriver={(orderId, agentId) => {
+          if (onUpdateOrderDriver) onUpdateOrderDriver(orderId, agentId);
+          setSelectedOrderDetail((prev) => prev ? { ...prev, deliveryAgentId: agentId } : null);
+        }}
+        showToast={showToast}
+        onNavigateTab={onNavigateTab}
+      />
     );
   }
 
@@ -701,8 +435,33 @@ export default function OrdersPage({
           />
         </div>
 
-        {/* Status Filter Pills */}
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+        {/* Order Type & Status Filter Pills */}
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {[
+            { id: 'all', label: 'All Types' },
+            { id: 'subscription', label: 'Subscription' },
+            { id: 'onetime', label: 'One-Time' }
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTypeFilter(t.id as any)}
+              style={{
+                padding: '0.38rem 0.75rem',
+                borderRadius: '20px',
+                border: typeFilter === t.id ? '1px solid #047857' : '1px solid var(--border-color)',
+                backgroundColor: typeFilter === t.id ? '#047857' : 'var(--bg-main)',
+                color: typeFilter === t.id ? '#FFFFFF' : 'var(--text-main)',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                cursor: 'pointer'
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 4px' }}>|</span>
+
           {[
             { id: 'all', label: 'All Statuses' },
             { id: 'packed', label: 'Packed' },
@@ -715,9 +474,9 @@ export default function OrdersPage({
               style={{
                 padding: '0.38rem 0.75rem',
                 borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                backgroundColor: statusFilter === s.id ? '#047857' : '#FFFFFF',
-                color: statusFilter === s.id ? '#FFFFFF' : '#374151',
+                border: '1px solid var(--border-color)',
+                backgroundColor: statusFilter === s.id ? '#047857' : 'var(--bg-main)',
+                color: statusFilter === s.id ? '#FFFFFF' : 'var(--text-main)',
                 fontWeight: 700,
                 fontSize: '0.78rem',
                 cursor: 'pointer'
@@ -741,9 +500,9 @@ export default function OrdersPage({
               style={{
                 padding: '0.38rem 0.65rem',
                 borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                backgroundColor: dateFilter === p.id && !customDate ? '#0284C7' : '#FFFFFF',
-                color: dateFilter === p.id && !customDate ? '#FFFFFF' : '#374151',
+                border: '1px solid var(--border-color)',
+                backgroundColor: dateFilter === p.id && !customDate ? '#0284C7' : 'var(--bg-main)',
+                color: dateFilter === p.id && !customDate ? '#FFFFFF' : 'var(--text-main)',
                 fontWeight: 700,
                 fontSize: '0.78rem',
                 cursor: 'pointer'
@@ -760,9 +519,9 @@ export default function OrdersPage({
             style={{
               padding: '0.35rem 0.55rem',
               borderRadius: '8px',
-              border: '1px solid #E5E7EB',
-              backgroundColor: customDate ? '#ECFDF5' : '#FFFFFF',
-              color: customDate ? '#047857' : '#374151',
+              border: '1px solid var(--border-color)',
+              backgroundColor: customDate ? '#ECFDF5' : 'var(--bg-main)',
+              color: customDate ? '#047857' : 'var(--text-main)',
               fontWeight: 700,
               fontSize: '0.78rem',
               outline: 'none',
@@ -810,11 +569,11 @@ export default function OrdersPage({
       </div>
 
       {/* Orders Table */}
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         <div className="table-container" style={{ border: 'none', borderRadius: 0 }}>
           <table className="admin-table" style={{ width: '100%' }}>
             <thead>
-              <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB', textTransform: 'uppercase', fontSize: '0.72rem', color: '#6B7280' }}>
+              <tr style={{ backgroundColor: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)', textTransform: 'uppercase', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '0.85rem 1rem' }}>ORDER ID</th>
                 <th style={{ padding: '0.85rem 1rem' }}>CUSTOMER NAME</th>
                 <th style={{ padding: '0.85rem 1rem' }}>DELIVERY ADDRESS</th>
@@ -834,13 +593,17 @@ export default function OrdersPage({
                 const isValidAddr = rawAddr && rawAddr !== 'Doorstep Delivery' && rawAddr !== 'Doorstep';
                 const displayAddress = isValidAddr ? rawAddr : (u?.address || u?.savedAddresses?.[0] || 'Address Pending');
 
+                const productsText = o.items && o.items.length > 0
+                  ? o.items.map((i) => `${i.product?.name || 'Milk Product'} - ${i.product?.unit || '500ml'} (x${i.quantity})`).join(', ')
+                  : 'Fresh Dairy Product - 500ml (x1)';
+
                 return (
-                  <tr key={o.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ fontWeight: 800, fontSize: '0.85rem', color: '#111827', padding: '0.85rem 1rem' }}>{o.id}</td>
-                    <td style={{ fontWeight: 700, fontSize: '0.85rem', color: '#111827', padding: '0.85rem 1rem' }}>{customerName}</td>
-                    <td style={{ fontSize: '0.78rem', color: '#374151', maxWidth: '240px', padding: '0.85rem 1rem', lineHeight: 1.4 }}>{displayAddress}</td>
-                    <td style={{ fontWeight: 700, fontSize: '0.82rem', color: '#374151', padding: '0.85rem 1rem' }}>
-                      {o.items?.map((i) => `${i.product?.name || 'Milk'} (x${i.quantity})`).join(', ') || 'Fresh Dairy Product'}
+                  <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{o.id}</td>
+                    <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{customerName}</td>
+                    <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '240px', padding: '0.85rem 1rem', lineHeight: 1.4 }}>{displayAddress}</td>
+                    <td style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
+                      {productsText}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span style={{ backgroundColor: isSub ? '#ECFDF5' : '#FEF3C7', color: isSub ? '#047857' : '#D97706', padding: '3px 9px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 800 }}>

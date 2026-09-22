@@ -340,6 +340,9 @@ function AppContent() {
           onLogout={logoutAdmin}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          orders={hubOrders}
+          subscriptions={hubSubscriptions}
+          onNavigateTab={handleNavigateTab}
         />
 
         <main style={{ flex: 1, padding: '1.75rem', boxSizing: 'border-box' }}>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Settings, Lock, Clock, ShieldCheck } from 'lucide-react';
+import { Settings, Lock, Clock, ShieldCheck, Trash2, Database } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { cleanupPhotosOlderThan30Days } from '../../utils/photoCleanupUtility';
 
 interface DispatchSystemControlsPageProps {
   selectedHubId: string;
@@ -14,6 +15,8 @@ export default function DispatchSystemControlsPage({ selectedHubId, showToast }:
   const [closeTime, setCloseTime] = useState('22:00');
   const [closedMessage, setClosedMessage] = useState('MilkyLush operations are currently closed for the night. Deliveries resume at 05:00 AM.');
   const [isSaving, setIsSaving] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [cleanupStatus, setCleanupStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -55,6 +58,21 @@ export default function DispatchSystemControlsPage({ selectedHubId, showToast }:
     }
   };
 
+  const handleRunPhotoCleanup = async () => {
+    setIsCleaning(true);
+    try {
+      showToast("Starting 30-day photo proof storage cleanup...", "info");
+      const res = await cleanupPhotosOlderThan30Days();
+      const statusMsg = `Cleaned ${res.ordersCleaned} orders & ${res.subscriptionsCleaned} subscriptions. Freed ${res.totalSpaceSavedMB} MB of storage.`;
+      setCleanupStatus(statusMsg);
+      showToast(statusMsg, "success");
+    } catch (err: any) {
+      showToast("Cleanup failed: " + err.message, "error");
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
       
@@ -68,92 +86,137 @@ export default function DispatchSystemControlsPage({ selectedHubId, showToast }:
         </p>
       </div>
 
-      {/* Settings Form Card */}
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.5rem', border: '1px solid #E2E8F0', maxWidth: '650px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 0.7fr)', gap: '1.5rem', alignItems: 'start' }}>
         
-        <form onSubmit={handleSaveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {/* Settings Form Card */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
           
-          <div>
-            <label style={{ fontWeight: 800, fontSize: '0.9rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock size={16} style={{ color: '#047857' }} /> Operation Mode Status
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '8px' }}>
-              {(['auto', 'force-open', 'force-closed'] as const).map(mode => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setStatusMode(mode)}
-                  style={{
-                    padding: '0.65rem 0.5rem',
-                    borderRadius: '10px',
-                    border: statusMode === mode ? '2px solid #047857' : '1px solid #CBD5E1',
-                    backgroundColor: statusMode === mode ? '#ECFDF5' : '#FFFFFF',
-                    color: statusMode === mode ? '#047857' : '#475569',
-                    fontWeight: 700,
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    textTransform: 'capitalize'
-                  }}
-                >
-                  {mode === 'auto' ? '⏱ Auto Schedule' : mode === 'force-open' ? '🟢 Force Open' : '🔴 Force Closed'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <form onSubmit={handleSaveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Opening Dispatch Time</label>
-              <input
-                type="time"
-                value={openTime}
-                onChange={(e) => setOpenTime(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginTop: '4px', outline: 'none' }}
+              <label style={{ fontWeight: 800, fontSize: '0.9rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Lock size={16} style={{ color: '#047857' }} /> Operation Mode Status
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '8px' }}>
+                {(['auto', 'force-open', 'force-closed'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setStatusMode(mode)}
+                    style={{
+                      padding: '0.65rem 0.5rem',
+                      borderRadius: '10px',
+                      border: statusMode === mode ? '2px solid #047857' : '1px solid #CBD5E1',
+                      backgroundColor: statusMode === mode ? '#ECFDF5' : '#FFFFFF',
+                      color: statusMode === mode ? '#047857' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      textTransform: 'capitalize'
+                    }}
+                  >
+                    {mode === 'auto' ? '⏱ Auto Schedule' : mode === 'force-open' ? '🟢 Force Open' : '🔴 Force Closed'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Opening Dispatch Time</label>
+                <input
+                  type="time"
+                  value={openTime}
+                  onChange={(e) => setOpenTime(e.target.value)}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginTop: '4px', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Closing Dispatch Time</label>
+                <input
+                  type="time"
+                  value={closeTime}
+                  onChange={(e) => setCloseTime(e.target.value)}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginTop: '4px', outline: 'none' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Closed Announcement Message</label>
+              <textarea
+                rows={3}
+                value={closedMessage}
+                onChange={(e) => setClosedMessage(e.target.value)}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.82rem', marginTop: '4px', outline: 'none' }}
               />
             </div>
-            <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Closing Dispatch Time</label>
-              <input
-                type="time"
-                value={closeTime}
-                onChange={(e) => setCloseTime(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginTop: '4px', outline: 'none' }}
-              />
-            </div>
-          </div>
 
-          <div>
-            <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Closed Announcement Message</label>
-            <textarea
-              rows={3}
-              value={closedMessage}
-              onChange={(e) => setClosedMessage(e.target.value)}
-              style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.82rem', marginTop: '4px', outline: 'none' }}
-            />
+            <button
+              type="submit"
+              disabled={isSaving}
+              style={{
+                backgroundColor: '#044E35',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                padding: '0.75rem',
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                marginTop: '0.5rem'
+              }}
+            >
+              {isSaving ? 'Saving Settings...' : 'Save Dispatch Controls'}
+            </button>
+
+          </form>
+
+        </div>
+
+        {/* Database Optimization Panel */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.5rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          
+          <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Database size={18} style={{ color: '#047857' }} /> Database Storage Cleanup (30-Day Policy)
           </div>
+          
+          <p style={{ fontSize: '0.82rem', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+            To optimize Firestore performance and minimize database storage size, photo proof attachments older than <strong>30 days</strong> can be auto-cleared while preserving complete order log history.
+          </p>
 
           <button
-            type="submit"
-            disabled={isSaving}
+            onClick={handleRunPhotoCleanup}
+            disabled={isCleaning}
             style={{
-              backgroundColor: '#044E35',
+              backgroundColor: '#DC2626',
               color: '#FFFFFF',
               fontWeight: 700,
-              fontSize: '0.88rem',
-              padding: '0.75rem',
+              fontSize: '0.84rem',
+              padding: '0.65rem 1rem',
               borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
-              marginTop: '0.5rem'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
             }}
           >
-            {isSaving ? 'Saving Settings...' : 'Save Dispatch Controls'}
+            <Trash2 size={16} /> {isCleaning ? 'Cleaning Photos...' : 'Purge Photos Older Than 30 Days'}
           </button>
 
-        </form>
+          {cleanupStatus && (
+            <div style={{ padding: '0.65rem', borderRadius: '8px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', fontSize: '0.78rem', color: '#047857', fontWeight: 700 }}>
+              ✓ {cleanupStatus}
+            </div>
+          )}
+
+        </div>
 
       </div>
 
     </div>
   );
 }
+

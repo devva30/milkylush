@@ -26,6 +26,7 @@ const formatDateWithTime = (dateStr?: string): string => {
 export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], deliveryAgents, selectedHubId }: DispatchDeliveryHistoryPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'one-time' | 'subscription'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'delivered' | 'cancelled'>('all');
   const [timePreset, setTimePreset] = useState<'all' | 'today' | 'yesterday' | 'week' | 'month'>('all');
   const [customDate, setCustomDate] = useState<string>('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -34,13 +35,13 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
   const pageSize = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const deliveredOrdersList = useMemo(() => {
-    return (hubOrders || []).filter((o) => o.status === 'delivered');
+  const completedOrdersList = useMemo(() => {
+    return (hubOrders || []).filter((o) => o.status === 'delivered' || o.status === 'cancelled');
   }, [hubOrders]);
 
   // Robust filtering
   const filteredOrders = useMemo(() => {
-    return deliveredOrdersList.filter((o) => {
+    return completedOrdersList.filter((o) => {
       const u = users.find((usr) => usr.id === o.userId);
       const agent = deliveryAgents.find((a) => a.id === o.deliveryAgentId);
       
@@ -62,9 +63,13 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
       if (filterType === 'subscription' && !isSub) return false;
       if (filterType === 'one-time' && isSub) return false;
 
+      // 3. Status Filter
+      if (statusFilter === 'delivered' && o.status !== 'delivered') return false;
+      if (statusFilter === 'cancelled' && o.status !== 'cancelled') return false;
+
       return true;
     });
-  }, [deliveredOrdersList, users, deliveryAgents, searchQuery, filterType]);
+  }, [completedOrdersList, users, deliveryAgents, searchQuery, filterType, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const paginatedOrders = useMemo(() => {
@@ -108,7 +113,18 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
     const customerName = o.customerName || u?.name || 'Customer Recipient';
     const customerPhone = o.customerPhone || u?.phone || 'N/A';
     const addressText = o.deliveryAddress || o.address || u?.savedAddresses?.[0] || 'Address Pending';
-    const isSubOrder = o.isSubscriptionDelivery || o.orderType === 'subscription';
+    const getCleanProofUrl = (raw: any): string => {
+      if (typeof raw !== 'string') return '';
+      const s = raw.trim();
+      if (s.length === 0) return '';
+      if (s.startsWith('http') || s.startsWith('data:')) return s;
+      if (s.startsWith('/data/') || s.startsWith('C:') || s.startsWith('file:')) return '';
+      if (s.length > 30) return `data:image/jpeg;base64,${s}`;
+      return '';
+    };
+
+    const rawProof = o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || '';
+    const proofUrl = getCleanProofUrl(rawProof);
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
@@ -172,7 +188,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
         </div>
 
         {/* 2-Column Section Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
           
           {/* Left Column: Proof & Products */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -183,14 +199,17 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
               </h3>
 
               <div style={{ display: 'flex', gap: '1.25rem', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1rem', alignItems: 'center' }}>
-                <img
-                  src={o.proofImageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=80'}
-                  alt="Doorstep Delivery Proof"
-                  style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '12px', border: '1px solid #E2E8F0' }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=80';
-                  }}
-                />
+                {proofUrl ? (
+                  <img
+                    src={proofUrl}
+                    alt="Doorstep Delivery Proof"
+                    style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '12px', border: '1px solid #E2E8F0', flexShrink: 0 }}
+                  />
+                ) : (
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <CheckCircle2 size={28} />
+                  </div>
+                )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem' }}>
                   <div style={{ fontWeight: 800, color: '#047857', fontSize: '0.9rem' }}>
                     ✅ Drop Verified by Fleet GPS
@@ -199,7 +218,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                     Timestamp: {formatDateWithTime(o.orderDate)}
                   </div>
                   <div style={{ color: '#64748B' }}>
-                    Empty Glass Bottles Returned: <strong style={{ color: '#047857' }}>{o.bottlesReturned || 2} units</strong>
+                    Empty Glass Bottles Returned: <strong style={{ color: '#047857' }}>{o.bottlesReturned || 0} units</strong>
                   </div>
                 </div>
               </div>
@@ -319,30 +338,63 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
           />
         </div>
 
-        {/* Type Filter */}
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-          {[
-            { id: 'all', label: 'All Types' },
-            { id: 'one-time', label: 'One-Time' },
-            { id: 'subscription', label: 'Subscriptions' }
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setFilterType(t.id as any)}
-              style={{
-                padding: '0.38rem 0.75rem',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                backgroundColor: filterType === t.id ? '#047857' : '#FFFFFF',
-                color: filterType === t.id ? '#FFFFFF' : '#475569',
-                fontWeight: 700,
-                fontSize: '0.76rem',
-                cursor: 'pointer'
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Type & Status Filters */}
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          
+          {/* Status Filter */}
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#64748B' }}>Status:</span>
+            {[
+              { id: 'all', label: 'All Statuses' },
+              { id: 'delivered', label: 'Delivered' },
+              { id: 'cancelled', label: 'Cancelled' }
+            ].map((st) => (
+              <button
+                key={st.id}
+                onClick={() => setStatusFilter(st.id as any)}
+                style={{
+                  padding: '0.38rem 0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: statusFilter === st.id ? (st.id === 'cancelled' ? '#DC2626' : '#047857') : '#FFFFFF',
+                  color: statusFilter === st.id ? '#FFFFFF' : '#475569',
+                  fontWeight: 700,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Type Filter */}
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#64748B' }}>Type:</span>
+            {[
+              { id: 'all', label: 'All Types' },
+              { id: 'one-time', label: 'One-Time' },
+              { id: 'subscription', label: 'Subscriptions' }
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setFilterType(t.id as any)}
+                style={{
+                  padding: '0.38rem 0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: filterType === t.id ? '#047857' : '#FFFFFF',
+                  color: filterType === t.id ? '#FFFFFF' : '#475569',
+                  fontWeight: 700,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
         </div>
 
       </div>
@@ -350,11 +402,13 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
       {/* Table Log */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
         <div className="table-container" style={{ border: 'none' }}>
-          <table className="admin-table" style={{ width: '100%' }}>
+          <table>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', textTransform: 'uppercase', fontSize: '0.72rem', color: '#64748B' }}>
                 <th style={{ padding: '0.85rem 1rem' }}>ORDER ID</th>
-                <th style={{ padding: '0.85rem 1rem' }}>DELIVERED DATE & TIME</th>
+                <th style={{ padding: '0.85rem 1rem' }}>STATUS</th>
+                <th style={{ padding: '0.85rem 1rem' }}>PHOTO PROOF</th>
+                <th style={{ padding: '0.85rem 1rem' }}>DELIVERED / LOGGED DATE</th>
                 <th style={{ padding: '0.85rem 1rem' }}>CUSTOMER</th>
                 <th style={{ padding: '0.85rem 1rem' }}>FULFILLMENT RIDER</th>
                 <th style={{ padding: '0.85rem 1rem' }}>ADDRESS</th>
@@ -365,8 +419,8 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
             <tbody>
               {paginatedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8' }}>
-                    No completed delivery receipts found.
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8' }}>
+                    No delivery history records found.
                   </td>
                 </tr>
               ) : (
@@ -374,10 +428,61 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                   const u = users.find((usr) => usr.id === o.userId);
                   const agent = deliveryAgents.find((a) => a.id === o.deliveryAgentId);
                   const customerName = o.customerName || u?.name || 'Customer';
+                  const isCancelled = o.status === 'cancelled';
+
+                  const rawProof = o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || '';
+                  const getCleanProofUrl = (raw: any): string => {
+                    if (typeof raw !== 'string') return '';
+                    const s = raw.trim();
+                    if (s.length === 0) return '';
+                    if (s.startsWith('http') || s.startsWith('data:')) return s;
+                    if (s.startsWith('/data/') || s.startsWith('C:') || s.startsWith('file:')) return '';
+                    if (s.length > 30) return `data:image/jpeg;base64,${s}`;
+                    return '';
+                  };
+                  const proofUrl = getCleanProofUrl(rawProof);
+                  const cancelReason = (o as any).cancellationReason || (o as any).cancelReason;
 
                   return (
                     <tr key={o.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                       <td style={{ fontWeight: 800, color: '#044E35', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{o.id}</td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          backgroundColor: isCancelled ? '#FEE2E2' : '#DCFCE7',
+                          color: isCancelled ? '#DC2626' : '#166534',
+                          border: `1px solid ${isCancelled ? '#FCA5A5' : '#86EFAC'}`
+                        }}>
+                          {isCancelled ? 'Cancelled' : 'Delivered'}
+                        </span>
+                      </td>
+
+                      {/* Photo Proof Cell */}
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        {proofUrl ? (
+                          <div
+                            onClick={() => setSelectedOrder(o)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                          >
+                            <img
+                              src={proofUrl}
+                              alt="Proof"
+                              style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #047857' }}
+                            />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857' }}>View Photo ✓</span>
+                          </div>
+                        ) : isCancelled ? (
+                          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#DC2626' }}>
+                            {cancelReason ? `✕ ${cancelReason}` : '✕ Cancelled'}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.74rem', color: '#94A3B8' }}>📷 No Photo</span>
+                        )}
+                      </td>
+
                       <td style={{ fontSize: '0.8rem', color: '#475569', padding: '0.85rem 1rem' }}>{formatDateWithTime(o.orderDate)}</td>
                       <td style={{ fontWeight: 700, color: '#1E293B', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{customerName}</td>
                       <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#475569' }}>{agent?.name || 'Express Rider'}</td>
@@ -392,9 +497,9 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                             padding: '0.35rem 0.75rem',
                             fontSize: '0.76rem',
                             fontWeight: 700,
-                            backgroundColor: '#F1F5F9',
-                            color: '#334155',
-                            border: '1px solid #CBD5E1',
+                            backgroundColor: '#044E35',
+                            color: '#FFFFFF',
+                            border: 'none',
                             borderRadius: '8px',
                             cursor: 'pointer'
                           }}

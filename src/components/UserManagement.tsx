@@ -50,6 +50,10 @@ export default function UserManagement({ users, subscriptions, deliveryAgents, h
   const [formPassword, setFormPassword] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formZone, setFormZone] = useState('');
+  const [formVehicleNumber, setFormVehicleNumber] = useState('');
+  const [formVehicleType, setFormVehicleType] = useState('Electric Scooter');
+  const [formLicenseNumber, setFormLicenseNumber] = useState('');
+  const [formLicenseValidity, setFormLicenseValidity] = useState('');
   const [formIsActive, setFormIsActive] = useState(true);
   const [formIsOnline, setFormIsOnline] = useState(false);
   const [formEmptyBottlesReturned, setFormEmptyBottlesReturned] = useState(0);
@@ -815,16 +819,56 @@ export default function UserManagement({ users, subscriptions, deliveryAgents, h
 
               {activeSubTab === 'delivery' && (
                 <>
-                  <div className="form-group">
-                    <label className="form-label">Assigned Delivery Zone</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={formZone}
-                      onChange={(e) => setFormZone(e.target.value)}
-                      placeholder="e.g. Zone A / Ooty Center"
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Vehicle Reg. Number</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={formVehicleNumber}
+                        onChange={(e) => setFormVehicleNumber(e.target.value)}
+                        placeholder="e.g. TN 29 AB 4521"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Vehicle Type</label>
+                      <select 
+                        className="form-select" 
+                        value={formVehicleType}
+                        onChange={(e) => setFormVehicleType(e.target.value)}
+                        style={{ padding: '0.5rem', width: '100%', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: '#fff' }}
+                      >
+                        <option value="Electric Scooter">Electric Scooter</option>
+                        <option value="Delivery Bike">Delivery Bike</option>
+                        <option value="EV Mini Van">EV Mini Van</option>
+                        <option value="Bicycle">Bicycle</option>
+                      </select>
+                    </div>
                   </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Driving License</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={formLicenseNumber}
+                        onChange={(e) => setFormLicenseNumber(e.target.value)}
+                        placeholder="e.g. DL-90823411"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">License Validity</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={formLicenseValidity}
+                        onChange={(e) => setFormLicenseValidity(e.target.value)}
+                        placeholder="e.g. Valid till 2030"
+                      />
+                    </div>
+                  </div>
+
                   <div className="form-group">
                     <label className="form-label" style={{ fontWeight: 600 }}>Assigned Operations Hub</label>
                     <select

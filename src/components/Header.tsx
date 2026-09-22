@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { MapPin, Sun, Moon, Bell, Menu, Search, LogOut } from 'lucide-react';
 import { HUBS } from '../context/HubContext';
+import NotificationCenter from './NotificationCenter';
+import type { Order, Subscription } from '../types';
 
 interface HeaderProps {
   activeTab: string;
@@ -13,6 +16,9 @@ interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
   onExitConsole?: () => void;
+  orders?: Order[];
+  subscriptions?: Subscription[];
+  onNavigateTab?: (tab: string, targetId?: string) => void;
 }
 
 export default function Header({
@@ -26,8 +32,12 @@ export default function Header({
   onLogout,
   searchQuery = '',
   onSearchChange,
-  onExitConsole
+  onExitConsole,
+  orders = [],
+  subscriptions = [],
+  onNavigateTab
 }: HeaderProps) {
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const activeHub = HUBS[selectedHubId] || HUBS.hub_bangalore_main;
 
   const getTabTitle = (tab: string) => {
@@ -81,20 +91,20 @@ export default function Header({
       zIndex: 90
     }}>
       {/* Left: Mobile Menu Trigger & Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         <button 
           onClick={onToggleMobileSidebar}
           className="btn-icon mobile-menu-btn"
-          style={{ display: 'none', cursor: 'pointer', background: 'none', border: 'none', color: 'var(--text-main)' }}
+          style={{ display: 'none', cursor: 'pointer', background: 'none', border: 'none', color: 'var(--text-main)', padding: '4px' }}
         >
           <Menu size={22} />
         </button>
 
         <div>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            MILKYLUSH PORTAL • {activeHub.location.toUpperCase()}
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            MILKYLUSH PORTAL • {activeHub.name.toUpperCase()}
           </div>
-          <h1 style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: '1px 0 0 0', lineHeight: 1.1 }}>
+          <h1 className="header-page-title" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: '1px 0 0 0', lineHeight: 1.1 }}>
             {getTabTitle(activeTab)}
           </h1>
         </div>
@@ -102,7 +112,7 @@ export default function Header({
 
       {/* Center: Search Box if enabled */}
       {onSearchChange && (
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '280px' }} className="header-search-box">
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '260px' }} className="header-search-box">
           <Search size={14} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
           <input
             type="text"
@@ -111,11 +121,11 @@ export default function Header({
             onChange={(e) => onSearchChange(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.45rem 0.75rem 0.45rem 34px',
+              padding: '0.42rem 0.75rem 0.42rem 34px',
               borderRadius: '20px',
               border: '1px solid var(--border-color)',
               backgroundColor: 'var(--bg-main)',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               color: 'var(--text-main)',
               outline: 'none'
             }}
@@ -123,53 +133,8 @@ export default function Header({
         </div>
       )}
 
-      {/* Right: Hub Pill, Gateway Button, Theme Toggle, Notifications, Profile Pill */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-        
-        {onExitConsole && (
-          <button
-            onClick={onExitConsole}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: '#166534',
-              border: 'none',
-              borderRadius: '20px',
-              padding: '6px 14px',
-              color: '#FFFFFF',
-              fontWeight: 800,
-              fontSize: '0.78rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 10px rgba(22, 101, 52, 0.25)',
-              transition: 'transform 0.15s ease',
-            }}
-          >
-            <span>Return to Portal Gateway</span>
-          </button>
-        )}
-
-        {/* Branch Selector Pill */}
-        <button 
-          onClick={onOpenHubModal}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: '#ECFDF5',
-            border: '1px solid #A7F3D0',
-            borderRadius: '20px',
-            padding: '6px 12px',
-            color: '#047857',
-            fontWeight: 700,
-            fontSize: '0.78rem',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(4, 120, 87, 0.08)'
-          }}
-        >
-          <MapPin size={14} style={{ color: '#059669' }} />
-          <span>{activeHub.name} ({activeHub.code.split('-')[0]})</span>
-        </button>
+      {/* Right: Theme Toggle, Notifications, Admin Profile Pill & Logout */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 
         {/* Theme Toggle Button */}
         <button 
@@ -191,38 +156,53 @@ export default function Header({
           {theme === 'light' ? <Moon size={16} style={{ color: '#6366F1' }} /> : <Sun size={16} style={{ color: '#F59E0B' }} />}
         </button>
 
-        {/* Notification Badge */}
-        <button 
-          style={{
-            position: 'relative',
-            backgroundColor: 'var(--bg-main)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-main)',
-            cursor: 'pointer'
-          }}
-        >
-          <Bell size={16} />
-          <span style={{
-            position: 'absolute',
-            top: '-2px',
-            right: '-2px',
-            backgroundColor: '#EF4444',
-            color: '#FFFFFF',
-            fontSize: '0.6rem',
-            fontWeight: 800,
-            padding: '1px 5px',
-            borderRadius: '10px',
-            border: '2px solid var(--bg-card)'
-          }}>
-            2
-          </span>
-        </button>
+        {/* Notification Bell & Popover Container */}
+        <div style={{ position: 'relative' }}>
+          <button 
+            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+            style={{
+              position: 'relative',
+              backgroundColor: 'var(--bg-main)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-main)',
+              cursor: 'pointer'
+            }}
+            title="Open Notifications"
+          >
+            <Bell size={16} />
+            <span style={{
+              position: 'absolute',
+              top: '-2px',
+              right: '-2px',
+              backgroundColor: '#EF4444',
+              color: '#FFFFFF',
+              fontSize: '0.6rem',
+              fontWeight: 800,
+              padding: '1px 5px',
+              borderRadius: '10px',
+              border: '2px solid var(--bg-card)'
+            }}>
+              {Math.max(1, orders.filter(o => o.status === 'packed' || o.status === 'outForDelivery').length)}
+            </span>
+          </button>
+
+          <NotificationCenter
+            isOpen={isNotificationOpen}
+            onClose={() => setIsNotificationOpen(false)}
+            onNavigateTab={(tab, targetId) => {
+              if (onNavigateTab) onNavigateTab(tab, targetId);
+              setIsNotificationOpen(false);
+            }}
+            orders={orders}
+            subscriptions={subscriptions}
+          />
+        </div>
 
         {/* Admin Profile Chip */}
         <div style={{

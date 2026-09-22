@@ -28,7 +28,10 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formAddress, setFormAddress] = useState('');
-  const [formZone, setFormZone] = useState('');
+  const [formVehicleNumber, setFormVehicleNumber] = useState('');
+  const [formVehicleType, setFormVehicleType] = useState('Electric Scooter');
+  const [formLicenseNumber, setFormLicenseNumber] = useState('');
+  const [formLicenseValidity, setFormLicenseValidity] = useState('');
   const [formHubId, setFormHubId] = useState(selectedHubId || 'hub_hosur');
 
   const resetForm = () => {
@@ -37,7 +40,10 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
     setFormEmail('');
     setFormPassword('');
     setFormAddress('');
-    setFormZone('');
+    setFormVehicleNumber('');
+    setFormVehicleType('Electric Scooter');
+    setFormLicenseNumber('');
+    setFormLicenseValidity('');
     setFormHubId(selectedHubId || 'hub_hosur');
   };
 
@@ -68,7 +74,12 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
         email: formEmail,
         password: pass,
         address: formAddress || '',
-        assignedZone: formZone || 'General Delivery Route',
+        vehicleNumber: formVehicleNumber || 'TN 29 AB 4521',
+        vehicleType: formVehicleType || 'Electric Scooter',
+        assignedVehicle: `${formVehicleNumber || 'TN 29 AB 4521'} • ${formVehicleType || 'Electric Scooter'}`,
+        licenseNumber: formLicenseNumber || 'DL-90823411',
+        licenseValidity: formLicenseValidity || '2030',
+        drivingLicense: `${formLicenseNumber || 'DL-90823411'} • ${formLicenseValidity || 'Valid till 2030'}`,
         hubId: targetHub,
         assignedHubId: targetHub,
         isOnline: false,
@@ -534,16 +545,57 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Assigned Delivery Zone</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formZone}
-                  onChange={(e) => setFormZone(e.target.value)}
-                  placeholder="e.g. Hosur Sector 1 & 2 / E-City Phase 1"
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Vehicle Reg. Number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formVehicleNumber}
+                    onChange={(e) => setFormVehicleNumber(e.target.value)}
+                    placeholder="e.g. TN 29 AB 4521"
+                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Vehicle Type</label>
+                  <select
+                    className="form-select"
+                    value={formVehicleType}
+                    onChange={(e) => setFormVehicleType(e.target.value)}
+                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem', backgroundColor: '#FFFFFF' }}
+                  >
+                    <option value="Electric Scooter">Electric Scooter</option>
+                    <option value="Motorbike">Motorbike</option>
+                    <option value="EV Mini Van">EV Mini Van</option>
+                    <option value="Bicycle">Bicycle</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Driving License</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formLicenseNumber}
+                    onChange={(e) => setFormLicenseNumber(e.target.value)}
+                    placeholder="e.g. DL-90823411"
+                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>License Validity</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formLicenseValidity}
+                    onChange={(e) => setFormLicenseValidity(e.target.value)}
+                    placeholder="e.g. Valid till 2030"
+                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
+                  />
+                </div>
               </div>
 
               <div className="form-group">

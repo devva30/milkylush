@@ -2,8 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { 
   Search, Plus, Download, MapPin, ArrowLeft, ChevronLeft, ChevronRight,
   User as UserIcon, Phone, Mail, CreditCard, Package, Calendar,
-  CheckCircle2, PauseCircle, Clock, ExternalLink, ShieldAlert, Trash2
+  CheckCircle2, PauseCircle, Clock, ExternalLink, ShieldAlert, Trash2, MessageCircle
 } from 'lucide-react';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { broadcastTemplate, formatPhoneNumberForWhatsApp } from '../services/whatsappService';
 import type { User, Order, Subscription } from '../types';
 import { useToast } from '../context/ToastContext';
 
@@ -29,6 +32,54 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerExtended | null>(null);
   const [newAddressText, setNewAddressText] = useState('');
   const [customerAddresses, setCustomerAddresses] = useState<Record<string, string[]>>({});
+  const [sendingWhatsApp, setSendingWhatsApp] = useState<Record<string, boolean>>({});
+  const [whatsappSentMap, setWhatsappSentMap] = useState<Record<string, boolean>>({});
+
+  const handleDeleteCustomer = async (userId: string, userName: string) => {
+    if (window.confirm(`Are you sure you want to permanently delete customer profile "${userName}" (${userId}) from Firestore?`)) {
+      try {
+        await deleteDoc(doc(db, 'users', userId));
+        showToast(`Successfully deleted customer profile ${userName}`, 'success');
+        if (selectedCustomer?.id === userId) {
+          setSelectedCustomer(null);
+        }
+      } catch (err) {
+        console.error('Error deleting user:', err);
+        showToast(`Failed to delete user: ${err}`, 'error');
+      }
+    }
+  };
+
+  const handleSendWhatsApp = async (user: CustomerExtended) => {
+    if (!user.phone) {
+      showToast(`No phone number found for ${user.name}`, 'error');
+      return;
+    }
+    setSendingWhatsApp(prev => ({ ...prev, [user.id]: true }));
+    try {
+      const templateName = localStorage.getItem('GETGABS_WELCOME_TEMPLATE') || '7days_free_milk';
+      const [result] = await broadcastTemplate(templateName, [
+        { id: user.id, name: user.name, phone: user.phone },
+      ]);
+      if (result.success) {
+        showToast(`✅ WhatsApp sent to ${user.name} (${formatPhoneNumberForWhatsApp(user.phone)})`, 'success');
+        setWhatsappSentMap(prev => ({ ...prev, [user.id]: true }));
+        // Mark in Firestore so auto-trigger won't fire again
+        try {
+          await updateDoc(doc(db, 'users', user.id), {
+            welcomeWhatsappSent: true,
+            welcomeWhatsappSentAt: new Date().toISOString(),
+          });
+        } catch (_) {}
+      } else {
+        showToast(`❌ WhatsApp failed for ${user.name}: ${result.message}`, 'error');
+      }
+    } catch (err) {
+      showToast(`❌ Error sending WhatsApp to ${user.name}`, 'error');
+    } finally {
+      setSendingWhatsApp(prev => ({ ...prev, [user.id]: false }));
+    }
+  };
 
   // Pagination State
   const [pageSize, setPageSize] = useState<number>(10);
@@ -278,10 +329,10 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button 
-              onClick={() => showToast(`Initiated wallet refill link for ${selectedCustomer.name}`, 'info')}
-              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={() => handleDeleteCustomer(selectedCustomer.id, selectedCustomer.name)}
+              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <CreditCard size={15} /> Add Wallet Funds
+              <Trash2 size={15} /> Delete Customer
             </button>
           </div>
         </div>
@@ -878,7 +929,29 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                           View Details
                         </button>
                         <button 
-                          onClick={() => showToast(`Removed ${user.name} from customer registry`, "info")}
+                          onClick={() => handleSendWhatsApp(user)}
+                          disabled={sendingWhatsApp[user.id] || whatsappSentMap[user.id]}
+                          title={whatsappSentMap[user.id] ? 'WhatsApp sent!' : `Send WhatsApp to ${user.name}`}
+                          style={{
+                            padding: '0.45rem 0.75rem',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            backgroundColor: whatsappSentMap[user.id] ? '#DCFCE7' : '#ECFDF5',
+                            color: whatsappSentMap[user.id] ? '#059669' : '#047857',
+                            border: '1px solid #A7F3D0',
+                            cursor: sendingWhatsApp[user.id] || whatsappSentMap[user.id] ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            opacity: sendingWhatsApp[user.id] ? 0.6 : 1,
+                          }}
+                        >
+                          <MessageCircle size={13} />
+                          {sendingWhatsApp[user.id] ? 'Sending...' : whatsappSentMap[user.id] ? 'Sent ✓' : 'WhatsApp'}
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCustomer(user.id, user.name)}
                           style={{
                             padding: '0.45rem 0.75rem',
                             fontSize: '0.78rem',
