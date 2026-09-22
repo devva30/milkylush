@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { broadcastTemplate, formatPhoneNumberForWhatsApp } from '../services/whatsappService';
+import { broadcastTemplate, formatPhoneNumberForWhatsApp, getWelcomeTemplate } from '../services/whatsappService';
 import type { User, Order, Subscription } from '../types';
 import { useToast } from '../context/ToastContext';
 
@@ -57,8 +57,7 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
     }
     setSendingWhatsApp(prev => ({ ...prev, [user.id]: true }));
     try {
-      const templateName = localStorage.getItem('GETGABS_WELCOME_TEMPLATE') || '7days_free_milk';
-      const [result] = await broadcastTemplate(templateName, [
+      const [result] = await broadcastTemplate(await getWelcomeTemplate(), [
         { id: user.id, name: user.name, phone: user.phone },
       ]);
       if (result.success) {

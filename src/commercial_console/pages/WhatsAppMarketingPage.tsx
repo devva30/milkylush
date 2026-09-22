@@ -14,8 +14,13 @@ import {
   fetchApprovedTemplates,
   broadcastTemplate,
   formatPhoneNumberForWhatsApp,
+  getAutomations,
+  saveAutomation,
+  AUTOMATION_LABELS,
   type GetgabsTemplate,
   type BroadcastResult,
+  type AutomationKey,
+  type AutomationRule,
 } from '../../services/whatsappService';
 
 interface WhatsAppMarketingPageProps {
@@ -37,8 +42,13 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [results, setResults] = useState<BroadcastResult[] | null>(null);
 
+  const [automations, setAutomations] = useState<Record<AutomationKey, AutomationRule> | null>(null);
+  const [savingKey, setSavingKey] = useState<AutomationKey | null>(null);
+  const [savedKey, setSavedKey] = useState<AutomationKey | null>(null);
+
   useEffect(() => {
     if (selectedTab !== 'whatsapp-campaigns') return;
+
     setLoadingTemplates(true);
     fetchApprovedTemplates()
       .then((list) => {
@@ -48,7 +58,21 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
       })
       .catch((err) => setTemplatesError(err?.message || 'Could not load templates from Getgabs'))
       .finally(() => setLoadingTemplates(false));
+
+    getAutomations().then(setAutomations);
   }, [selectedTab]);
+
+  const updateAutomation = async (key: AutomationKey, patch: Partial<AutomationRule>) => {
+    setAutomations((current) => (current ? { ...current, [key]: { ...current[key], ...patch } } : current));
+    setSavingKey(key);
+    setSavedKey(null);
+    try {
+      await saveAutomation(key, patch);
+      setSavedKey(key);
+    } finally {
+      setSavingKey(null);
+    }
+  };
 
   // WhatsApp can only reach a customer who has a usable number on file, so
   // everyone without one is excluded from every audience.
@@ -176,6 +200,110 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
           {selectedTab === 'customer-cohorts' && 'Real-time customer segment aggregation, retention rates and automated campaign triggers.'}
         </p>
       </div>
+
+      {selectedTab === 'whatsapp-campaigns' && (
+        <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem 1.5rem', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+            Automated WhatsApp Messages
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 14px 0' }}>
+            These send on their own, with nobody watching the panel. Choose which approved template each one
+            uses. Saved for the whole team, so the automatic sender picks it up too.
+          </div>
+
+          {!automations && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Loading automation settings…</div>
+          )}
+
+          {automations && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(Object.keys(AUTOMATION_LABELS) as AutomationKey[]).map((key) => {
+                const rule = automations[key];
+                return (
+                  <div
+                    key={key}
+                    style={{ padding: '0.9rem 1rem', borderRadius: '14px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: savingKey ? 'wait' : 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={rule.enabled}
+                          disabled={savingKey === key}
+                          onChange={(e) => updateAutomation(key, { enabled: e.target.checked })}
+                        />
+                        <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                          {AUTOMATION_LABELS[key].title}
+                        </span>
+                      </label>
+
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 800,
+                          padding: '2px 10px',
+                          borderRadius: '10px',
+                          color: rule.enabled ? '#047857' : '#92400E',
+                          backgroundColor: rule.enabled ? '#ECFDF5' : '#FEF3C7',
+                        }}
+                      >
+                        {rule.enabled ? 'ON' : 'OFF'}
+                      </span>
+
+                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 700, color: '#047857' }}>
+                        {savingKey === key ? 'Saving…' : savedKey === key ? 'Saved' : ''}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '4px 0 10px 0' }}>
+                      {AUTOMATION_LABELS[key].description}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <select
+                        value={rule.template}
+                        disabled={!rule.enabled || savingKey === key || loadingTemplates}
+                        onChange={(e) => updateAutomation(key, { template: e.target.value })}
+                        style={{ flex: '1 1 240px', padding: '0.55rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
+                      >
+                        {/* Keeps the saved value visible even before the list loads. */}
+                        {rule.template && !templates.some((t) => t.name === rule.template) && (
+                          <option value={rule.template}>{rule.template}</option>
+                        )}
+                        {templates.map((t) => (
+                          <option key={t.name} value={t.name}>
+                            {t.name} ({t.category})
+                          </option>
+                        ))}
+                      </select>
+
+                      {key === 'subscriptionExpiry' && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                          Send
+                          <input
+                            type="number"
+                            min={1}
+                            max={30}
+                            value={rule.daysBefore ?? 1}
+                            disabled={!rule.enabled || savingKey === key}
+                            onChange={(e) => updateAutomation(key, { daysBefore: Math.max(1, Number(e.target.value) || 1) })}
+                            style={{ width: '64px', padding: '0.45rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.8rem' }}
+                          />
+                          day(s) before it ends
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px' }}>
+            To change the wording, edit the template in Getgabs and wait for Meta approval, then pick it here.
+          </div>
+        </div>
+      )}
 
       {selectedTab === 'whatsapp-campaigns' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>

@@ -5,7 +5,7 @@
 // browser. The same code serves both environments: netlify/functions in
 // production, and a Vite middleware in `npm run dev` (see vite.config.ts).
 
-import { collection, addDoc, doc, updateDoc, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sendWelcomeEmail } from './emailService';
 
@@ -28,8 +28,63 @@ export interface BroadcastResult {
 
 const env = (import.meta as any).env ?? {};
 
-export const WELCOME_TEMPLATE_NAME: string =
-  env.VITE_GETGABS_WELCOME_TEMPLATE || '7days_free_milk';
+// Used only when nothing has been chosen in the admin panel yet.
+export const DEFAULT_WELCOME_TEMPLATE: string =
+  env.VITE_GETGABS_WELCOME_TEMPLATE || 'milkylush_welcome';
+
+// Which template each automatic message uses. Kept in Firestore rather than in
+// code or localStorage because the scheduled senders on the server read the same
+// values, and so a choice survives a browser change or a redeploy.
+const AUTOMATIONS_DOC = ['settings', 'whatsapp_automations'] as const;
+
+export type AutomationKey = 'welcome' | 'subscriptionExpiry';
+
+export interface AutomationRule {
+  enabled: boolean;
+  template: string;
+  /** Only meaningful for subscriptionExpiry: how many days ahead to warn. */
+  daysBefore?: number;
+}
+
+export const AUTOMATION_LABELS: Record<AutomationKey, { title: string; description: string }> = {
+  welcome: {
+    title: 'Welcome message',
+    description:
+      'Sent once when a new customer signs up in the mobile app. Google signups have no phone number, so they get the welcome email instead.',
+  },
+  subscriptionExpiry: {
+    title: 'Subscription expiry reminder',
+    description: 'Sent once to each customer the day before their subscription ends.',
+  },
+};
+
+const DEFAULT_AUTOMATIONS: Record<AutomationKey, AutomationRule> = {
+  welcome: { enabled: true, template: DEFAULT_WELCOME_TEMPLATE },
+  subscriptionExpiry: { enabled: false, template: 'subscription_expiry_alert', daysBefore: 1 },
+};
+
+export const getAutomations = async (): Promise<Record<AutomationKey, AutomationRule>> => {
+  try {
+    const stored = (await getDoc(doc(db, ...AUTOMATIONS_DOC))).data() ?? {};
+    return {
+      welcome: { ...DEFAULT_AUTOMATIONS.welcome, ...(stored.welcome ?? {}) },
+      subscriptionExpiry: { ...DEFAULT_AUTOMATIONS.subscriptionExpiry, ...(stored.subscriptionExpiry ?? {}) },
+    };
+  } catch {
+    return DEFAULT_AUTOMATIONS;
+  }
+};
+
+export const saveAutomation = async (key: AutomationKey, rule: Partial<AutomationRule>): Promise<void> => {
+  await setDoc(
+    doc(db, ...AUTOMATIONS_DOC),
+    { [key]: rule, updatedAt: new Date().toISOString() },
+    { merge: true }
+  );
+};
+
+export const getWelcomeTemplate = async (): Promise<string> =>
+  (await getAutomations()).welcome.template;
 
 /** Formats mobile numbers to E.164 with the India country code. */
 export const formatPhoneNumberForWhatsApp = (phone: string): string => {
@@ -155,7 +210,7 @@ export const sendWelcomeToNewCustomer = async (
   const channel: 'whatsapp' | 'email' = claim.phone ? 'whatsapp' : 'email';
 
   const outcome = claim.phone
-    ? (await broadcastTemplate(WELCOME_TEMPLATE_NAME, [
+    ? (await broadcastTemplate(await getWelcomeTemplate(), [
         { id: userId, name: claim.name, phone: claim.phone },
       ]))[0]
     : await sendWelcomeEmail(claim.email, claim.name);

@@ -19,7 +19,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
   const [fcmKey, setFcmKey] = useState(() => localStorage.getItem('fcm_server_key') || '');
   const [emailWebhook, setEmailWebhook] = useState(() => localStorage.getItem('email_webhook_url') || '');
   const [getgabsApiKey, setGetgabsApiKey] = useState(() => localStorage.getItem('GETGABS_API_KEY') || '');
-  const [getgabsTemplate, setGetgabsTemplate] = useState(() => localStorage.getItem('GETGABS_WELCOME_TEMPLATE') || '7days_free_milk');
+  const [getgabsTemplate, setGetgabsTemplate] = useState(() => localStorage.getItem('GETGABS_WELCOME_TEMPLATE') || 'milkylush_welcome');
   const [getgabsSender, setGetgabsSender] = useState(() => localStorage.getItem('GETGABS_SENDER_NUMBER') || '919902882332');
 
   // Edit Profile Modal state
@@ -284,7 +284,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 7days_free_milk"
+                    placeholder="e.g. milkylush_welcome"
                     value={getgabsTemplate}
                     onChange={(e) => setGetgabsTemplate(e.target.value)}
                     style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}

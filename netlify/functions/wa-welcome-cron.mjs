@@ -4,37 +4,15 @@
 // 2am is greeted whether or not anyone has the admin panel open. That is the
 // whole point of it existing: the browser version only ran while a tab was open.
 
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 import { sendWelcomeEmail } from '../lib/email.mjs';
-
-const FIREBASE_CONFIG = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBLLmjVTiJ8uKlrSiy4A6yUjVbzgSqMR6g',
-  authDomain: 'milkylush-8f110.firebaseapp.com',
-  projectId: process.env.FIREBASE_PROJECT_ID || 'milkylush-8f110',
-  storageBucket: 'milkylush-8f110.firebasestorage.app',
-  messagingSenderId: '668523107428',
-  appId: '1:668523107428:web:4c5565c8ac169fd619bb71',
-};
-
-const WELCOME_TEMPLATE = process.env.GETGABS_WELCOME_TEMPLATE || '7days_free_milk';
 
 // Keeps one run well inside Netlify's execution limit; the next run picks up the rest.
 const MAX_PER_RUN = 10;
 
 const SETTINGS_PATH = ['settings', 'whatsapp_welcome'];
-
-async function connect() {
-  const app = getApps()[0] ?? initializeApp(FIREBASE_CONFIG);
-  const email = process.env.MILKYLUSH_ADMIN_EMAIL;
-  const password = process.env.MILKYLUSH_ADMIN_PASSWORD;
-  if (!email || !password) throw new Error('MILKYLUSH_ADMIN_EMAIL / MILKYLUSH_ADMIN_PASSWORD are not set');
-
-  await signInWithEmailAndPassword(getAuth(app), email, password);
-  return getFirestore(app);
-}
 
 const hasPhone = (u) => u.phone || u.phoneNumber || u.mobile;
 const hasEmail = (u) => (u.email || '').trim();
@@ -76,12 +54,19 @@ export default async () => {
     return;
   }
 
+  const rule = (await getAutomations(db)).welcome;
+  if (!rule.enabled) {
+    console.log('welcome message is switched off in the admin panel');
+    return;
+  }
+  const welcomeTemplate = rule.template;
+
   let spec = null;
   if (pending.some((snap) => hasPhone(snap.data()))) {
     try {
-      spec = await templateSpec(WELCOME_TEMPLATE);
+      spec = await templateSpec(welcomeTemplate);
     } catch (err) {
-      console.error(`could not load template ${WELCOME_TEMPLATE}: ${err.message}`);
+      console.error(`could not load template ${welcomeTemplate}: ${err.message}`);
       return;
     }
   }
