@@ -16,8 +16,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 async function addAdmin() {
-  const email = "admin@milkylush.com";
-  const password = "milkylush123";
+  // Passed in rather than hardcoded: a committed password is readable by anyone
+  // with repo access, and Netlify's secret scanning fails the build over it.
+  //   node add_admin.mjs admin@milkylush.com "the-password"
+  const [email, password] = process.argv.slice(2);
+
+  if (!email || !password) {
+    console.error('Usage: node add_admin.mjs <email> <password>');
+    process.exit(1);
+  }
+
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;

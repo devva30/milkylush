@@ -8,6 +8,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
+import { sendWelcomeEmail } from '../lib/email.mjs';
 
 const FIREBASE_CONFIG = {
   apiKey: process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBLLmjVTiJ8uKlrSiy4A6yUjVbzgSqMR6g',
@@ -36,6 +37,9 @@ async function connect() {
 }
 
 const hasPhone = (u) => u.phone || u.phoneNumber || u.mobile;
+const hasEmail = (u) => (u.email || '').trim();
+// A customer is greeted on WhatsApp if they gave a phone, otherwise by email.
+const reachable = (u) => hasPhone(u) || hasEmail(u);
 const alreadyHandled = (u) => u.welcomeWhatsappStatus || u.welcomeWhatsappSent;
 
 export default async () => {
@@ -64,7 +68,7 @@ export default async () => {
   }
 
   const pending = users.docs
-    .filter((snap) => !alreadyHandled(snap.data()) && hasPhone(snap.data()))
+    .filter((snap) => !alreadyHandled(snap.data()) && reachable(snap.data()))
     .slice(0, MAX_PER_RUN);
 
   if (pending.length === 0) {
@@ -72,12 +76,14 @@ export default async () => {
     return;
   }
 
-  let spec;
-  try {
-    spec = await templateSpec(WELCOME_TEMPLATE);
-  } catch (err) {
-    console.error(`could not load template ${WELCOME_TEMPLATE}: ${err.message}`);
-    return;
+  let spec = null;
+  if (pending.some((snap) => hasPhone(snap.data()))) {
+    try {
+      spec = await templateSpec(WELCOME_TEMPLATE);
+    } catch (err) {
+      console.error(`could not load template ${WELCOME_TEMPLATE}: ${err.message}`);
+      return;
+    }
   }
 
   for (const snap of pending) {
@@ -90,30 +96,36 @@ export default async () => {
       if (alreadyHandled(u)) return null;
 
       const phone = normalizePhone(u.phone || u.phoneNumber || u.mobile);
-      if (!phone) return null;
+      const email = hasEmail(u);
+      if (!phone && !email) return null;
 
       tx.update(snap.ref, { welcomeWhatsappStatus: 'sending', welcomeWhatsappClaimedAt: new Date().toISOString() });
-      return { phone, name: u.name };
+      return { phone, email, name: u.name };
     });
 
     if (!claim) continue;
 
-    const result = await sendTemplate(spec, claim.phone, claim.name);
+    const channel = claim.phone ? 'whatsapp' : 'email';
+    const result = claim.phone
+      ? await sendTemplate(spec, claim.phone, claim.name)
+      : await sendWelcomeEmail(claim.email, claim.name);
 
     await setDoc(
       snap.ref,
       {
         welcomeWhatsappStatus: result.success ? 'sent' : 'failed',
+        welcomeWhatsappChannel: channel,
         welcomeWhatsappSentAt: new Date().toISOString(),
         welcomeWhatsappError: result.success ? null : result.error,
       },
       { merge: true }
     );
 
+    const who = `${claim.name} (${claim.phone || claim.email})`;
     console.log(
       result.success
-        ? `greeted ${claim.name} (${claim.phone}) - ${result.messageId}`
-        : `failed for ${claim.name} (${claim.phone}) - ${result.error}`
+        ? `greeted ${who} by ${channel} - ${result.messageId}`
+        : `failed for ${who} by ${channel} - ${result.error}`
     );
   }
 };
