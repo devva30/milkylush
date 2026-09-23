@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Search, Download, ArrowLeft, Calendar as CalendarIcon, Sparkles, X, ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, CheckCircle, PauseCircle, Headphones, Mail, MapPin, Phone, Trash2 } from 'lucide-react';
 import { updateDoc, doc, arrayUnion, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
+import { shiftEndDate } from '../utils/subscriptionDates';
 import type { Subscription, User, Product } from '../types';
 
 interface DateStatusInfo {
@@ -547,6 +548,10 @@ export default function SubscriptionsPage({
           pausedDates: updatedPaused,
         };
 
+        // Restoring a skipped day pulls the end date back in by the same amount.
+        const restoredEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
+        if (restoredEnd) updatePayload.endDate = restoredEnd;
+
         if (dateKey) {
           updatePayload[`pausedDateReasons.${dateKey}`] = deleteField();
         }
@@ -805,8 +810,12 @@ export default function SubscriptionsPage({
           if (!isAlreadyInPaused) {
             updatedPaused.push(dateKey);
           }
+          // A skipped day owes the customer one more delivery day at the end.
+          const extendedEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
+
           await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
             pausedDates: updatedPaused,
+            ...(extendedEnd ? { endDate: extendedEnd } : {}),
             [`pausedDateReasons.${dateKey}`]: {
               reason: historyEntry.reason,
               notes: modalNotes.trim() || '',
@@ -824,8 +833,12 @@ export default function SubscriptionsPage({
                            d.getDate() === targetDateObj.getDate();
             return !isSame && pd !== dateKey;
           });
+          // Un-skipping a day removes the extra day it had bought.
+          const shortenedEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
+
           await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
             pausedDates: updatedPaused,
+            ...(shortenedEnd ? { endDate: shortenedEnd } : {}),
             [`pausedDateReasons.${dateKey}`]: deleteField(),
             historyLog: arrayUnion(historyEntry)
           });

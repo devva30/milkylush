@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { Save, Moon, Sun, Edit3, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, Moon, Sun, Edit3, Settings, CreditCard } from 'lucide-react';
+import { HUBS, useHubContext } from '../context/HubContext';
+import {
+  getRazorpaySettings,
+  saveRazorpayForHub,
+  describeKeyId,
+  type RazorpaySettings,
+} from '../services/paymentSettingsService';
 
 interface SettingsPageProps {
   theme: 'light' | 'dark';
@@ -24,6 +31,39 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
   const [editName, setEditName] = useState(adminProfile.name);
   const [editEmail, setEditEmail] = useState(adminProfile.email);
   const [editPassword, setEditPassword] = useState('');
+
+  // Razorpay Key ID per hub. "saved" is what the mobile app will read; "drafts"
+  // is what is being typed. Nothing reaches the app until Save is pressed.
+  // Each hub bills through its own Razorpay account, so only the hub currently
+  // being administered is shown. Switch hubs to manage the other one.
+  const { selectedHubId } = useHubContext();
+  const [savedKeys, setSavedKeys] = useState<RazorpaySettings | null>(null);
+  const [draftKeys, setDraftKeys] = useState<RazorpaySettings | null>(null);
+  const [savingHub, setSavingHub] = useState<string | null>(null);
+
+  useEffect(() => {
+    getRazorpaySettings([selectedHubId]).then((loaded) => {
+      setSavedKeys(loaded);
+      setDraftKeys(loaded);
+    });
+  }, [selectedHubId]);
+
+  const editHubKey = (hubId: string, patch: Partial<RazorpaySettings[string]>) =>
+    setDraftKeys((current) => (current ? { ...current, [hubId]: { ...current[hubId], ...patch } } : current));
+
+  const handleSaveRazorpay = async (hubId: string) => {
+    if (!draftKeys) return;
+    setSavingHub(hubId);
+    try {
+      await saveRazorpayForHub(hubId, draftKeys[hubId]);
+      setSavedKeys((current) => (current ? { ...current, [hubId]: draftKeys[hubId] } : current));
+      showToast(`Razorpay key saved for ${HUBS[hubId].name}`, 'success');
+    } catch (err) {
+      showToast(`Could not save Razorpay key: ${err}`, 'error');
+    } finally {
+      setSavingHub(null);
+    }
+  };
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,6 +318,78 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
       </div>
 
       {/* EDIT PROFILE MODAL */}
+      {/* Razorpay keys, one per hub */}
+      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB' }}>
+        <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CreditCard size={18} style={{ color: '#047857' }} /> Razorpay Payment Keys
+        </h3>
+        <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
+          This key belongs to <strong>{HUBS[selectedHubId]?.name ?? 'this hub'}</strong> only. The mobile app reads
+          the key for whichever location the customer chose, so changing it here takes effect without an app
+          release. To set the other hub's key, switch hubs first.
+        </p>
+
+        <div style={{ marginTop: '0.4rem', padding: '0.6rem 0.8rem', borderRadius: '10px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#92400E' }}>
+          <strong>Key ID only.</strong> It starts with <code>rzp_test_</code> or <code>rzp_live_</code> and is safe to
+          share with the app. Never paste the Key Secret here — anyone who opens this panel could read it,
+          and it can issue refunds on your account.
+        </div>
+
+        {!draftKeys && (
+          <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '1rem' }}>Loading payment settings…</div>
+        )}
+
+        {draftKeys && savedKeys && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '1rem' }}>
+            {[selectedHubId].map((hubId) => {
+              const draft = draftKeys[hubId];
+              const live = savedKeys[hubId];
+              const check = describeKeyId(draft.keyId);
+              const changed = draft.keyId.trim() !== live.keyId || draft.enabled !== live.enabled;
+              const busy = savingHub === hubId;
+
+              return (
+                <div key={hubId} style={{ padding: '0.9rem 1rem', borderRadius: '14px', border: `1px solid ${changed ? '#047857' : '#E5E7EB'}`, backgroundColor: '#F9FAFB' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#111827' }}>{HUBS[hubId].name}</span>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: '#374151', cursor: busy ? 'wait' : 'pointer' }}>
+                      <input type="checkbox" checked={draft.enabled} disabled={busy} onChange={(e) => editHubKey(hubId, { enabled: e.target.checked })} />
+                      Accept payments
+                    </label>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.7rem', fontWeight: 800, padding: '2px 10px', borderRadius: '10px', color: live.enabled && live.keyId ? '#047857' : '#92400E', backgroundColor: live.enabled && live.keyId ? '#ECFDF5' : '#FEF3C7' }}>
+                      {live.keyId ? (live.enabled ? 'LIVE' : 'KEY SET, OFF') : 'NOT SET'}
+                    </span>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={draft.keyId}
+                    disabled={busy}
+                    placeholder="rzp_test_XXXXXXXXXXXX"
+                    onChange={(e) => editHubKey(hubId, { keyId: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: `1px solid ${check.ok ? '#D1D5DB' : '#B91C1C'}`, backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.85rem', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                  />
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveRazorpay(hubId)}
+                      disabled={busy || !changed || !check.ok}
+                      style={{ padding: '0.5rem 1.1rem', borderRadius: '10px', border: 'none', backgroundColor: !changed || !check.ok ? '#94A3B8' : '#047857', color: '#FFFFFF', fontSize: '0.8rem', fontWeight: 800, cursor: busy || !changed || !check.ok ? 'not-allowed' : 'pointer' }}
+                    >
+                      {busy ? 'Saving…' : 'Save'}
+                    </button>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: !check.ok ? '#B91C1C' : changed ? '#92400E' : '#6B7280' }}>
+                      {!check.ok ? check.note : changed ? 'Unsaved changes — click Save to apply' : check.note || 'No key set'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {isEditProfileOpen && (
         <div style={{
           position: 'fixed',

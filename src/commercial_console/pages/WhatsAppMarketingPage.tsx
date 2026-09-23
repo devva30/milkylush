@@ -42,9 +42,13 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [results, setResults] = useState<BroadcastResult[] | null>(null);
 
-  const [automations, setAutomations] = useState<Record<AutomationKey, AutomationRule> | null>(null);
+  // "saved" is what is live in Firestore; "drafts" is what the admin is editing.
+  // Nothing takes effect until Save is pressed, so a half-typed value can never
+  // become the live setting.
+  const [saved, setSaved] = useState<Record<AutomationKey, AutomationRule> | null>(null);
+  const [drafts, setDrafts] = useState<Record<AutomationKey, AutomationRule> | null>(null);
   const [savingKey, setSavingKey] = useState<AutomationKey | null>(null);
-  const [savedKey, setSavedKey] = useState<AutomationKey | null>(null);
+  const [justSavedKey, setJustSavedKey] = useState<AutomationKey | null>(null);
 
   useEffect(() => {
     if (selectedTab !== 'whatsapp-campaigns') return;
@@ -59,16 +63,23 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
       .catch((err) => setTemplatesError(err?.message || 'Could not load templates from Getgabs'))
       .finally(() => setLoadingTemplates(false));
 
-    getAutomations().then(setAutomations);
+    getAutomations().then((loaded) => {
+      setSaved(loaded);
+      setDrafts(loaded);
+    });
   }, [selectedTab]);
 
-  const updateAutomation = async (key: AutomationKey, patch: Partial<AutomationRule>) => {
-    setAutomations((current) => (current ? { ...current, [key]: { ...current[key], ...patch } } : current));
+  const editDraft = (key: AutomationKey, patch: Partial<AutomationRule>) =>
+    setDrafts((current) => (current ? { ...current, [key]: { ...current[key], ...patch } } : current));
+
+  const saveAutomationRule = async (key: AutomationKey) => {
+    if (!drafts) return;
     setSavingKey(key);
-    setSavedKey(null);
+    setJustSavedKey(null);
     try {
-      await saveAutomation(key, patch);
-      setSavedKey(key);
+      await saveAutomation(key, drafts[key]);
+      setSaved((current) => (current ? { ...current, [key]: drafts[key] } : current));
+      setJustSavedKey(key);
     } finally {
       setSavingKey(null);
     }
@@ -211,26 +222,35 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
             uses. Saved for the whole team, so the automatic sender picks it up too.
           </div>
 
-          {!automations && (
+          {!drafts && (
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Loading automation settings…</div>
           )}
 
-          {automations && (
+          {drafts && saved && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {(Object.keys(AUTOMATION_LABELS) as AutomationKey[]).map((key) => {
-                const rule = automations[key];
+                const draft = drafts[key];
+                const live = saved[key];
+                const days = Number(draft.daysBefore);
+                const daysValid = key !== 'subscriptionExpiry' || (Number.isInteger(days) && days >= 1 && days <= 30);
+                const changed =
+                  draft.enabled !== live.enabled ||
+                  draft.template !== live.template ||
+                  (draft.daysBefore ?? 1) !== (live.daysBefore ?? 1);
+                const busy = savingKey === key;
+
                 return (
                   <div
                     key={key}
-                    style={{ padding: '0.9rem 1rem', borderRadius: '14px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}
+                    style={{ padding: '0.9rem 1rem', borderRadius: '14px', border: `1px solid ${changed ? '#047857' : 'var(--border-color)'}`, backgroundColor: 'var(--bg-main)' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: savingKey ? 'wait' : 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: busy ? 'wait' : 'pointer' }}>
                         <input
                           type="checkbox"
-                          checked={rule.enabled}
-                          disabled={savingKey === key}
-                          onChange={(e) => updateAutomation(key, { enabled: e.target.checked })}
+                          checked={draft.enabled}
+                          disabled={busy}
+                          onChange={(e) => editDraft(key, { enabled: e.target.checked })}
                         />
                         <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                           {AUTOMATION_LABELS[key].title}
@@ -243,15 +263,11 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                           fontWeight: 800,
                           padding: '2px 10px',
                           borderRadius: '10px',
-                          color: rule.enabled ? '#047857' : '#92400E',
-                          backgroundColor: rule.enabled ? '#ECFDF5' : '#FEF3C7',
+                          color: live.enabled ? '#047857' : '#92400E',
+                          backgroundColor: live.enabled ? '#ECFDF5' : '#FEF3C7',
                         }}
                       >
-                        {rule.enabled ? 'ON' : 'OFF'}
-                      </span>
-
-                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 700, color: '#047857' }}>
-                        {savingKey === key ? 'Saving…' : savedKey === key ? 'Saved' : ''}
+                        {live.enabled ? 'ON' : 'OFF'}
                       </span>
                     </div>
 
@@ -261,14 +277,14 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <select
-                        value={rule.template}
-                        disabled={!rule.enabled || savingKey === key || loadingTemplates}
-                        onChange={(e) => updateAutomation(key, { template: e.target.value })}
+                        value={draft.template}
+                        disabled={busy || loadingTemplates}
+                        onChange={(e) => editDraft(key, { template: e.target.value })}
                         style={{ flex: '1 1 240px', padding: '0.55rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
                       >
                         {/* Keeps the saved value visible even before the list loads. */}
-                        {rule.template && !templates.some((t) => t.name === rule.template) && (
-                          <option value={rule.template}>{rule.template}</option>
+                        {draft.template && !templates.some((t) => t.name === draft.template) && (
+                          <option value={draft.template}>{draft.template}</option>
                         )}
                         {templates.map((t) => (
                           <option key={t.name} value={t.name}>
@@ -278,20 +294,50 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       </select>
 
                       {key === 'subscriptionExpiry' && (
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 700 }}>
                           Send
                           <input
                             type="number"
                             min={1}
                             max={30}
-                            value={rule.daysBefore ?? 1}
-                            disabled={!rule.enabled || savingKey === key}
-                            onChange={(e) => updateAutomation(key, { daysBefore: Math.max(1, Number(e.target.value) || 1) })}
-                            style={{ width: '64px', padding: '0.45rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.8rem' }}
+                            value={draft.daysBefore ?? 1}
+                            disabled={busy}
+                            onChange={(e) => editDraft(key, { daysBefore: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                            style={{ width: '68px', padding: '0.45rem', borderRadius: '8px', border: `1px solid ${daysValid ? 'var(--border-color)' : '#B91C1C'}`, backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.8rem' }}
                           />
                           day(s) before it ends
-                        </label>
+                        </span>
                       )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => saveAutomationRule(key)}
+                        disabled={busy || !changed || !daysValid}
+                        style={{
+                          padding: '0.5rem 1.1rem',
+                          borderRadius: '10px',
+                          border: 'none',
+                          backgroundColor: !changed || !daysValid ? '#94A3B8' : '#047857',
+                          color: '#FFFFFF',
+                          fontSize: '0.8rem',
+                          fontWeight: 800,
+                          cursor: busy || !changed || !daysValid ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {busy ? 'Saving…' : 'Save'}
+                      </button>
+
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: !daysValid ? '#B91C1C' : changed ? '#92400E' : '#047857' }}>
+                        {!daysValid
+                          ? 'Days must be between 1 and 30'
+                          : changed
+                            ? 'Unsaved changes — click Save to apply'
+                            : justSavedKey === key
+                              ? 'Saved'
+                              : 'No changes'}
+                      </span>
                     </div>
                   </div>
                 );
