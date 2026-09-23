@@ -31,6 +31,7 @@ export default function FulfillmentSheetView({
   const [imgError, setImgError] = useState(false);
   const [zoomPhoto, setZoomPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [viewMode, setViewMode] = useState<'admin' | 'customer' | 'rider'>('admin');
 
   // User & Address resolution
   const u = users.find((usr) => usr.id === o.userId);
@@ -188,8 +189,60 @@ export default function FulfillmentSheetView({
           </div>
         </div>
 
-        {/* Right: Badges & Export Button */}
+        {/* Right: View Mode Toggles, Badges & Export Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {/* View Mode Toggle Group */}
+          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '3px', borderRadius: '10px', gap: '3px', border: '1px solid #CBD5E1' }}>
+            <button
+              onClick={() => setViewMode('admin')}
+              style={{
+                backgroundColor: viewMode === 'admin' ? '#047857' : 'transparent',
+                color: viewMode === 'admin' ? '#FFFFFF' : '#475569',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '5px 11px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              🏢 Admin View
+            </button>
+            <button
+              onClick={() => setViewMode('customer')}
+              style={{
+                backgroundColor: viewMode === 'customer' ? '#047857' : 'transparent',
+                color: viewMode === 'customer' ? '#FFFFFF' : '#475569',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '5px 11px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              👤 Customer View
+            </button>
+            <button
+              onClick={() => setViewMode('rider')}
+              style={{
+                backgroundColor: viewMode === 'rider' ? '#047857' : 'transparent',
+                color: viewMode === 'rider' ? '#FFFFFF' : '#475569',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '5px 11px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              🛵 Delivery Person View
+            </button>
+          </div>
+
           {/* Subscription drop badge */}
           <span style={{
             padding: '6px 14px',
@@ -240,6 +293,19 @@ export default function FulfillmentSheetView({
           </button>
         </div>
       </div>
+
+      {/* View Mode Context Banners */}
+      {viewMode === 'customer' && (
+        <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.85rem 1.25rem', borderRadius: '14px', color: '#1E40AF', fontSize: '0.85rem', fontWeight: 700 }}>
+          👤 Customer Receipt View Mode: Displaying digital tax invoice & doorstep delivery receipt formatted for <strong>{customerName}</strong>.
+        </div>
+      )}
+
+      {viewMode === 'rider' && (
+        <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '0.85rem 1.25rem', borderRadius: '14px', color: '#047857', fontSize: '0.85rem', fontWeight: 700 }}>
+          🛵 Delivery Person View Mode: Displaying rider dropoff sheet & doorstep verification proof for <strong>{assignedRiderName}</strong>.
+        </div>
+      )}
 
       {/* 2. MAIN 2-COLUMN GRID LAYOUT */}
       <div style={{
@@ -946,26 +1012,34 @@ export default function FulfillmentSheetView({
                 </div>
               </div>
 
-              {/* Event 4: pending / delivered / cancelled */}
+              {/* Event 4: pending / delivered / cancelled / skipped */}
               <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
                 <span style={{
                   padding: '3px 10px',
                   borderRadius: '9999px',
-                  backgroundColor: isDelivered ? '#ECFDF5' : isCancelled ? '#FEE2E2' : '#F1F5F9',
-                  color: isDelivered ? '#047857' : isCancelled ? '#DC2626' : '#64748B',
+                  backgroundColor: isDelivered ? '#ECFDF5' : (isCancelled || o.status === 'skipped') ? '#FEE2E2' : '#F1F5F9',
+                  color: isDelivered ? '#047857' : (isCancelled || o.status === 'skipped') ? '#DC2626' : '#64748B',
                   fontWeight: 700,
                   fontSize: '0.72rem',
-                  border: isDelivered ? '1px solid #A7F3D0' : isCancelled ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
+                  border: isDelivered ? '1px solid #A7F3D0' : (isCancelled || o.status === 'skipped') ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
                   marginTop: '1px'
                 }}>
-                  {isDelivered ? 'delivered' : isCancelled ? 'cancelled' : 'pending'}
+                  {isDelivered ? 'delivered' : o.status === 'skipped' ? 'skipped' : isCancelled ? 'cancelled' : 'pending'}
                 </span>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
-                    {isDelivered ? 'Delivered & Verified ✓' : isCancelled ? 'Job Cancelled' : 'Awaiting dropoff'}
+                    {isDelivered 
+                      ? `Delivered by Rider (${assignedRiderName})` 
+                      : (isCancelled || o.status === 'skipped') 
+                        ? `Cancelled/Skipped by Rider (${assignedRiderName})` 
+                        : 'Awaiting dropoff'}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    {isDelivered ? 'Doorstep photo attached' : isCancelled ? cancelReason || 'Rider cancellation recorded' : 'In transit on route'}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
+                    {isDelivered 
+                      ? `Doorstep photo & GPS verified at ${formattedCreatedDate}` 
+                      : (isCancelled || o.status === 'skipped') 
+                        ? `Reason: "${cancelReason || (o as any).skipReason || 'Customer unreachable / Delivery issue'}"` 
+                        : 'In transit on route'}
                   </div>
                 </div>
               </div>

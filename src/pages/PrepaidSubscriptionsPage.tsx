@@ -34,14 +34,49 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
     }
   };
 
-  // Compute days until start helper
-  const getDaysUntilStart = (startStr?: string) => {
-    if (!startStr) return 0;
+  // Helper to compute effective dispatch start date taking skipped/paused dates into account
+  const getEffectiveStartDate = (sub: Subscription): Date => {
+    const baseStart = sub.startDate ? new Date(sub.startDate) : new Date();
+    baseStart.setHours(0, 0, 0, 0);
+
+    const pausedSet = new Set(
+      (sub.pausedDates || []).map((d) => {
+        const pd = new Date(d);
+        return `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')}`;
+      })
+    );
+
+    let curr = new Date(baseStart);
+    for (let i = 0; i < 365; i++) {
+      const key = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
+      if (!pausedSet.has(key)) {
+        return curr;
+      }
+      curr.setDate(curr.getDate() + 1);
+    }
+    return baseStart;
+  };
+
+  // Helper to check if start date is currently skipped
+  const isStartDateSkipped = (sub: Subscription): boolean => {
+    if (!sub.startDate) return false;
+    const sDate = new Date(sub.startDate);
+    const key = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}-${String(sDate.getDate()).padStart(2, '0')}`;
+    const pausedSet = new Set(
+      (sub.pausedDates || []).map((d) => {
+        const pd = new Date(d);
+        return `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')}`;
+      })
+    );
+    return pausedSet.has(key);
+  };
+
+  // Compute days until effective start helper
+  const getDaysUntilStart = (sub: Subscription) => {
     try {
-      const start = new Date(startStr);
-      if (isNaN(start.getTime())) return 0;
-      start.setHours(0, 0, 0, 0);
-      const diffTime = start.getTime() - todayDate.getTime();
+      const effectiveStart = getEffectiveStartDate(sub);
+      effectiveStart.setHours(0, 0, 0, 0);
+      const diffTime = effectiveStart.getTime() - todayDate.getTime();
       const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return days < 0 ? 0 : days;
     } catch (e) {
@@ -49,16 +84,13 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
     }
   };
 
-  // Filter live prepaid subscriptions: ONLY show future-scheduled upcoming subscriptions (startDate > todayDate)
-  // Once a subscription start date arrives (startDate <= todayDate), it moves to Active Subscriptions and is hidden here.
+  // Filter live prepaid subscriptions: ONLY show future-scheduled upcoming subscriptions (effectiveStart > todayDate)
   const upcomingPrepaids = useMemo(() => {
     return subscriptions
       .filter((s) => {
         if (!s.startDate) return false;
-        const start = new Date(s.startDate);
-        if (isNaN(start.getTime())) return false;
-        start.setHours(0, 0, 0, 0);
-        return start.getTime() > todayDate.getTime() || (s.status as string) === 'upcoming';
+        const effectiveStart = getEffectiveStartDate(s);
+        return effectiveStart.getTime() > todayDate.getTime() || (s.status as string) === 'upcoming';
       })
       .sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
   }, [subscriptions, todayDate]);
@@ -74,7 +106,7 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
       if (!matchesSearch) return false;
 
       // Timeframe Window Filter
-      const days = getDaysUntilStart(s.startDate);
+      const days = getDaysUntilStart(s);
       if (timeframeFilter === '7days' && days > 7) return false;
       if (timeframeFilter === '15days' && days > 15) return false;
       if (timeframeFilter === '30days' && days > 30) return false;
@@ -91,7 +123,7 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
 
   // Metric Summaries
   const totalUpcoming = upcomingPrepaids.length;
-  const startingNext7Days = upcomingPrepaids.filter((s) => getDaysUntilStart(s.startDate) <= 7).length;
+  const startingNext7Days = upcomingPrepaids.filter((s) => getDaysUntilStart(s) <= 7).length;
   const totalPrepaidRevenue = upcomingPrepaids.reduce((acc, curr) => acc + (curr.prepaidAmountPaid || 0), 0);
   const avgPrepaidAmount = totalUpcoming > 0 ? Math.round(totalPrepaidRevenue / totalUpcoming) : 0;
 
@@ -358,7 +390,9 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
                 </tr>
               ) : (
                 filteredSubs.map((s) => {
-                  const daysToGo = getDaysUntilStart(s.startDate);
+                  const daysToGo = getDaysUntilStart(s);
+                  const isSkipped = isStartDateSkipped(s);
+                  const effectiveDate = getEffectiveStartDate(s);
 
                   return (
                     <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
@@ -377,6 +411,11 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
                           <Calendar size={14} style={{ color: '#047857' }} />
                           <span>{formatDateLabel(s.startDate)}</span>
                         </div>
+                        {isSkipped && (
+                          <div style={{ fontSize: '0.71rem', fontWeight: 800, color: '#D97706', marginTop: '3px', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', padding: '2px 6px', borderRadius: '6px', width: 'fit-content' }}>
+                            ⏸️ Start Skipped (Dispatch: {formatDateLabel(effectiveDate.toISOString())})
+                          </div>
+                        )}
                       </td>
 
                       <td style={{ padding: '0.85rem 1rem' }}>
@@ -478,7 +517,21 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
               <div><strong>Scheduled Start Date:</strong> {formatDateLabel(selectedSub.startDate)}</div>
               <div><strong>Calculated End Date:</strong> {formatDateLabel(selectedSub.endDate || '2026-11-08')}</div>
               <div><strong>Frequency:</strong> {selectedSub.frequency}</div>
-              <div><strong>Countdown:</strong> <span style={{ color: '#D97706', fontWeight: 800 }}>Starts in {getDaysUntilStart(selectedSub.startDate)} days</span></div>
+              <div><strong>Countdown:</strong> <span style={{ color: '#D97706', fontWeight: 800 }}>Starts in {getDaysUntilStart(selectedSub)} days</span></div>
+              
+              {/* Skip & Vacation History Log */}
+              {selectedSub.historyLog && selectedSub.historyLog.length > 0 && (
+                <div style={{ marginTop: '0.5rem', backgroundColor: '#FEF3C7', padding: '0.85rem', borderRadius: '12px', border: '1px solid #FDE68A' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#B45309', marginBottom: '6px' }}>
+                    📋 Customer Activity &amp; Skip Log:
+                  </div>
+                  {selectedSub.historyLog.map((log: any, idx: number) => (
+                    <div key={idx} style={{ fontSize: '0.75rem', color: '#92400E', margin: '2px 0' }}>
+                      • <strong>{log.type || 'Skip'}:</strong> {log.reason || 'Skipped'} {log.date ? `(${log.date})` : ''} - By {log.actorName || 'Customer'}
+                    </div>
+                  ))}
+                </div>
+              )}
               
               {/* Modify Start Date Input Box */}
               <div style={{ marginTop: '0.5rem', backgroundColor: '#F8FAFC', padding: '0.85rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>

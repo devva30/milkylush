@@ -8,6 +8,7 @@ import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 interface TodaysDeliveriesPageProps {
   selectedHubId: string;
   orders: Order[];
+  subscriptions?: any[];
   users: User[];
   products?: Product[];
   deliveryAgents: DeliveryAgent[];
@@ -22,6 +23,7 @@ interface TodaysDeliveriesPageProps {
 export default function TodaysDeliveriesPage({
   selectedHubId,
   orders,
+  subscriptions = [],
   users,
   products = [],
   deliveryAgents,
@@ -47,30 +49,137 @@ export default function TodaysDeliveriesPage({
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  // Dynamic today filtering: Exclude delivered/cancelled orders, include active today orders & subscriptions
+  // Dynamic today filtering: Include active orders & recurring subscriptions scheduled for today
   const todayOnlyOrders = useMemo(() => {
-    const rawList = orders;
     const now = new Date();
+    const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    return rawList.filter((o) => {
-      // Delivered or cancelled orders do NOT show in Today's Deliveries (they belong in Delivered History!)
-      if (o.status === 'delivered' || o.status === 'cancelled') return false;
+    const items: Order[] = [];
+    const processedSubIds = new Set<string>();
 
-      if (!o.orderDate) return true;
-      if (o.orderDate.startsWith(todayStr) || o.orderDate.startsWith(localDateStr)) return true;
-      
+    // 1. Process explicit orders from orders list
+    for (const o of orders) {
+      if (o.status === 'delivered' || o.status === 'cancelled') continue;
+
+      const isSub = o.isSubscriptionDelivery || o.orderType === 'subscription';
+      if (isSub && subscriptions.length > 0) {
+        const subId = o.subscriptionId || o.id.replace('DISPATCH_', '').replace('SUB-', '');
+        const matchingSub = subscriptions.find(s => s.id === subId || s.id === o.id || o.id.includes(s.id));
+        if (matchingSub) {
+          processedSubIds.add(matchingSub.id);
+
+          // Rule: If subscription was ordered today or starts tomorrow/later, exclude from today's deliveries
+          if (matchingSub.startDate) {
+            const sStart = new Date(matchingSub.startDate);
+            sStart.setHours(0, 0, 0, 0);
+            if (sStart.getTime() >= todayZero.getTime() && matchingSub.startDate.startsWith(todayStr)) {
+              continue; // Created today, starts tomorrow!
+            }
+          }
+
+          // Check paused dates
+          const pausedList: string[] = matchingSub.pausedDates || [];
+          const isTodayPaused = pausedList.some(pd => {
+            const pDate = new Date(pd);
+            const pdStr = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}-${String(pDate.getDate()).padStart(2, '0')}`;
+            return pdStr === localDateStr || pdStr === todayStr;
+          });
+          if (isTodayPaused) continue;
+
+          // Check vacation range
+          if (matchingSub.vacationStart && matchingSub.vacationEnd) {
+            const vStart = new Date(matchingSub.vacationStart);
+            vStart.setHours(0, 0, 0, 0);
+            const vEnd = new Date(matchingSub.vacationEnd);
+            vEnd.setHours(23, 59, 59, 999);
+            if (now.getTime() >= vStart.getTime() && now.getTime() <= vEnd.getTime()) {
+              continue;
+            }
+          }
+
+          items.push(o);
+          continue;
+        }
+      }
+
+      if (!o.orderDate) continue;
+
+      // Rule: If order was placed today, it is scheduled for tomorrow delivery -> exclude from today's deliveries
+      if (o.orderDate.startsWith(todayStr) || o.orderDate.startsWith(localDateStr)) {
+        continue; // Ordered today, delivered tomorrow!
+      }
+
       const parsed = new Date(o.orderDate);
       if (!isNaN(parsed.getTime())) {
         const pStr = parsed.toISOString().slice(0, 10);
-        if (pStr === todayStr || pStr === localDateStr) return true;
+        const localPStr = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+        if (pStr !== todayStr && localPStr !== todayStr) {
+          items.push(o);
+        }
       }
-      if (o.isSubscriptionDelivery || o.orderType === 'subscription') {
-        return true;
+    }
+
+    // 2. Process active recurring subscriptions whose delivery date is today
+    for (const sub of subscriptions) {
+      if (processedSubIds.has(sub.id)) continue;
+      if (sub.status === 'cancelled') continue;
+
+      // Rule: If subscription was ordered today, it starts tomorrow -> exclude from today's deliveries
+      if (sub.startDate) {
+        const sStart = new Date(sub.startDate);
+        sStart.setHours(0, 0, 0, 0);
+        if (sStart.getTime() >= todayZero.getTime() && sub.startDate.startsWith(todayStr)) {
+          continue; // Created today, starts tomorrow!
+        }
       }
-      return false;
-    });
-  }, [orders, todayStr]);
+
+      const pausedList: string[] = sub.pausedDates || [];
+      const isTodayPaused = pausedList.some(pd => {
+        const pDate = new Date(pd);
+        const pdStr = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}-${String(pDate.getDate()).padStart(2, '0')}`;
+        return pdStr === localDateStr || pdStr === todayStr;
+      });
+      if (isTodayPaused) continue;
+
+      if (sub.vacationStart && sub.vacationEnd) {
+        const vStart = new Date(sub.vacationStart);
+        vStart.setHours(0, 0, 0, 0);
+        const vEnd = new Date(sub.vacationEnd);
+        vEnd.setHours(23, 59, 59, 999);
+        if (now.getTime() >= vStart.getTime() && now.getTime() <= vEnd.getTime()) {
+          continue;
+        }
+      }
+
+      items.push({
+        id: `SUB-${sub.id.slice(0, 8)}`,
+        userId: sub.userId || sub.customerId || 'user_01',
+        orderDate: localDateStr,
+        status: 'confirmed',
+        totalAmount: (sub.product?.price || 95) * (sub.quantity || 1),
+        isSubscriptionDelivery: true,
+        orderType: 'subscription',
+        subscriptionId: sub.id,
+        address: sub.address || '',
+        items: [
+          {
+            product: sub.product || {
+              id: 'prod_a2_milk',
+              name: 'A2 Desi Cow Milk',
+              price: 95,
+              unit: '750ml Glass Bottle',
+              imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600'
+            },
+            quantity: sub.quantity || 1,
+            unitPrice: sub.product?.price || 95,
+          }
+        ]
+      });
+    }
+
+    return items;
+  }, [orders, subscriptions, todayStr]);
 
   const activeOrdersList = todayOnlyOrders;
 
@@ -356,9 +465,36 @@ export default function TodaysDeliveriesPage({
                 const u = users.find((usr) => usr.id === o.userId);
                 const isSub = o.isSubscriptionDelivery || o.orderType === 'subscription';
                 const customerName = u?.name || 'Customer';
-                const rawAddr = o.address || o.deliveryAddress;
-                const isValidAddr = rawAddr && rawAddr !== 'Doorstep Delivery' && rawAddr !== 'Doorstep';
-                const fullAddressText = isValidAddr ? rawAddr : (u?.address || u?.savedAddresses?.[0] || 'Hosur Central Hub Area');
+
+                let fullAddressText = o.address || o.deliveryAddress || '';
+                const isExplicitValid = fullAddressText && fullAddressText.length > 5 && !fullAddressText.startsWith('Doorstep') && !fullAddressText.startsWith('Hub Area');
+
+                if (!isExplicitValid && u) {
+                  if (u.savedAddresses && u.savedAddresses.length > 0) {
+                    const activeIdx = u.activeAddressIndex ?? (u.savedAddresses.length - 1);
+                    const activeAddr = u.savedAddresses[activeIdx];
+                    if (activeAddr && activeAddr.length > 5) {
+                      const isAddrHosur = activeAddr.toLowerCase().includes('hosur') || activeAddr.toLowerCase().includes('tamil nadu') || activeAddr.toLowerCase().includes('tn');
+                      if (isHosur === isAddrHosur || u.savedAddresses.length === 1) {
+                        fullAddressText = activeAddr;
+                      }
+                    }
+                    if (!fullAddressText) {
+                      const matched = u.savedAddresses.find(a => {
+                        const isH = a.toLowerCase().includes('hosur') || a.toLowerCase().includes('tamil nadu') || a.toLowerCase().includes('tn');
+                        return isHosur ? isH : !isH;
+                      });
+                      fullAddressText = matched || u.savedAddresses[0];
+                    }
+                  } else if (u.address && u.address.length > 5) {
+                    fullAddressText = u.address;
+                  }
+                }
+                if (!fullAddressText || fullAddressText.startsWith('Doorstep')) {
+                  fullAddressText = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+                }
+
+                const hasGpsInText = fullAddressText.includes('[GPS:');
 
                 return (
                   <tr
@@ -376,12 +512,14 @@ export default function TodaysDeliveriesPage({
                       {customerName}
                     </td>
 
-                    {/* Delivery Address with Single Clean GPS Spec Line */}
-                    <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '280px', verticalAlign: 'middle', padding: '0.85rem 0.85rem', lineHeight: 1.4 }}>
+                    {/* Delivery Address */}
+                    <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '320px', verticalAlign: 'middle', padding: '0.85rem 0.85rem', lineHeight: 1.4 }}>
                       {fullAddressText}
-                      <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        [GPS: (12.867697, 77.666721)] | Hub: {hubCodeName}
-                      </div>
+                      {!hasGpsInText && (
+                        <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Hub: {hubCodeName}
+                        </div>
+                      )}
                       {o.deliveryInstructions && (
                         <div style={{ marginTop: '4px', fontSize: '0.71rem', fontWeight: 700, color: '#B45309', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', padding: '2px 6px', display: 'inline-block' }}>
                           📝 Note: {o.deliveryInstructions}

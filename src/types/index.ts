@@ -17,6 +17,9 @@ export interface Product {
   offerTag?: string;
   isFeatured?: boolean;
   inStock?: boolean;
+  stockStatus?: 'in_stock' | 'out_of_stock' | 'limited_stock' | 'coming_soon';
+  stockQuantity?: number;
+  guaranteeNote?: string;
   hubIds?: string[];
   outOfStockHubs?: string[];
 }
@@ -199,6 +202,8 @@ export interface PrepaidPackage {
   isActive?: boolean;
   description?: string;
   hubId?: string;
+  productId?: string;
+  productName?: string;
 }
 
 export interface BottleRecordItem {

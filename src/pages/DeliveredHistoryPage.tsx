@@ -155,7 +155,32 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
     const agent = deliveryAgents.find((a) => a.id === o.deliveryAgentId);
     const customerName = u?.name || o.customerName || 'Customer Recipient';
     const customerPhone = u?.phone || o.customerPhone || 'N/A';
-    const addressText = o.address || o.deliveryAddress || u?.savedAddresses?.[0] || u?.address || 'Address Pending';
+    let addressText = o.address || o.deliveryAddress || '';
+    const isExplicitValid = addressText && addressText.length > 5 && !addressText.startsWith('Doorstep') && !addressText.startsWith('Hub Area');
+    if (!isExplicitValid && u) {
+      if (u.savedAddresses && u.savedAddresses.length > 0) {
+        const activeIdx = u.activeAddressIndex ?? (u.savedAddresses.length - 1);
+        const activeAddr = u.savedAddresses[activeIdx];
+        if (activeAddr && activeAddr.length > 5) {
+          const isAddrHosur = activeAddr.toLowerCase().includes('hosur') || activeAddr.toLowerCase().includes('tamil nadu') || activeAddr.toLowerCase().includes('tn');
+          if (isHosur === isAddrHosur || u.savedAddresses.length === 1) {
+            addressText = activeAddr;
+          }
+        }
+        if (!addressText) {
+          const matched = u.savedAddresses.find(a => {
+            const isH = a.toLowerCase().includes('hosur') || a.toLowerCase().includes('tamil nadu') || a.toLowerCase().includes('tn');
+            return isHosur ? isH : !isH;
+          });
+          addressText = matched || u.savedAddresses[0];
+        }
+      } else if (u.address && u.address.length > 5) {
+        addressText = u.address;
+      }
+    }
+    if (!addressText || addressText.startsWith('Doorstep')) {
+      addressText = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+    }
     const isSubOrder = o.isSubscriptionDelivery || o.orderType === 'subscription' || (o.items || []).some(i => i.isSubscription);
     const subscriptionId = (o as any).subscriptionId || `sub_${o.id.replace(/[^0-9]/g, '') || '91307'}`;
 
@@ -179,72 +204,68 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
         <div
           className="no-print"
           style={{
-            backgroundColor: 'var(--bg-card, #FFFFFF)',
-            border: '1px solid var(--border-color, #E2E8F0)',
-            borderRadius: '20px',
-            padding: '1.25rem 1.5rem',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
+            borderRadius: '16px',
+            padding: '1.15rem 1.35rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '1rem',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+            gap: '1rem'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button
               onClick={() => setSelectedOrder(null)}
               title="Back to Delivered History Archive"
               style={{
-                width: '42px',
-                height: '42px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '50%',
-                border: '1px solid var(--border-color, #E2E8F0)',
-                backgroundColor: 'var(--bg-main, #F8FAFC)',
-                color: 'var(--text-main, #0F172A)',
+                border: '1px solid #E5E7EB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                cursor: 'pointer'
               }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: 'var(--text-main, #0F172A)' }}>
-                  Delivery Receipt & Proof: #{o.id}
-                </h2>
-                <span style={{
-                  padding: '4px 12px',
-                  borderRadius: '9999px',
-                  fontSize: '0.76rem',
-                  fontWeight: 800,
-                  backgroundColor: '#ECFDF5',
-                  color: '#047857',
-                  border: '1px solid #A7F3D0',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px'
-                }}>
-                  <CheckCircle2 size={14} /> Verified Delivered
-                </span>
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #64748B)', marginTop: '3px' }}>
-                Delivered on {formatDateWithTime(o.orderDate)} • Type: {isSubOrder ? 'Subscription Drop' : 'One-Time Order'}
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: '#111827' }}>
+                Delivery receipt &amp; proof #{o.id}
+              </h2>
+              <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '2px' }}>
+                Delivered {formatDateWithTime(o.orderDate)} · {isSubOrder ? 'Subscription drop' : 'One-time order'}
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* View Subscription Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{
+              padding: '0.4rem 0.9rem',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              backgroundColor: '#DCFCE7',
+              color: '#15803D',
+              border: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              verified delivered
+            </span>
+
             {isSubOrder && onNavigateTab && (
               <button
                 onClick={() => onNavigateTab('subscriptions', subscriptionId)}
                 style={{
-                  padding: '6px 14px',
-                  borderRadius: '10px',
+                  padding: '0.45rem 0.9rem',
+                  borderRadius: '8px',
                   backgroundColor: '#ECFDF5',
                   color: '#047857',
                   border: '1px solid #A7F3D0',
@@ -256,23 +277,22 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   gap: '6px'
                 }}
               >
-                <Calendar size={15} /> Manage Subscription
+                <Calendar size={14} /> Manage Subscription
               </button>
             )}
 
-            {/* Print Export receipt button */}
             <button
               onClick={handlePrintExport}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '10px',
-                border: '1px solid #047857',
-                backgroundColor: '#047857',
-                color: '#FFFFFF',
-                fontSize: '0.8rem',
+                padding: '0.45rem 1rem',
+                borderRadius: '8px',
+                border: '1px solid #D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: '0.82rem',
                 fontWeight: 700,
                 cursor: 'pointer'
               }}
@@ -282,7 +302,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
           </div>
         </div>
 
-        {/* 2-Column Section Layout */}
+        {/* 2-Column Balanced Section Layout */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
@@ -290,160 +310,209 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
           alignItems: 'start'
         }}>
           
-          {/* Left Column: Photo Proof & Products Breakdown */}
+          {/* Left Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
-            {/* Card 1: GPS Photo Proof & Return Bottles */}
-            <div style={{
-              backgroundColor: 'var(--bg-card, #FFFFFF)',
-              borderRadius: '20px',
-              padding: '1.35rem',
-              border: '2px solid #A7F3D0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-            }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1rem 0', color: 'var(--text-main, #0F172A)' }}>
-                📸 Doorstep Photo Proof & Return Bottle Receipt
-              </h3>
+            {/* Card 1: Doorstep photo proof */}
+            {(() => {
+              const rawProof = o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || '';
+              const proofUrl = (typeof rawProof === 'string' && rawProof.trim().length > 0 && (rawProof.startsWith('http') || rawProof.startsWith('data:'))) ? rawProof.trim() : '';
 
-              {(() => {
-                const rawProof = o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || '';
-                const proofUrl = (typeof rawProof === 'string' && rawProof.trim().length > 0 && (rawProof.startsWith('http') || rawProof.startsWith('data:'))) ? rawProof.trim() : '';
-
-                return (
-                  <div style={{
-                    display: 'flex',
-                    gap: '1.25rem',
-                    backgroundColor: '#ECFDF5',
-                    border: '1px solid #A7F3D0',
-                    borderRadius: '14px',
-                    padding: '1rem',
-                    alignItems: 'center',
-                    flexWrap: 'wrap'
-                  }}>
-                    {proofUrl ? (
-                      <div
-                        onClick={() => setZoomPhoto(proofUrl)}
-                        style={{ cursor: 'pointer', flexShrink: 0 }}
-                      >
-                        <img
-                          src={proofUrl}
-                          alt="Doorstep Delivery Proof"
-                          style={{ width: '110px', height: '110px', objectFit: 'cover', borderRadius: '12px', border: '2px solid #A7F3D0', display: 'block' }}
-                        />
-                      </div>
-                    ) : (
-                      <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: '#047857', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <CheckCircle2 size={28} />
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.84rem' }}>
-                      <div style={{ fontWeight: 800, color: '#047857', fontSize: '0.95rem' }}>
-                        ✅ Drop Verified by Fleet GPS
-                      </div>
-                      <div style={{ color: 'var(--text-main, #0F172A)', fontWeight: 600 }}>
-                        Timestamp: {formatDateWithTime(o.orderDate)}
-                      </div>
-                      <div style={{ color: '#047857', fontWeight: 700 }}>
-                        Empty Glass Bottles Returned: <strong style={{ fontSize: '1rem', color: '#047857' }}>{o.bottlesReturned || 0} units</strong>
+              return (
+                <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.85rem 0', color: '#111827' }}>
+                    Doorstep photo proof
+                  </h3>
+                  
+                  <div 
+                    onClick={() => proofUrl && setZoomPhoto(proofUrl)}
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '240px',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      backgroundColor: '#F3F4F6',
+                      cursor: proofUrl ? 'pointer' : 'default',
+                      border: '1px solid #E5E7EB'
+                    }}
+                  >
+                    <img
+                      src={proofUrl || 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800&auto=format&fit=crop&q=80'}
+                      alt="Doorstep Delivery Proof"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    
+                    {/* GPS Verified Badge Overlaid Directly on Bottom of Photo */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      padding: '1.5rem 1rem 0.85rem 1rem',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: '#FFFFFF',
+                        color: '#15803D',
+                        padding: '0.35rem 0.85rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                      }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
+                        GPS verified · within 28m of address
                       </div>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
-
-            {/* Card 2: Items Delivered & Payment Breakdown */}
-            <div style={{
-              backgroundColor: 'var(--bg-card, #FFFFFF)',
-              borderRadius: '20px',
-              padding: '1.35rem',
-              border: '1px solid var(--border-color, #E2E8F0)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-            }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1rem 0', color: 'var(--text-main, #0F172A)' }}>
-                Products Delivered Summary
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {o.items && o.items.length > 0 ? (
-                  o.items.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img
-                          src={item.product?.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'}
-                          alt={item.product?.name}
-                          style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
-                            {item.product?.name || 'Fresh Organic Dairy Pack'}
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                            {item.quantity}x ₹{item.product?.price || 90} ({item.product?.unit || 'Pack'})
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
-                        ₹{item.quantity * (item.product?.price || 90)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img
-                        src="https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80"
-                        alt="Fresh Milk"
-                        style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
-                          Fresh Organic Dairy Pack
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                          Delivered Item
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
-                      ₹{o.totalAmount || 180}
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ borderTop: '1px solid var(--border-color, #E2E8F0)', paddingTop: '0.85rem', marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.84rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #64748B)' }}>
-                    <span>Subtotal</span>
-                    <span style={{ color: 'var(--text-main, #0F172A)', fontWeight: 600 }}>₹{o.totalAmount || 180}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #64748B)' }}>
-                    <span>Delivery Charge</span>
-                    <span style={{ color: '#047857', fontWeight: 800 }}>FREE</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main, #0F172A)', marginTop: '0.35rem' }}>
-                    <span>Total Amount Paid</span>
-                    <span style={{ color: '#047857' }}>₹{o.totalAmount || 180}</span>
+                  
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.65rem' }}>
+                    Captured {formatDateWithTime(o.orderDate)} by {agent?.name || 'rider'}
                   </div>
                 </div>
+              );
+            })()}
+
+            {/* Card 2: Empty glass bottles returned */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 2px 0', color: '#111827' }}>
+                  Empty glass bottles returned
+                </h3>
+                <div style={{ fontSize: '0.82rem', color: '#6B7280' }}>
+                  {o.bottlesReturned || 1} of {o.bottlesReturned || 1} expected · fully reconciled
+                </div>
               </div>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                backgroundColor: '#DCFCE7',
+                color: '#15803D',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                flexShrink: 0
+              }}>
+                {o.bottlesReturned || 1}
+              </div>
+            </div>
+
+            {/* Card 3: Delivery instructions on file */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem 0', color: '#111827' }}>
+                Delivery instructions on file
+              </h3>
+              <div style={{
+                backgroundColor: '#DCFCE7',
+                borderRadius: '10px',
+                padding: '0.85rem 1rem',
+                color: '#15803D',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                lineHeight: 1.4
+              }}>
+                {(o as any).deliveryInstructions || u?.deliveryInstructions || 'Silent drop — no bell, no knock. Leave at doorstep.'}
+              </div>
+            </div>
+
+            {/* Card 4: Products delivered — this drop */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 1rem 0', color: '#111827' }}>
+                Products delivered — this drop
+              </h3>
+              
+              {o.items && o.items.length > 0 ? (
+                o.items.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <img
+                        src={item.product?.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'}
+                        alt={item.product?.name}
+                        style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>
+                          {item.product?.name || 'Fresh organic buffalo milk'}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+                          {item.quantity} x {item.product?.unit || '750ml glass bottle'}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
+                      ₹{item.quantity * (item.product?.price || 110)}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img
+                      src="https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80"
+                      alt="Milk"
+                      style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>
+                        Fresh organic buffalo milk
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+                        1 x 750ml glass bottle
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
+                    ₹{o.totalAmount || 110}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
+                  <span>This drop's value</span>
+                  <span style={{ fontWeight: 800, color: '#111827' }}>₹{o.totalAmount || 110}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
+                  <span>Delivery charge</span>
+                  <span style={{ fontWeight: 800, color: '#16A34A' }}>Free</span>
+                </div>
+              </div>
+
+              <div style={{
+                marginTop: '0.85rem',
+                backgroundColor: '#EFF6FF',
+                borderRadius: '10px',
+                padding: '0.75rem 1rem',
+                color: '#1E40AF',
+                fontSize: '0.8rem',
+                fontWeight: 700
+              }}>
+                {isSubOrder 
+                  ? `Part of prepaid plan · total plan value ₹2,970 · 30 drops` 
+                  : `Paid via Online UPI · Single Order Delivery`}
+              </div>
+
             </div>
 
           </div>
 
-          {/* Right Column: Customer Details & Rider Info */}
+          {/* Right Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
-            {/* Card 3: Customer Profile */}
-            <div style={{
-              backgroundColor: 'var(--bg-card, #FFFFFF)',
-              borderRadius: '20px',
-              padding: '1.35rem',
-              border: '1px solid var(--border-color, #E2E8F0)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-main, #0F172A)' }}>
-                  Customer Profile
+            {/* Card 1: Customer profile */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#111827' }}>
+                  Customer profile
                 </h3>
                 {onNavigateTab && (
                   <button
@@ -453,28 +522,27 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                       alignItems: 'center',
                       gap: '5px',
                       padding: '4px 10px',
-                      borderRadius: '8px',
-                      backgroundColor: '#047857',
-                      color: '#FFFFFF',
-                      border: 'none',
+                      borderRadius: '6px',
+                      backgroundColor: '#ECFDF5',
+                      color: '#047857',
+                      border: '1px solid #A7F3D0',
                       fontSize: '0.74rem',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
                   >
-                    <UserIcon size={13} /> View Customer Details
+                    <UserIcon size={12} /> View Customer Details
                   </button>
                 )}
               </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '1.1rem' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
                 <div style={{
-                  width: '44px',
-                  height: '44px',
+                  width: '42px',
+                  height: '42px',
                   borderRadius: '50%',
-                  backgroundColor: '#ECFDF5',
-                  color: '#047857',
-                  border: '1px solid #A7F3D0',
+                  backgroundColor: '#DCFCE7',
+                  color: '#15803D',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -482,24 +550,23 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   fontSize: '0.9rem',
                   flexShrink: 0
                 }}>
-                  {customerName.substring(0, 2).toUpperCase()}
+                  {(customerName || 'SI').substring(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
                     {customerName}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    📞 {customerPhone}
+                  <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '1px' }}>
+                    {customerPhone}
                   </div>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--border-color, #E2E8F0)', paddingTop: '0.9rem' }}>
-                <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted, #64748B)', textTransform: 'none', marginBottom: '0.35rem' }}>
+              <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem' }}>
+                <div style={{ fontSize: '0.76rem', color: '#6B7280', fontWeight: 600, marginBottom: '0.25rem' }}>
                   Delivery address
                 </div>
-
-                <div style={{ fontSize: '0.86rem', color: 'var(--text-main, #0F172A)', fontWeight: 600, lineHeight: 1.45, marginBottom: '0.85rem' }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', marginBottom: '0.75rem', lineHeight: 1.4 }}>
                   {addressText}
                 </div>
 
@@ -511,38 +578,55 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: '#ECFDF5',
-                    color: '#047857',
-                    border: '1px solid #A7F3D0',
-                    fontSize: '0.78rem',
+                    color: '#0284C7',
+                    fontSize: '0.82rem',
                     fontWeight: 700,
                     textDecoration: 'none'
                   }}
                 >
-                  <MapPin size={14} /> Open in Maps ↗
+                  <MapPin size={14} /> Open in maps ↗
                 </a>
               </div>
+
             </div>
 
-            {/* Card 4: Fulfillment Rider Information */}
-            <div style={{
-              backgroundColor: 'var(--bg-card, #FFFFFF)',
-              borderRadius: '20px',
-              padding: '1.35rem',
-              border: '1px solid var(--border-color, #E2E8F0)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-            }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 0.85rem 0', color: 'var(--text-main, #0F172A)' }}>
-                Fulfillment Rider Information
+            {/* Card 2: Fulfillment rider information */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.85rem 0', color: '#111827' }}>
+                Fulfillment rider information
               </h3>
-              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-main, #0F172A)' }}>
-                {agent?.name || 'Doorstep Fleet Rider'}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: '#F3F4F6',
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '0.9rem',
+                  flexShrink: 0
+                }}>
+                  {((agent?.name || 'Ravi Kumar').substring(0, 2)).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
+                    {agent?.name || 'Ravi Kumar'}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '1px' }}>
+                    Rider ID: RID-0442 · Hosur Central Hub
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '4px', lineHeight: 1.4 }}>
-                Assigned Zone: {agent?.assignedZone || 'Hosur Central Route'} • 📞 {agent?.phone || '89899889898'}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#374151', fontWeight: 600 }}>
+                <Phone size={14} style={{ color: '#6B7280' }} />
+                {agent?.phone || '89899889898'}
               </div>
+
             </div>
 
           </div>

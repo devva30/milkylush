@@ -1,20 +1,31 @@
 import { Eye, ShieldCheck, BarChart3, TrendingUp, MapPin, Activity } from 'lucide-react';
-import type { DeliveryAgent, Order } from '../../types';
+import type { DeliveryAgent, Order, User, Product } from '../../types';
+import DispatchTodaysDeliveriesPage from './DispatchTodaysDeliveriesPage';
 
 interface DispatchDashboardPageProps {
   hubDeliveryAgents: DeliveryAgent[];
   hubOrders: Order[];
+  users?: User[];
+  products?: Product[];
   selectedHubId: string;
   onOpenRegisterModal: () => void;
   onSelectPartner?: (partner: DeliveryAgent) => void;
+  onUpdateOrderStatus?: (orderId: string, status: Order['status']) => void;
+  onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
+  showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export default function DispatchDashboardPage({
   hubDeliveryAgents,
   hubOrders,
+  users = [],
+  products = [],
   selectedHubId,
   onOpenRegisterModal,
-  onSelectPartner
+  onSelectPartner,
+  onUpdateOrderStatus = () => {},
+  onUpdateOrderDriver = () => {},
+  showToast = () => {},
 }: DispatchDashboardPageProps) {
   const displayAgents = hubDeliveryAgents || [];
   const displayOrders = hubOrders || [];
@@ -376,6 +387,20 @@ export default function DispatchDashboardPage({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Today's Delivery Pipeline Table Section */}
+      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '1.25rem' }}>
+        <DispatchTodaysDeliveriesPage
+          selectedHubId={selectedHubId}
+          hubOrders={hubOrders}
+          users={users}
+          products={products}
+          deliveryAgents={hubDeliveryAgents}
+          onUpdateOrderStatus={onUpdateOrderStatus}
+          onUpdateOrderDriver={onUpdateOrderDriver}
+          showToast={showToast}
+        />
       </div>
 
     </div>

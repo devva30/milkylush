@@ -9,15 +9,18 @@ import DispatchTodaysDeliveriesPage from './pages/DispatchTodaysDeliveriesPage';
 import DispatchActiveBoardPage from './pages/DispatchActiveBoardPage';
 import DispatchDeliveryPartnersPage from './pages/DispatchDeliveryPartnersPage';
 import DispatchCustomerAssignmentPage from './pages/DispatchCustomerAssignmentPage';
+import DispatchRouteGroupingPage from './pages/DispatchRouteGroupingPage';
 import DispatchRegisterPartnerPage from './pages/DispatchRegisterPartnerPage';
 import DispatchPartnerDetailPage from './pages/DispatchPartnerDetailPage';
 import DispatchLiveTrackingPage from './pages/DispatchLiveTrackingPage';
+import DispatchAttendancePage from './pages/DispatchAttendancePage';
 import DispatchBottleReclamationPage from './pages/DispatchBottleReclamationPage';
 import DispatchDeliveriesArchivePage from './pages/DispatchDeliveriesArchivePage';
 import DispatchDeliveryHistoryPage from './pages/DispatchDeliveryHistoryPage';
 import DispatchSystemControlsPage from './pages/DispatchSystemControlsPage';
+import DispatchHubContactSettingsPage from './pages/DispatchHubContactSettingsPage';
 
-import type { DeliveryAgent, Order, User, Product } from '../types';
+import type { DeliveryAgent, Order, Subscription, User, Product } from '../types';
 
 interface DispatchConsoleLayoutProps {
   selectedHubId: string;
@@ -26,6 +29,7 @@ interface DispatchConsoleLayoutProps {
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   hubDeliveryAgents: DeliveryAgent[];
   hubOrders: Order[];
+  hubSubscriptions?: Subscription[];
   hubUsers?: User[];
   products?: Product[];
   onUpdateOrderStatus?: (orderId: string, status: Order['status']) => void;
@@ -40,6 +44,7 @@ export default function DispatchConsoleLayout({
   showToast,
   hubDeliveryAgents,
   hubOrders,
+  hubSubscriptions = [],
   hubUsers = [],
   products = [],
   onUpdateOrderStatus,
@@ -101,12 +106,17 @@ export default function DispatchConsoleLayout({
             <DispatchDashboardPage
               hubDeliveryAgents={hubDeliveryAgents}
               hubOrders={hubOrders}
+              users={hubUsers}
+              products={products}
               selectedHubId={selectedHubId}
               onOpenRegisterModal={() => setActiveTab('register-partner')}
               onSelectPartner={(partner) => {
                 setSelectedPartner(partner);
                 setActiveTab('partner-detail');
               }}
+              onUpdateOrderStatus={handleUpdateStatus}
+              onUpdateOrderDriver={handleUpdateDriver}
+              showToast={showToast}
             />
           )}
 
@@ -157,6 +167,17 @@ export default function DispatchConsoleLayout({
             />
           )}
 
+          {activeTab === 'route-grouping' && (
+            <DispatchRouteGroupingPage
+              hubDeliveryAgents={hubDeliveryAgents}
+              hubOrders={hubOrders}
+              hubSubscriptions={hubSubscriptions}
+              users={hubUsers}
+              selectedHubId={selectedHubId}
+              showToast={showToast}
+            />
+          )}
+
           {activeTab === 'register-partner' && (
             <DispatchRegisterPartnerPage
               selectedHubId={selectedHubId}
@@ -182,6 +203,14 @@ export default function DispatchConsoleLayout({
             />
           )}
 
+          {activeTab === 'rider-attendance' && (
+            <DispatchAttendancePage
+              selectedHubId={selectedHubId}
+              hubDeliveryAgents={hubDeliveryAgents}
+              showToast={showToast}
+            />
+          )}
+
           {activeTab === 'live-tracking' && (
             <DispatchLiveTrackingPage
               hubDeliveryAgents={hubDeliveryAgents}
@@ -193,6 +222,8 @@ export default function DispatchConsoleLayout({
             <DispatchBottleReclamationPage
               hubOrders={hubOrders}
               selectedHubId={selectedHubId}
+              users={hubUsers}
+              showToast={showToast}
             />
           )}
 
@@ -220,6 +251,14 @@ export default function DispatchConsoleLayout({
 
           {activeTab === 'system-controls' && (
             <DispatchSystemControlsPage
+              selectedHubId={selectedHubId}
+              showToast={showToast}
+              deliveryAgents={hubDeliveryAgents}
+            />
+          )}
+
+          {activeTab === 'hub-contacts' && (
+            <DispatchHubContactSettingsPage
               selectedHubId={selectedHubId}
               showToast={showToast}
             />

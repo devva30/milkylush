@@ -2,17 +2,16 @@ import { useState, useMemo, useEffect } from 'react';
 import { 
   Search, Plus, Download, MapPin, ArrowLeft, ChevronLeft, ChevronRight,
   User as UserIcon, Phone, Mail, CreditCard, Package, Calendar,
-  CheckCircle2, PauseCircle, Clock, ExternalLink, ShieldAlert, Trash2, MessageCircle
+  CheckCircle2, PauseCircle, Clock, ExternalLink, ShieldAlert, Trash2
 } from 'lucide-react';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { broadcastTemplate, formatPhoneNumberForWhatsApp, getWelcomeTemplate } from '../services/whatsappService';
 import type { User, Order, Subscription } from '../types';
 import { useToast } from '../context/ToastContext';
 
 interface CustomerExtended extends User {
   status: 'active' | 'inactive' | 'vacation' | 'skipped';
-  customerType: 'subscription' | 'onetime' | 'both';
+  customerType: 'subscription' | 'onetime' | 'both' | 'new';
 }
 
 interface CustomersPageProps {
@@ -27,64 +26,51 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<'all' | 'active' | 'inactive' | 'vacation' | 'skipped'>('all');
-  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'subscription' | 'onetime'>('all');
+  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'subscription' | 'onetime' | 'both' | 'new'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerExtended | null>(null);
   const [newAddressText, setNewAddressText] = useState('');
   const [customerAddresses, setCustomerAddresses] = useState<Record<string, string[]>>({});
-  const [sendingWhatsApp, setSendingWhatsApp] = useState<Record<string, boolean>>({});
-  const [whatsappSentMap, setWhatsappSentMap] = useState<Record<string, boolean>>({});
 
-  const handleDeleteCustomer = async (userId: string, userName: string) => {
-    if (window.confirm(`Are you sure you want to permanently delete customer profile "${userName}" (${userId}) from Firestore?`)) {
-      try {
-        await deleteDoc(doc(db, 'users', userId));
-        showToast(`Successfully deleted customer profile ${userName}`, 'success');
-        if (selectedCustomer?.id === userId) {
-          setSelectedCustomer(null);
-        }
-      } catch (err) {
-        console.error('Error deleting user:', err);
-        showToast(`Failed to delete user: ${err}`, 'error');
-      }
-    }
+  // 20-Second Delete Customer Modal State
+  const [deleteCustomerModal, setDeleteCustomerModal] = useState<{ id: string; name: string } | null>(null);
+  const [deleteCustCountdown, setDeleteCustCountdown] = useState<number>(20);
+
+  useEffect(() => {
+    if (!deleteCustomerModal) return;
+    if (deleteCustCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setDeleteCustCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [deleteCustomerModal, deleteCustCountdown]);
+
+  const handleOpenDeleteCustomerModal = (userId: string, userName: string) => {
+    setDeleteCustomerModal({ id: userId, name: userName });
+    setDeleteCustCountdown(20);
   };
 
-  const handleSendWhatsApp = async (user: CustomerExtended) => {
-    if (!user.phone) {
-      showToast(`No phone number found for ${user.name}`, 'error');
-      return;
-    }
-    setSendingWhatsApp(prev => ({ ...prev, [user.id]: true }));
+  const handleConfirmDeleteCustomer = async () => {
+    if (!deleteCustomerModal) return;
+    const { id: userId, name: userName } = deleteCustomerModal;
     try {
-      const [result] = await broadcastTemplate(await getWelcomeTemplate(), [
-        { id: user.id, name: user.name, phone: user.phone },
-      ]);
-      if (result.success) {
-        showToast(`✅ WhatsApp sent to ${user.name} (${formatPhoneNumberForWhatsApp(user.phone)})`, 'success');
-        setWhatsappSentMap(prev => ({ ...prev, [user.id]: true }));
-        // Mark in Firestore so auto-trigger won't fire again
-        try {
-          await updateDoc(doc(db, 'users', user.id), {
-            welcomeWhatsappSent: true,
-            welcomeWhatsappSentAt: new Date().toISOString(),
-          });
-        } catch (_) {}
-      } else {
-        showToast(`❌ WhatsApp failed for ${user.name}: ${result.message}`, 'error');
+      await deleteDoc(doc(db, 'users', userId));
+      showToast(`Successfully deleted customer profile ${userName}`, 'success');
+      if (selectedCustomer?.id === userId) {
+        setSelectedCustomer(null);
       }
     } catch (err) {
-      showToast(`❌ Error sending WhatsApp to ${user.name}`, 'error');
-    } finally {
-      setSendingWhatsApp(prev => ({ ...prev, [user.id]: false }));
+      console.error('Error deleting user:', err);
+      showToast(`Failed to delete user: ${err}`, 'error');
     }
+    setDeleteCustomerModal(null);
   };
 
   // Pagination State
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Merge real hubUsers with rich demo customers
+  // Merge real hubUsers with customer classification
   const demoUsers: CustomerExtended[] = useMemo(() => {
     if (hubUsers.length > 0) {
       return hubUsers.map((u) => {
@@ -93,10 +79,11 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         const hasSub = userSubs.length > 0;
         const hasOrder = userOrders.length > 0;
 
-        let typeVal: CustomerExtended['customerType'] = 'subscription';
+        let typeVal: CustomerExtended['customerType'] = 'new';
         if (hasSub && hasOrder) typeVal = 'both';
         else if (hasSub) typeVal = 'subscription';
         else if (hasOrder) typeVal = 'onetime';
+        else typeVal = 'new';
 
         let statusVal: CustomerExtended['status'] = 'active';
         if (hasSub) {
@@ -141,10 +128,12 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         return false;
       }
 
-      // Customer Type Filter (subscription, onetime)
+      // Customer Type Filter (subscription, onetime, both, new)
       if (activeTypeFilter !== 'all') {
         if (activeTypeFilter === 'subscription' && user.customerType !== 'subscription') return false;
         if (activeTypeFilter === 'onetime' && user.customerType !== 'onetime') return false;
+        if (activeTypeFilter === 'both' && user.customerType !== 'both') return false;
+        if (activeTypeFilter === 'new' && user.customerType !== 'new') return false;
       }
 
       return true;
@@ -165,48 +154,8 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
     const userOrders = orders.filter(o => o.userId === selectedCustomer.id);
     const addresses = customerAddresses[selectedCustomer.id] || selectedCustomer.savedAddresses || [selectedCustomer.address || 'Default Hub Delivery Address'];
 
-    const displaySubs = userSubs.length > 0 ? userSubs : [
-      {
-        id: 'sub_ML-9014',
-        userId: selectedCustomer.id,
-        productName: 'Fresh Organic Buffalo Milk (1L)',
-        frequency: 'Everyday',
-        quantity: 1,
-        status: 'active'
-      },
-      {
-        id: 'sub_ML-9022',
-        userId: selectedCustomer.id,
-        productName: 'Pure A2 Cow Desi Ghee (500ml)',
-        frequency: 'Weekly',
-        quantity: 1,
-        status: 'active'
-      }
-    ];
-
-    const displayOrders = userOrders.length > 0 ? userOrders : [
-      {
-        id: 'ORD-90146',
-        userId: selectedCustomer.id,
-        orderDate: '08/09/2026',
-        totalAmount: 1350,
-        status: 'delivered'
-      },
-      {
-        id: 'ORD-90101',
-        userId: selectedCustomer.id,
-        orderDate: '01/09/2026',
-        totalAmount: 1485,
-        status: 'delivered'
-      },
-      {
-        id: 'ORD-90030',
-        userId: selectedCustomer.id,
-        orderDate: '25/08/2026',
-        totalAmount: 90,
-        status: 'delivered'
-      }
-    ];
+    const displaySubs = userSubs;
+    const displayOrders = userOrders;
 
     const handleAddAddress = () => {
       if (!newAddressText.trim()) return;
@@ -282,10 +231,10 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
               fontWeight: 800,
               padding: '4px 12px',
               borderRadius: '20px',
-              backgroundColor: '#F3F4F6',
-              color: '#374151'
+              backgroundColor: selectedCustomer.customerType === 'new' ? '#EFF6FF' : '#F3F4F6',
+              color: selectedCustomer.customerType === 'new' ? '#2563EB' : '#374151'
             }}>
-              TYPE: {selectedCustomer.customerType === 'subscription' ? 'SUBSCRIPTION CUSTOMER' : 'ONE-TIME BUYER'}
+              TYPE: {selectedCustomer.customerType === 'new' ? 'NEW CUSTOMER' : selectedCustomer.customerType === 'subscription' ? 'SUBSCRIPTION CUSTOMER' : selectedCustomer.customerType === 'onetime' ? 'ONE-TIME BUYER' : 'SUBSCRIPTION & ONE-TIME'}
             </span>
           </div>
         </div>
@@ -328,7 +277,7 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button 
-              onClick={() => handleDeleteCustomer(selectedCustomer.id, selectedCustomer.name)}
+              onClick={() => handleOpenDeleteCustomerModal(selectedCustomer.id, selectedCustomer.name)}
               style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Trash2 size={15} /> Delete Customer
@@ -449,39 +398,45 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                 <Calendar size={18} style={{ color: '#047857' }} /> Active Subscriptions ({displaySubs.length})
               </div>
 
-              <div className="table-container" style={{ border: '1px solid #F3F4F6', borderRadius: '10px' }}>
-                <table className="admin-table" style={{ width: '100%', fontSize: '0.8rem' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
-                      <th>SUB ID</th>
-                      <th>PRODUCT</th>
-                      <th>FREQUENCY</th>
-                      <th>STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displaySubs.map(sub => (
-                      <tr key={sub.id}>
-                        <td>
-                          <button 
-                            onClick={() => onNavigateTab('subscriptions')}
-                            style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
-                          >
-                            {sub.id} →
-                          </button>
-                        </td>
-                        <td style={{ fontWeight: 700, color: '#111827' }}>{sub.productName}</td>
-                        <td style={{ color: '#6B7280' }}>{sub.frequency}</td>
-                        <td>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
-                            ACTIVE
-                          </span>
-                        </td>
+              {displaySubs.length === 0 ? (
+                <div style={{ padding: '1.25rem', textAlign: 'center', color: '#6B7280', fontSize: '0.85rem', backgroundColor: '#F9FAFB', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+                  No active subscriptions for this customer.
+                </div>
+              ) : (
+                <div className="table-container" style={{ border: '1px solid #F3F4F6', borderRadius: '10px' }}>
+                  <table className="admin-table" style={{ width: '100%', fontSize: '0.8rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
+                        <th>SUB ID</th>
+                        <th>PRODUCT</th>
+                        <th>FREQUENCY</th>
+                        <th>STATUS</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {displaySubs.map(sub => (
+                        <tr key={sub.id}>
+                          <td>
+                            <button 
+                              onClick={() => onNavigateTab('subscriptions')}
+                              style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
+                            >
+                              {sub.id} →
+                            </button>
+                          </td>
+                          <td style={{ fontWeight: 700, color: '#111827' }}>{sub.productName}</td>
+                          <td style={{ color: '#6B7280' }}>{sub.frequency}</td>
+                          <td>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
+                              ACTIVE
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
           </div>
@@ -492,46 +447,70 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
               <Package size={18} style={{ color: '#047857' }} /> Order &amp; Delivery History
             </div>
 
-            <div className="table-container" style={{ border: '1px solid #F3F4F6', borderRadius: '10px' }}>
-              <table className="admin-table" style={{ width: '100%', fontSize: '0.8rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
-                    <th>ORDER ID</th>
-                    <th>DATE</th>
-                    <th>AMOUNT</th>
-                    <th>STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayOrders.map(order => (
-                    <tr key={order.id}>
-                      <td>
-                        <button 
-                          onClick={() => onNavigateTab('orders')}
-                          style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
-                        >
-                          {order.id} →
-                        </button>
-                      </td>
-                      <td style={{ color: '#6B7280' }}>{order.orderDate}</td>
-                      <td style={{ fontWeight: 800, color: '#111827' }}>₹{order.totalAmount}</td>
-                      <td>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
-                          {order.status.toUpperCase()}
-                        </span>
-                      </td>
+            {displayOrders.length === 0 ? (
+              <div style={{ padding: '1.25rem', textAlign: 'center', color: '#6B7280', fontSize: '0.85rem', backgroundColor: '#F9FAFB', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+                No orders placed yet by this customer.
+              </div>
+            ) : (
+              <div className="table-container" style={{ border: '1px solid #F3F4F6', borderRadius: '10px' }}>
+                <table className="admin-table" style={{ width: '100%', fontSize: '0.8rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
+                      <th>ORDER ID</th>
+                      <th>DATE</th>
+                      <th>AMOUNT</th>
+                      <th>STATUS</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {displayOrders.map(order => (
+                      <tr key={order.id}>
+                        <td>
+                          <button 
+                            onClick={() => onNavigateTab('orders')}
+                            style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
+                          >
+                            {order.id} →
+                          </button>
+                        </td>
+                        <td style={{ color: '#6B7280' }}>{order.orderDate}</td>
+                        <td style={{ fontWeight: 800, color: '#111827' }}>₹{order.totalAmount}</td>
+                        <td>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
+                            {order.status.toUpperCase()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <div style={{ marginTop: '1.25rem', padding: '1rem', borderRadius: '12px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
               <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
                 Customer Account Notes
               </div>
               <div style={{ fontSize: '0.78rem', color: '#6B7280', lineHeight: '1.4' }}>
-                Registered on {new Date(selectedCustomer.createdAt || Date.now()).toLocaleDateString()}. Verified phone number. Regular subscriber with active return bottle cycle.
+                {(() => {
+                  let formattedDate = 'recently';
+                  if (selectedCustomer.createdAt) {
+                    try {
+                      const d = typeof selectedCustomer.createdAt === 'object' && (selectedCustomer.createdAt as any).seconds
+                        ? new Date((selectedCustomer.createdAt as any).seconds * 1000)
+                        : new Date(selectedCustomer.createdAt);
+                      if (!isNaN(d.getTime())) formattedDate = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    } catch (e) {
+                      formattedDate = 'recently';
+                    }
+                  }
+                  const noteText = selectedCustomer.customerType === 'new'
+                    ? 'Newly registered customer account. No orders or subscriptions placed yet.'
+                    : selectedCustomer.customerType === 'subscription'
+                    ? 'Active subscription customer with recurring delivery schedule.'
+                    : 'Customer with verified order history.';
+                  return `Registered ${formattedDate}. Verified phone number (${selectedCustomer.phone}). ${noteText}`;
+                })()}
               </div>
             </div>
           </div>
@@ -773,6 +752,36 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
             >
               One-Time
             </button>
+            <button 
+              onClick={() => setActiveTypeFilter('both')}
+              style={{
+                padding: '0.35rem 0.75rem',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: activeTypeFilter === 'both' ? '#0284C7' : 'transparent',
+                color: activeTypeFilter === 'both' ? '#FFFFFF' : '#374151',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Both
+            </button>
+            <button 
+              onClick={() => setActiveTypeFilter('new')}
+              style={{
+                padding: '0.35rem 0.75rem',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: activeTypeFilter === 'new' ? '#0284C7' : 'transparent',
+                color: activeTypeFilter === 'new' ? '#FFFFFF' : '#374151',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              New Customer
+            </button>
           </div>
 
         </div>
@@ -869,12 +878,12 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                       <span style={{
                         fontSize: '0.72rem',
                         fontWeight: 700,
-                        color: user.customerType === 'subscription' ? '#0369A1' : '#475569',
-                        backgroundColor: user.customerType === 'subscription' ? '#E0F2FE' : '#F1F5F9',
+                        color: user.customerType === 'new' ? '#2563EB' : user.customerType === 'subscription' ? '#0369A1' : '#475569',
+                        backgroundColor: user.customerType === 'new' ? '#EFF6FF' : user.customerType === 'subscription' ? '#E0F2FE' : '#F1F5F9',
                         padding: '3px 8px',
                         borderRadius: '8px'
                       }}>
-                        {user.customerType === 'subscription' ? 'Subscription' : 'One-Time'}
+                        {user.customerType === 'new' ? 'New Customer' : user.customerType === 'subscription' ? 'Subscription' : user.customerType === 'onetime' ? 'One-Time' : 'Both'}
                       </span>
                     </td>
 
@@ -928,29 +937,7 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                           View Details
                         </button>
                         <button 
-                          onClick={() => handleSendWhatsApp(user)}
-                          disabled={sendingWhatsApp[user.id] || whatsappSentMap[user.id]}
-                          title={whatsappSentMap[user.id] ? 'WhatsApp sent!' : `Send WhatsApp to ${user.name}`}
-                          style={{
-                            padding: '0.45rem 0.75rem',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            borderRadius: '8px',
-                            backgroundColor: whatsappSentMap[user.id] ? '#DCFCE7' : '#ECFDF5',
-                            color: whatsappSentMap[user.id] ? '#059669' : '#047857',
-                            border: '1px solid #A7F3D0',
-                            cursor: sendingWhatsApp[user.id] || whatsappSentMap[user.id] ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            opacity: sendingWhatsApp[user.id] ? 0.6 : 1,
-                          }}
-                        >
-                          <MessageCircle size={13} />
-                          {sendingWhatsApp[user.id] ? 'Sending...' : whatsappSentMap[user.id] ? 'Sent ✓' : 'WhatsApp'}
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteCustomer(user.id, user.name)}
+                          onClick={() => handleOpenDeleteCustomerModal(user.id, user.name)}
                           style={{
                             padding: '0.45rem 0.75rem',
                             fontSize: '0.78rem',
@@ -1124,6 +1111,101 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                   Save Account
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 20-Second Delete Customer Warning Modal */}
+      {deleteCustomerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            padding: '1.75rem',
+            maxWidth: '480px',
+            width: '100%',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.75rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+                  Delete Customer Profile
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                  Permanent Account Removal
+                </p>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#FEF2F2', padding: '1rem', borderRadius: '12px', border: '1px solid #FCA5A5', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#991B1B' }}>
+                ⚠️ Warning: Deleting Customer "{deleteCustomerModal.name}"
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#B91C1C', marginTop: '4px', lineHeight: '1.4' }}>
+                This will permanently delete the customer profile, saved addresses, and Firestore user document. This operation cannot be undone.
+              </div>
+            </div>
+
+            {deleteCustCountdown > 0 ? (
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+                ⏳ Delete action enabled in {deleteCustCountdown} seconds...
+              </div>
+            ) : (
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+                ✓ Safety countdown complete. You may proceed.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setDeleteCustomerModal(null)}
+                style={{
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: '10px',
+                  backgroundColor: '#F3F4F6',
+                  color: '#374151',
+                  border: '1px solid #E5E7EB',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                disabled={deleteCustCountdown > 0}
+                onClick={handleConfirmDeleteCustomer}
+                style={{
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: '10px',
+                  backgroundColor: deleteCustCountdown > 0 ? '#F3F4F6' : '#DC2626',
+                  color: deleteCustCountdown > 0 ? '#9CA3AF' : '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: deleteCustCountdown > 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {deleteCustCountdown > 0 ? `Delete (${deleteCustCountdown}s)` : 'Permanently Delete Customer'}
+              </button>
             </div>
           </div>
         </div>

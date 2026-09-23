@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { UserCheck, Search, ShieldCheck, RefreshCw, ArrowRightLeft, UserX, CheckCircle, AlertTriangle } from 'lucide-react';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import type { User, DeliveryAgent } from '../../types';
 
@@ -49,9 +49,35 @@ export default function DispatchCustomerAssignmentPage({
         assignedDeliveryAgentName: agentName || null,
         assignedHubId: selectedHubId
       });
+
+      // Batch sync all orders and subscriptions for this customer in Firestore
+      const updateData = {
+        deliveryAgentId: agentId || null,
+        assignedRiderId: agentId || null,
+        assignedPartner: agentName || null,
+        assignedRider: agentName || null,
+        updatedAt: new Date().toISOString(),
+      };
+
+      try {
+        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.id));
+        const ordersSnap = await getDocs(ordersQuery);
+        for (const orderDoc of ordersSnap.docs) {
+          await updateDoc(doc(db, 'orders', orderDoc.id), updateData);
+        }
+
+        const subsQuery = query(collection(db, 'subscriptions'), where('userId', '==', user.id));
+        const subsSnap = await getDocs(subsQuery);
+        for (const subDoc of subsSnap.docs) {
+          await updateDoc(doc(db, 'subscriptions', subDoc.id), updateData);
+        }
+      } catch (syncErr) {
+        console.warn("Auto-assign order sync note:", syncErr);
+      }
+
       showToast(
         agentId 
-          ? `Assigned dedicated rider "${agentName}" to customer "${user.name || 'Customer'}"!` 
+          ? `Assigned dedicated rider "${agentName}" to customer "${user.name || 'Customer'}" and synced active drops!` 
           : `Removed dedicated rider assignment for "${user.name || 'Customer'}".`,
         'success'
       );

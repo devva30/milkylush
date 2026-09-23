@@ -79,8 +79,9 @@ export default function DispatchTodaysDeliveriesPage({
 
       if (filterType === 'subscriptions') return o.isSubscriptionDelivery || o.orderType === 'subscription';
       if (filterType === 'onetime') return !o.isSubscriptionDelivery && o.orderType !== 'subscription';
-      if (filterType === 'assigned') return !!o.deliveryAgentId;
-      if (filterType === 'unassigned') return !o.deliveryAgentId;
+      const effectiveAgentId = o.deliveryAgentId || (o as any).assignedRiderId || u?.assignedDeliveryAgentId;
+      if (filterType === 'assigned') return !!effectiveAgentId;
+      if (filterType === 'unassigned') return !effectiveAgentId;
       return true;
     });
   }, [activeOrdersList, users, searchQuery, filterType]);
@@ -244,7 +245,8 @@ export default function DispatchTodaysDeliveriesPage({
               ) : (
                 paginatedOrders.map(order => {
                   const u = users.find(usr => usr.id === order.userId);
-                  const agent = deliveryAgents.find(a => a.id === order.deliveryAgentId);
+                  const effectiveAgentId = order.deliveryAgentId || (order as any).assignedRiderId || u?.assignedDeliveryAgentId || '';
+                  const agent = deliveryAgents.find(a => a.id === effectiveAgentId);
                   const customerName = order.customerName || u?.name || 'Valued Customer';
                   const customerPhone = order.customerPhone || u?.phone || 'N/A';
 
@@ -260,12 +262,40 @@ export default function DispatchTodaysDeliveriesPage({
                       </td>
 
                       <td style={{ padding: '0.85rem 1.25rem', maxWidth: '280px', fontSize: '0.8rem', color: '#334155', lineHeight: '1.35' }}>
-                        {order.deliveryAddress || order.address || u?.savedAddresses?.[0] || 'Default Address'}
+                        {(() => {
+                          let addr = order.deliveryAddress || order.address || '';
+                          const isExplicitValid = addr && addr.length > 5 && !addr.startsWith('Doorstep') && !addr.startsWith('Hub Area');
+                          if (!isExplicitValid && u) {
+                            if (u.savedAddresses && u.savedAddresses.length > 0) {
+                              const activeIdx = u.activeAddressIndex ?? (u.savedAddresses.length - 1);
+                              const activeAddr = u.savedAddresses[activeIdx];
+                              if (activeAddr && activeAddr.length > 5) {
+                                const isAddrHosur = activeAddr.toLowerCase().includes('hosur') || activeAddr.toLowerCase().includes('tamil nadu') || activeAddr.toLowerCase().includes('tn');
+                                if (isHosur === isAddrHosur || u.savedAddresses.length === 1) {
+                                  addr = activeAddr;
+                                }
+                              }
+                              if (!addr) {
+                                const matched = u.savedAddresses.find(a => {
+                                  const isH = a.toLowerCase().includes('hosur') || a.toLowerCase().includes('tamil nadu') || a.toLowerCase().includes('tn');
+                                  return isHosur ? isH : !isH;
+                                });
+                                addr = matched || u.savedAddresses[0];
+                              }
+                            } else if (u.address && u.address.length > 5) {
+                              addr = u.address;
+                            }
+                          }
+                          if (!addr || addr.startsWith('Doorstep')) {
+                            addr = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+                          }
+                          return addr;
+                        })()}
                       </td>
 
                       <td style={{ padding: '0.85rem 1.25rem' }}>
                         <select
-                          value={order.deliveryAgentId || ''}
+                          value={effectiveAgentId}
                           onChange={(e) => {
                             if (onUpdateOrderDriver) onUpdateOrderDriver(order.id, e.target.value);
                           }}
@@ -298,15 +328,21 @@ export default function DispatchTodaysDeliveriesPage({
                             backgroundColor: '#FFFFFF',
                             fontSize: '0.75rem',
                             fontWeight: 800,
-                            color: order.status === 'delivered' ? '#047857' : order.status === 'outForDelivery' ? '#1E40AF' : '#B45309',
+                            color: order.status === 'delivered' ? '#047857' : (order.status === 'skipped' || order.status === 'cancelled') ? '#DC2626' : order.status === 'outForDelivery' ? '#1E40AF' : '#B45309',
                             outline: 'none'
                           }}
                         >
                           <option value="packed">PACKED</option>
                           <option value="outForDelivery">OUT FOR DELIVERY</option>
                           <option value="delivered">DELIVERED</option>
+                          <option value="skipped">SKIPPED</option>
                           <option value="cancelled">CANCELLED</option>
                         </select>
+                        {((order as any).skipReason || (order as any).cancellationReason) && (
+                          <div style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 600, marginTop: '3px' }}>
+                            {(order as any).skipReason || (order as any).cancellationReason}
+                          </div>
+                        )}
                       </td>
 
                       <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>

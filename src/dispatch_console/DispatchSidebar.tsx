@@ -13,7 +13,10 @@ import {
   Settings, 
   LogOut, 
   Search, 
-  Grid 
+  Grid,
+  Calendar,
+  Layers,
+  PhoneCall
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
@@ -59,6 +62,8 @@ export default function DispatchSidebar({
       items: [
         { id: 'delivery-partners', label: 'Delivery Partners', icon: Users },
         { id: 'customer-assignments', label: 'Customer Rider Mapping', icon: UserCheck },
+        { id: 'route-grouping', label: 'Route Grouping & Sequence', icon: Layers },
+        { id: 'rider-attendance', label: 'Rider Attendance', icon: Calendar },
         { id: 'live-tracking', label: 'Live Rider Tracking', icon: MapPin },
         { id: 'register-partner', label: 'Register Partner', icon: UserPlus },
       ]
@@ -75,6 +80,7 @@ export default function DispatchSidebar({
       title: 'SYSTEM & CONTROLS',
       items: [
         { id: 'system-controls', label: 'System Controls', icon: Settings },
+        { id: 'hub-contacts', label: 'Hub Contacts & Help Settings', icon: PhoneCall },
         { id: 'portal-gateway', label: 'Exit to Gateway', icon: Grid },
       ]
     }

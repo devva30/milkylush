@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Download, ArrowLeft, Calendar as CalendarIcon, Sparkles, X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, PauseCircle, Phone, Mail, MapPin } from 'lucide-react';
-import { updateDoc, doc } from 'firebase/firestore';
+import { Search, Download, ArrowLeft, Calendar as CalendarIcon, Sparkles, X, ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, CheckCircle, PauseCircle, Headphones, Mail, MapPin, Phone, Trash2 } from 'lucide-react';
+import { updateDoc, doc, arrayUnion, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Subscription, User, Product } from '../types';
 
@@ -40,6 +40,216 @@ const formatDateLabel = (dateStr?: string) => {
   }
 };
 
+const formatSingleDate = (dateStr?: string | number) => {
+  if (!dateStr) return 'N/A';
+  try {
+    const str = String(dateStr).trim();
+    if (/^\d+$/.test(str)) {
+      const num = Number(str);
+      const d = new Date(num);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+    const clean = str.split('T')[0].split('–')[0].split('—')[0].trim();
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const monthIdx = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, monthIdx, day);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+    const d = new Date(clean);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    return clean;
+  } catch (e) {
+    return String(dateStr);
+  }
+};
+
+const formatDateRange = (startDateStr?: string, endDateStr?: string) => {
+  if (!startDateStr) return 'N/A';
+  if (!endDateStr || startDateStr === endDateStr) return formatSingleDate(startDateStr);
+
+  try {
+    const cleanStart = String(startDateStr).split('T')[0].split('–')[0].trim();
+    const cleanEnd = String(endDateStr).split('T')[0].split('–')[0].trim();
+    const pStart = cleanStart.split('-').map(Number);
+    const pEnd = cleanEnd.split('-').map(Number);
+
+    if (pStart.length === 3 && pEnd.length === 3) {
+      const dStart = new Date(pStart[0], pStart[1] - 1, pStart[2]);
+      const dEnd = new Date(pEnd[0], pEnd[1] - 1, pEnd[2]);
+
+      const startMonth = dStart.toLocaleDateString('en-GB', { month: 'short' });
+      const endMonth = dEnd.toLocaleDateString('en-GB', { month: 'short' });
+      const startYear = dStart.getFullYear();
+      const endYear = dEnd.getFullYear();
+
+      if (startYear === endYear && startMonth === endMonth) {
+        return `${dStart.getDate()}–${dEnd.getDate()} ${startMonth} ${startYear}`;
+      } else if (startYear === endYear) {
+        return `${dStart.getDate()} ${startMonth} – ${dEnd.getDate()} ${endMonth} ${startYear}`;
+      } else {
+        return `${dStart.getDate()} ${startMonth} ${startYear} – ${dEnd.getDate()} ${endMonth} ${endYear}`;
+      }
+    }
+    return `${formatSingleDate(startDateStr)} – ${formatSingleDate(endDateStr)}`;
+  } catch (e) {
+    return `${formatSingleDate(startDateStr)} – ${formatSingleDate(endDateStr)}`;
+  }
+};
+
+const formatLoggedTime = (timestampStr?: string | number) => {
+  if (!timestampStr) return '';
+  try {
+    const str = String(timestampStr).trim();
+    let d: Date;
+    if (/^\d+$/.test(str)) {
+      d = new Date(Number(str));
+    } else {
+      d = new Date(str);
+    }
+    if (isNaN(d.getTime())) return '';
+    const dateFormatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timeFormatted = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `Logged ${dateFormatted}, ${timeFormatted}`;
+  } catch (e) {
+    return '';
+  }
+};
+
+const groupHistoryLogsIntoRanges = (logs: any[]) => {
+  if (!logs || !Array.isArray(logs) || logs.length === 0) return [];
+
+  try {
+    const singleDayEvents: any[] = [];
+    const rangeOrSpecialEvents: any[] = [];
+
+    logs.forEach((log) => {
+      if (!log || typeof log !== 'object') return;
+      if (log.type === 'vacation_hold' || (log.startDate && log.endDate && String(log.startDate) !== String(log.endDate))) {
+        rangeOrSpecialEvents.push(log);
+      } else {
+        const rawKey = log.date || log.startDate;
+        if (rawKey) {
+          const normStr = String(rawKey).split('T')[0].trim();
+          singleDayEvents.push({ ...log, normalizedDate: normStr });
+        } else {
+          rangeOrSpecialEvents.push(log);
+        }
+      }
+    });
+
+    singleDayEvents.sort((a, b) => String(a.normalizedDate || '').localeCompare(String(b.normalizedDate || '')));
+
+    const mergedEvents: any[] = [];
+    let currentGroup: any = null;
+
+    singleDayEvents.forEach((item) => {
+      if (!currentGroup) {
+        currentGroup = {
+          ...item,
+          startDate: item.normalizedDate,
+          endDate: item.normalizedDate,
+          dateList: [item.normalizedDate],
+        };
+        return;
+      }
+
+      const prevDateParts = String(currentGroup.endDate || '').split('-').map(Number);
+      const currDateParts = String(item.normalizedDate || '').split('-').map(Number);
+      let isNextDay = false;
+
+      if (prevDateParts.length === 3 && currDateParts.length === 3 && !prevDateParts.some(isNaN) && !currDateParts.some(isNaN)) {
+        const pD = new Date(prevDateParts[0], prevDateParts[1] - 1, prevDateParts[2]);
+        const cD = new Date(currDateParts[0], currDateParts[1] - 1, currDateParts[2]);
+        const diffDays = Math.round((cD.getTime() - pD.getTime()) / (1000 * 3600 * 24));
+        if (diffDays === 1) isNextDay = true;
+      }
+
+      const isSameType = (item.type || '') === (currentGroup.type || '');
+      const isSameReason = (item.reason || 'Skipped Delivery') === (currentGroup.reason || 'Skipped Delivery');
+      const isSameActor = (item.actor || 'customer') === (currentGroup.actor || 'customer');
+
+      if (isNextDay && isSameType && isSameReason && isSameActor) {
+        currentGroup.endDate = item.normalizedDate;
+        currentGroup.dateList.push(item.normalizedDate);
+      } else {
+        mergedEvents.push(currentGroup);
+        currentGroup = {
+          ...item,
+          startDate: item.normalizedDate,
+          endDate: item.normalizedDate,
+          dateList: [item.normalizedDate],
+        };
+      }
+    });
+
+    if (currentGroup) {
+      mergedEvents.push(currentGroup);
+    }
+
+    // Rank history items primarily by WHEN THE ACTION WAS PERFORMED (timestamp)
+    const getEpoch = (item: any) => {
+      if (!item || typeof item !== 'object') return 0;
+      if (item.timestamp) {
+        const str = String(item.timestamp).trim();
+        let t = 0;
+        if (/^\d+$/.test(str)) {
+          t = Number(str);
+        } else {
+          t = new Date(str).getTime();
+        }
+        if (!isNaN(t) && t > 0) return t;
+      }
+      const rawStr = item.startDate || item.date || item.endDate;
+      if (rawStr) {
+        const cleanStr = String(rawStr).split('–')[0].split('—')[0].split('T')[0].trim();
+        if (/^\d+$/.test(cleanStr)) {
+          const t = Number(cleanStr);
+          if (!isNaN(t) && t > 0) return t;
+        }
+        const t = new Date(cleanStr).getTime();
+        if (!isNaN(t) && t > 0) return t;
+        const parts = cleanStr.split('-').map(Number);
+        if (parts.length === 3 && !parts.some(isNaN)) {
+          const d = new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+          if (!isNaN(d) && d > 0) return d;
+        }
+      }
+      return 0;
+    };
+
+    const allEvents = [...mergedEvents, ...rangeOrSpecialEvents];
+    allEvents.sort((a, b) => {
+      const epochA = getEpoch(a);
+      const epochB = getEpoch(b);
+      return epochB - epochA;
+    });
+
+    return allEvents;
+  } catch (err) {
+    console.error('Error in groupHistoryLogsIntoRanges:', err);
+    return logs;
+  }
+};
+
+const getDurationDays = (planDurationStr?: string): number => {
+  if (!planDurationStr) return 30;
+  const match = planDurationStr.match(/(\d+)/);
+  if (match) {
+    const days = parseInt(match[1], 10);
+    return isNaN(days) ? 30 : days;
+  }
+  return 30;
+};
+
 const calculatePaidDropEndDate = (
   startDateStr?: string,
   planDurationStr: string = '30days',
@@ -54,7 +264,7 @@ const calculatePaidDropEndDate = (
     const startDate = new Date(startDateStr);
     if (isNaN(startDate.getTime())) return '2026-11-08';
 
-    const requiredDrops = planDurationStr === '15days' ? 15 : (planDurationStr === '90days' ? 90 : 30);
+    const requiredDrops = getDurationDays(planDurationStr);
     let curr = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     let dropsCounted = 0;
 
@@ -232,15 +442,27 @@ export default function SubscriptionsPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
+  const [historyFilter, setHistoryFilter] = useState<string>('all');
 
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
-  // Month Shifting State (Default: September 2026)
-  const [calendarYear, setCalendarYear] = useState<number>(2026);
-  const [calendarMonthIndex, setCalendarMonthIndex] = useState<number>(8); // 8 = September (0-indexed)
+  // Month Shifting State (Default: Current Active Month)
+  const todayNow = new Date();
+  const [calendarYear, setCalendarYear] = useState<number>(todayNow.getFullYear());
+  const [calendarMonthIndex, setCalendarMonthIndex] = useState<number>(todayNow.getMonth());
 
   // Interactive Calendar Date Status Overrides: Key = `${planId}_${year}_${month}_${day}`
   const [dateOverrides, setDateOverrides] = useState<Record<string, DateStatusInfo>>({});
+
+  // Collapsible History per Plan State
+  const [expandedHistoryPlans, setExpandedHistoryPlans] = useState<Record<string, boolean>>({});
+
+  const toggleHistoryExpand = (planId: string) => {
+    setExpandedHistoryPlans((prev) => ({
+      ...prev,
+      [planId]: !prev[planId],
+    }));
+  };
 
   // Modal State for Date Click
   const [activeDateModal, setActiveDateModal] = useState<{
@@ -256,6 +478,88 @@ export default function SubscriptionsPage({
   const [modalReason, setModalReason] = useState<string>('Supply / Stock Shortage');
   const [modalSuggestion, setModalSuggestion] = useState<string>('');
   const [modalNotes, setModalNotes] = useState<string>('');
+
+  // Delete History Modal State & 5-Second Warning Countdown
+  const [deleteHistoryModal, setDeleteHistoryModal] = useState<{ planId: string; log: any } | null>(null);
+  const [deleteCountdown, setDeleteCountdown] = useState<number>(5);
+
+  useEffect(() => {
+    if (!deleteHistoryModal) return;
+    if (deleteCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setDeleteCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [deleteHistoryModal, deleteCountdown]);
+
+  const handleOpenDeleteHistoryModal = (planId: string, log: any) => {
+    setDeleteHistoryModal({ planId, log });
+    setDeleteCountdown(5);
+  };
+
+  const handleDeleteAppOnly = async () => {
+    if (!deleteHistoryModal) return;
+    const { planId, log } = deleteHistoryModal;
+    try {
+      const subDoc: any = hubSubscriptions.find((s) => s.id === planId);
+      if (subDoc) {
+        const currentHistory: any[] = subDoc.historyLog || [];
+        const dateKey = (log.date || log.startDate || '').split('T')[0].trim();
+        const updatedHistory = currentHistory.map((h: any) => {
+          const hKey = (h.date || h.startDate || '').split('T')[0].trim();
+          if ((log.id && h.id && h.id === log.id) || (log.timestamp && h.timestamp && h.timestamp === log.timestamp) || (hKey && hKey === dateKey)) {
+            return { ...h, hideInApp: true };
+          }
+          return h;
+        });
+        await updateDoc(doc(db, 'subscriptions', planId), {
+          historyLog: updatedHistory
+        });
+        showToast("History log hidden from customer App view", "success");
+      }
+    } catch (err) {
+      console.error("Error hiding history log from app:", err);
+      showToast("Failed to update history log", "error");
+    }
+    setDeleteHistoryModal(null);
+  };
+
+  const handleDeleteBothAppAndWeb = async () => {
+    if (!deleteHistoryModal) return;
+    const { planId, log } = deleteHistoryModal;
+    try {
+      const subDoc: any = hubSubscriptions.find((s) => s.id === planId);
+      if (subDoc) {
+        const dateKey = (log.date || log.startDate || '').split('T')[0].trim();
+        const currentHistory: any[] = subDoc.historyLog || [];
+        const updatedHistory = currentHistory.filter((h: any) => {
+          if (log.id && h.id) return h.id !== log.id;
+          if (log.timestamp && h.timestamp) return h.timestamp !== log.timestamp;
+          const hKey = (h.date || h.startDate || '').split('T')[0].trim();
+          return hKey !== dateKey;
+        });
+
+        const currentPaused: string[] = subDoc.pausedDates || [];
+        const updatedPaused = currentPaused.filter((pd: string) => pd.split('T')[0].trim() !== dateKey);
+
+        const updatePayload: any = {
+          historyLog: updatedHistory,
+          pausedDates: updatedPaused,
+        };
+
+        if (dateKey) {
+          updatePayload[`pausedDateReasons.${dateKey}`] = deleteField();
+        }
+
+        await updateDoc(doc(db, 'subscriptions', planId), updatePayload);
+        showToast("History log deleted & delivery schedule restored on Web and App", "success");
+      }
+    } catch (err) {
+      console.error("Error deleting history log:", err);
+      showToast("Failed to delete history log", "error");
+    }
+    setDeleteHistoryModal(null);
+  };
 
   // Pagination State
   const [pageSize, setPageSize] = useState<number>(10);
@@ -305,11 +609,13 @@ export default function SubscriptionsPage({
           dailyRate,
           frequency: sub.frequency || 'Everyday',
           timing: sub.timing === 'evening' ? 'Evening (5-7 PM)' : 'Morning (6-8 AM)',
-          duration: sub.planDuration ? `${sub.planDuration.replace('days', '')} Days Pack` : '30 Days Pack',
-          prepaidPaid: sub.prepaidAmountPaid || dailyQty * dailyRate * 30,
+          duration: `${getDurationDays(sub.planDuration)} Days Pack`,
+          prepaidPaid: sub.prepaidAmountPaid || dailyQty * dailyRate * getDurationDays(sub.planDuration),
           startDate: sub.startDate,
           endDate: sub.endDate,
           pausedDates: sub.pausedDates || [],
+          historyLog: sub.historyLog || [],
+          pausedDateReasons: sub.pausedDateReasons || {},
           vacationStart: sub.vacationStart,
           vacationEnd: sub.vacationEnd,
           customDays: sub.customDays || [],
@@ -453,6 +759,8 @@ export default function SubscriptionsPage({
   const handleSaveDateStatus = async (statusType: 'active' | 'skipped' | 'exception') => {
     if (!activeDateModal) return;
     const key = `${activeDateModal.planId}_${activeDateModal.year}_${activeDateModal.monthIndex}_${activeDateModal.dayNum}`;
+    const dateKey = `${activeDateModal.year}-${String(activeDateModal.monthIndex + 1).padStart(2, '0')}-${String(activeDateModal.dayNum).padStart(2, '0')}`;
+    
     const newOverride: DateStatusInfo = {
       status: statusType,
       reason: statusType === 'exception' ? modalReason : undefined,
@@ -466,38 +774,65 @@ export default function SubscriptionsPage({
     const targetDateObj = new Date(activeDateModal.year, activeDateModal.monthIndex, activeDateModal.dayNum);
     const targetIso = targetDateObj.toISOString();
 
-    // Sync pausedDates array in Firestore subscriptions collection
+    const adminName = 'MilkyLush Support';
+    const chosenReason = modalReason || modalNotes.trim() || 'Skipped by support';
+
+    const historyEntry = {
+      id: `log_${Date.now()}`,
+      type: statusType === 'skipped' ? 'admin_skip' : statusType === 'exception' ? 'admin_exception' : 'admin_restored',
+      date: dateKey,
+      reason: statusType === 'active' ? 'Admin Resumed Delivery' : chosenReason,
+      notes: modalNotes.trim() || '',
+      actor: 'admin',
+      actorName: adminName,
+      timestamp: new Date().toISOString()
+    };
+
+    // Sync pausedDates array & historyLog in Firestore subscriptions collection
     try {
-      const subDoc = hubSubscriptions.find((s) => s.id === activeDateModal.planId);
+      const subDoc: any = hubSubscriptions.find((s) => s.id === activeDateModal.planId);
       if (subDoc) {
         let currentPaused: string[] = subDoc.pausedDates || [];
         const isAlreadyInPaused = currentPaused.some((pd) => {
           const d = new Date(pd);
-          return d.getFullYear() === targetDateObj.getFullYear() &&
-                 d.getMonth() === targetDateObj.getMonth() &&
-                 d.getDate() === targetDateObj.getDate();
+          return (d.getFullYear() === targetDateObj.getFullYear() &&
+                  d.getMonth() === targetDateObj.getMonth() &&
+                  d.getDate() === targetDateObj.getDate()) || pd === dateKey;
         });
 
         let updatedPaused: string[] = [...currentPaused];
         if (statusType === 'skipped' || statusType === 'exception') {
           if (!isAlreadyInPaused) {
-            updatedPaused.push(targetIso);
+            updatedPaused.push(dateKey);
           }
+          await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
+            pausedDates: updatedPaused,
+            [`pausedDateReasons.${dateKey}`]: {
+              reason: historyEntry.reason,
+              notes: modalNotes.trim() || '',
+              actor: 'admin',
+              actorName: adminName,
+              timestamp: new Date().toISOString()
+            },
+            historyLog: arrayUnion(historyEntry)
+          });
         } else if (statusType === 'active') {
           updatedPaused = currentPaused.filter((pd) => {
             const d = new Date(pd);
-            return !(d.getFullYear() === targetDateObj.getFullYear() &&
-                     d.getMonth() === targetDateObj.getMonth() &&
-                     d.getDate() === targetDateObj.getDate());
+            const isSame = d.getFullYear() === targetDateObj.getFullYear() &&
+                           d.getMonth() === targetDateObj.getMonth() &&
+                           d.getDate() === targetDateObj.getDate();
+            return !isSame && pd !== dateKey;
+          });
+          await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
+            pausedDates: updatedPaused,
+            [`pausedDateReasons.${dateKey}`]: deleteField(),
+            historyLog: arrayUnion(historyEntry)
           });
         }
-
-        await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
-          pausedDates: updatedPaused,
-        });
       }
     } catch (dbErr) {
-      console.error('Error updating pausedDates in Firestore:', dbErr);
+      console.error('Error updating pausedDates/historyLog in Firestore:', dbErr);
     }
 
     // Real-time Audit Log
@@ -524,11 +859,64 @@ export default function SubscriptionsPage({
     }
   };
 
+  // Delete History Entry & Auto-Restore Calendar Delivery Status
+  const handleDeleteHistoryLog = async (planId: string, logEntry: any) => {
+    if (!window.confirm('Are you sure you want to delete this subscription history entry? If this was a skip or hold, the date will be restored back to active scheduled delivery.')) {
+      return;
+    }
+
+    try {
+      const subDoc: any = hubSubscriptions.find((s) => s.id === planId);
+      if (!subDoc) return;
+
+      const rawHistory = subDoc.historyLog || [];
+      const updatedHistory = rawHistory.filter((h: any) => {
+        if (logEntry.id && h.id) return h.id !== logEntry.id;
+        if (logEntry.timestamp && h.timestamp) return h.timestamp !== logEntry.timestamp;
+        const hKey = h.date || h.startDate;
+        const lKey = logEntry.date || logEntry.startDate;
+        return hKey !== lKey;
+      });
+
+      const dateKey = logEntry.date || logEntry.startDate;
+      let updatePayload: any = {
+        historyLog: updatedHistory,
+      };
+
+      if (dateKey) {
+        const normKey = String(dateKey).split('T')[0].trim();
+        const currentPaused: string[] = subDoc.pausedDates || [];
+        const updatedPaused = currentPaused.filter((pd) => String(pd).split('T')[0].trim() !== normKey);
+
+        updatePayload.pausedDates = updatedPaused;
+        updatePayload[`pausedDateReasons.${normKey}`] = deleteField();
+      }
+
+      await updateDoc(doc(db, 'subscriptions', planId), updatePayload);
+
+      logAdminAuditAction(
+        'Tom SuperAdmin',
+        'tomadmin@gmail.com',
+        'Super Admin',
+        'Hub Operations',
+        `Deleted Subscription History Log Entry for Plan ${planId}`,
+        `Subscription: ${planId}`,
+        { deletedLog: logEntry },
+        selectedHubId
+      );
+
+      showToast('Deleted history log entry & restored delivery schedule!', 'success');
+    } catch (err) {
+      console.error('Error deleting history log entry:', err);
+      showToast('Failed to delete history log entry.', 'error');
+    }
+  };
+
   // -------------------------------------------------------------
   // CUSTOMER SUBSCRIPTIONS PORTAL (SUBSCRIPTION DETAIL VIEW)
   // -------------------------------------------------------------
   if (selectedCustomer) {
-    const cust = selectedCustomer;
+    const cust = customerRegistry.find((c) => c.id === selectedCustomer.id || c.fullCustomerId === selectedCustomer.fullCustomerId) || selectedCustomer;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
@@ -612,16 +1000,16 @@ export default function SubscriptionsPage({
               fontWeight: 800,
               fontSize: '1.25rem'
             }}>
-              {cust.name.charAt(0).toUpperCase()}
+              {(cust.name || 'Customer').charAt(0).toUpperCase()}
             </div>
             <div>
               <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#111827' }}>
-                {cust.name}
+                {cust.name || 'Customer'}
               </h3>
               <div style={{ fontSize: '0.82rem', color: '#4B5563', marginTop: '3px', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <span><Phone size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#047857' }} /> {cust.phone}</span>
-                <span><Mail size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#047857' }} /> {cust.email}</span>
-                <span><MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#047857' }} /> {cust.address}</span>
+                <span><Phone size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#047857' }} /> {cust.phone || 'N/A'}</span>
+                <span><Mail size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#047857' }} /> {cust.email || 'N/A'}</span>
+                <span><MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', color: '#047857' }} /> {cust.address || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -634,7 +1022,7 @@ export default function SubscriptionsPage({
             backgroundColor: cust.status === 'On Vacation' ? '#FEF3C7' : '#DCFCE7',
             color: cust.status === 'On Vacation' ? '#D97706' : '#059669'
           }}>
-            STATUS: {cust.status.toUpperCase()}
+            STATUS: {(cust.status || 'Active Delivery').toUpperCase()}
           </span>
         </div>
 
@@ -982,6 +1370,307 @@ export default function SubscriptionsPage({
 
           </div>
         ))}
+
+        {/* Subscription Activity & Skip History Log (Web Admin) */}
+        {cust.plans?.filter(Boolean).map((plan: any, pIdx: number) => {
+          const rawHistory = plan.historyLog || [];
+          const pausedDateReasons = plan.pausedDateReasons || {};
+          const logs: any[] = [...rawHistory];
+
+          const normalizeDateKey = (str?: string) => {
+            if (!str) return '';
+            const clean = String(str).split('T')[0].trim();
+            const parts = clean.split('-');
+            if (parts.length === 3) {
+              const y = parts[0];
+              const m = parts[1].padStart(2, '0');
+              const d = parts[2].padStart(2, '0');
+              return `${y}-${m}-${d}`;
+            }
+            return clean;
+          };
+
+          const hasLogForDate = (dateKey: string) => {
+            const normTarget = normalizeDateKey(dateKey);
+            return logs.some((l) => {
+              const normLog = normalizeDateKey(l.date || l.startDate);
+              return normLog === normTarget;
+            });
+          };
+
+          // 1. Merge pausedDateReasons
+          Object.entries(pausedDateReasons).forEach(([dateStr, val]: [string, any]) => {
+            const normDate = normalizeDateKey(dateStr);
+            const reasonMap = typeof val === 'object' ? val : { reason: String(val) };
+            if (!hasLogForDate(normDate)) {
+              logs.push({
+                type: reasonMap.actor === 'admin' ? 'admin_skip' : 'customer_skip',
+                date: normDate,
+                startDate: normDate,
+                endDate: normDate,
+                reason: reasonMap.reason || 'Skipped Delivery',
+                notes: reasonMap.notes || '',
+                actor: reasonMap.actor || 'customer',
+                actorName: reasonMap.actorName || (reasonMap.actor === 'admin' ? 'MilkyLush Support' : cust.name),
+                timestamp: reasonMap.timestamp || ''
+              });
+            }
+          });
+
+          // 2. Merge pausedDates array
+          const pausedDatesList = plan.pausedDates || [];
+          pausedDatesList.forEach((pd: string) => {
+            const normDate = normalizeDateKey(pd);
+            if (!hasLogForDate(normDate)) {
+              logs.push({
+                type: 'customer_skip',
+                date: normDate,
+                startDate: normDate,
+                endDate: normDate,
+                reason: 'Skipped Delivery',
+                actor: 'customer',
+                actorName: cust.name,
+                timestamp: ''
+              });
+            }
+          });
+
+          // 3. Merge dateOverrides from local state if admin modified calendar dates
+          Object.entries(dateOverrides).forEach(([overrideKey, overrideInfo]: [string, any]) => {
+            if (overrideKey.startsWith(`${plan.id}_`)) {
+              const parts = overrideKey.split('_');
+              if (parts.length >= 4) {
+                const yr = parts[1];
+                const mIdx = parseInt(parts[2], 10);
+                const dy = parseInt(parts[3], 10);
+                const normDate = `${yr}-${String(mIdx + 1).padStart(2, '0')}-${String(dy).padStart(2, '0')}`;
+                if (overrideInfo.status === 'skipped' || overrideInfo.status === 'exception') {
+                  if (!hasLogForDate(normDate)) {
+                    logs.push({
+                      type: 'admin_skip',
+                      date: normDate,
+                      startDate: normDate,
+                      endDate: normDate,
+                      reason: overrideInfo.reason || (overrideInfo.status === 'exception' ? 'Unable to Deliver Exception' : 'Admin Skipped Drop'),
+                      notes: overrideInfo.notes || '',
+                      actor: 'admin',
+                      actorName: 'MilkyLush Support',
+                      timestamp: new Date().toISOString()
+                    });
+                  }
+                }
+              }
+            }
+          });
+
+          // 4. Merge Vacation Start
+          if (plan.vacationStart && !logs.some((l) => l.type === 'vacation_hold')) {
+            logs.push({
+              type: 'vacation_hold',
+              startDate: normalizeDateKey(plan.vacationStart),
+              endDate: normalizeDateKey(plan.vacationEnd),
+              reason: 'Vacation Hold Active',
+              actor: 'customer',
+              actorName: cust.name,
+              timestamp: ''
+            });
+          }
+
+          // Date Range Grouping Algorithm (Pre-sorted descending: newest action timestamp first at index 0)
+          const groupedLogs = groupHistoryLogsIntoRanges(logs);
+
+          // Interactive History Filter
+          const filteredLogs = groupedLogs.filter((l) => {
+            if (historyFilter === 'all') return true;
+            const isResumedType = l.type === 'customer_resumed' || l.type === 'admin_resumed' || l.type === 'admin_restored' || l.type === 'vacation_resumed';
+            const isSupportAction = l.actor === 'admin' || (l.actorName && (l.actorName.includes('Support') || l.actorName.includes('Admin')));
+            const isVacation = l.type === 'vacation_hold';
+            if (historyFilter === 'customer') return !isSupportAction && !isResumedType && !isVacation;
+            if (historyFilter === 'support') return isSupportAction && !isResumedType;
+            if (historyFilter === 'resumed') return isResumedType;
+            if (historyFilter === 'vacation') return isVacation;
+            return true;
+          });
+
+          const isExpanded = !!expandedHistoryPlans[plan.id];
+          const displayedLogs = isExpanded ? filteredLogs.slice(0, 20) : filteredLogs.slice(0, 2);
+
+          return (
+            <div key={`hist_${plan.id || pIdx}`} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid #E5E7EB', marginBottom: '1.25rem', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 800, margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CalendarIcon size={18} style={{ color: '#047857' }} /> Subscription activity &amp; skip history ({plan.productName || 'Subscription'})
+                </h4>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Filter Dropdown */}
+                  <select
+                    value={historyFilter}
+                    onChange={(e) => setHistoryFilter(e.target.value)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      color: '#374151',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">Filter: All Activities ({groupedLogs.length})</option>
+                    <option value="customer">Customer Skips</option>
+                    <option value="support">Support Skips</option>
+                    <option value="resumed">Resumed Drops</option>
+                    <option value="vacation">Vacation Holds</option>
+                  </select>
+
+                  {filteredLogs.length > 2 && (
+                    <button
+                      onClick={() => toggleHistoryExpand(plan.id)}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '16px',
+                        backgroundColor: '#F3F4F6',
+                        border: '1px solid #E5E7EB',
+                        color: '#374151',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {isExpanded ? 'Collapse' : `View all (${filteredLogs.length})`}
+                      <ChevronDown
+                        size={15}
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {filteredLogs.length === 0 ? (
+                <div style={{ fontSize: '0.85rem', color: '#6B7280', padding: '0.5rem 0' }}>
+                  {groupedLogs.length === 0
+                    ? 'No activity or skip history recorded yet for this plan. Deliveries scheduled as planned.'
+                    : 'No activity logs matching the selected filter criteria.'}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {displayedLogs.map((log: any, lIdx: number) => {
+                    const isResumedType = log.type === 'customer_resumed' || log.type === 'admin_resumed' || log.type === 'admin_restored' || log.type === 'vacation_resumed';
+                    const isSupportAction = log.actor === 'admin' || (log.actorName && (log.actorName.includes('Support') || log.actorName.includes('Admin')));
+                    
+                    // Formatting Range
+                    const dateDisplay = formatDateRange(log.startDate || log.date, log.endDate || log.date);
+                    
+                    // Actor Labeling for Web Admin View
+                    const actorLabel = isSupportAction ? 'By MilkyLush Support' : `By ${log.actorName ? String(log.actorName).replace(/\s*\(Customer\)/g, '').replace(/\s*\(Administrator\)/g, '') : cust.name}`;
+
+                    // Logged time line
+                    const formattedLogged = formatLoggedTime(log.timestamp) || (log.startDate ? `Logged ${formatSingleDate(log.startDate)}` : '');
+
+                    // Dynamic Title & Reason
+                    let titleText = log.reason || 'Skipped delivery';
+                    if (isResumedType) {
+                      titleText = 'Delivery resumed';
+                    } else if (isSupportAction) {
+                      const displayReason = (log.reason && log.reason !== 'Skipped by support' && log.reason !== 'Admin Skipped Drop' && log.reason !== 'Skipped Delivery') ? log.reason : '';
+                      if (displayReason) {
+                        titleText = `Skipped by support — ${displayReason}`;
+                      } else {
+                        titleText = 'Skipped by support';
+                      }
+                    } else if (titleText === 'Skipped Delivery' || titleText === 'Quick Skip') {
+                      titleText = 'Skipped delivery';
+                    } else if (!titleText.toLowerCase().startsWith('skipped')) {
+                      titleText = `Skipped — ${titleText.toLowerCase()}`;
+                    }
+
+                    // Icons and Theme Colors
+                    // Amber = Paused/Skipped, Green = Resumed. No Red!
+                    const circleBg = isResumedType ? '#ECFDF5' : '#FEF3C7';
+                    const iconColor = isResumedType ? '#047857' : '#D97706';
+
+                    return (
+                      <div key={lIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '0.85rem 1rem', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #F3F4F6' }}>
+                        <div style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          backgroundColor: circleBg,
+                          color: iconColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          marginTop: '2px'
+                        }}>
+                          {isResumedType ? (
+                            <CheckCircle size={20} />
+                          ) : isSupportAction ? (
+                            <Headphones size={18} />
+                          ) : (
+                            <PauseCircle size={20} />
+                          )}
+                        </div>
+
+                        <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#111827', textTransform: 'capitalize' }}>
+                              {titleText}
+                            </div>
+                            
+                            <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '3px', fontWeight: 600 }}>
+                              {dateDisplay}
+                              {isResumedType && ' · Skip cancelled'}
+                              {isSupportAction && log.reason && log.reason !== 'Skipped by support' && !log.reason.includes('Skipped Delivery') && !titleText.includes(log.reason) && (
+                                <span> · {log.reason}</span>
+                              )}
+                              <span> · {actorLabel}</span>
+                            </div>
+
+                            {formattedLogged && (
+                              <div style={{ fontSize: '0.73rem', color: '#9CA3AF', marginTop: '2px' }}>
+                                {formattedLogged} {isSupportAction ? '· By MilkyLush Support' : ''}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => handleOpenDeleteHistoryModal(plan.id, log)}
+                            title="Delete this history entry"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#9CA3AF',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'color 0.2s',
+                              marginLeft: '8px'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#DC2626')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#9CA3AF')}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Calendar Date Status & Delivery Exception Modal */}
         {activeDateModal && (
@@ -1649,6 +2338,122 @@ export default function SubscriptionsPage({
         </div>
 
       </div>
+
+      {/* 5-Second Warning History Deletion Options Modal */}
+      {deleteHistoryModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            padding: '1.75rem',
+            maxWidth: '480px',
+            width: '100%',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.75rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+                  Delete History Entry
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                  Choose deletion scope for this record
+                </p>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
+                {deleteHistoryModal.log.reason || 'Skipped delivery'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
+                Date: {deleteHistoryModal.log.date || deleteHistoryModal.log.startDate || 'N/A'}
+              </div>
+            </div>
+
+            {deleteCountdown > 0 ? (
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+                ⚠️ Action options enabled in {deleteCountdown} seconds...
+              </div>
+            ) : (
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+                ✓ Verified. Select your deletion action below:
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button
+                disabled={deleteCountdown > 0}
+                onClick={handleDeleteAppOnly}
+                style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  backgroundColor: deleteCountdown > 0 ? '#F3F4F6' : '#EFF6FF',
+                  color: deleteCountdown > 0 ? '#9CA3AF' : '#2563EB',
+                  border: deleteCountdown > 0 ? '1px solid #E5E7EB' : '1px solid #BFDBFE',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: deleteCountdown > 0 ? 'not-allowed' : 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                Option 1: Delete from Customer App Only
+              </button>
+
+              <button
+                disabled={deleteCountdown > 0}
+                onClick={handleDeleteBothAppAndWeb}
+                style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  backgroundColor: deleteCountdown > 0 ? '#F3F4F6' : '#DC2626',
+                  color: deleteCountdown > 0 ? '#9CA3AF' : '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: deleteCountdown > 0 ? 'not-allowed' : 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                Option 2: Delete from both App &amp; Website (Restore Delivery)
+              </button>
+
+              <button
+                onClick={() => setDeleteHistoryModal(null)}
+                style={{
+                  padding: '0.65rem 1rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'transparent',
+                  color: '#6B7280',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  marginTop: '4px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

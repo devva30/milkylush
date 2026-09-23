@@ -78,6 +78,7 @@ export default function Sidebar({
       title: 'CATALOG & FLEET',
       items: [
         { id: 'products', label: 'Products & Stock', icon: ShoppingBag },
+        { id: 'quality-reports', label: 'Quality & Lab Reports', icon: FileText },
         { id: 'bottle-management', label: 'Bottle Management', icon: Wine },
         { id: 'delivery', label: 'Delivery Fleet', icon: Truck },
         { id: 'service-area', label: 'Service Areas', icon: FileText }

@@ -39,6 +39,7 @@ import DeliveredHistoryPage from './pages/DeliveredHistoryPage';
 import AdminAccessPage from './pages/AdminAccessPage';
 import SettingsPage from './pages/SettingsPage';
 import BottleManagementPage from './pages/BottleManagementPage';
+import QualityReportsPage from './pages/QualityReportsPage';
 
 import type { Order } from './types';
 
@@ -364,6 +365,7 @@ function AppContent() {
             <TodaysDeliveriesPage
               selectedHubId={selectedHubId}
               orders={hubOrders}
+              subscriptions={hubSubscriptions}
               users={hubUsers}
               products={products}
               deliveryAgents={hubDeliveryAgents}
@@ -509,6 +511,7 @@ function AppContent() {
               selectedHubId={selectedHubId}
               subscriptions={hubSubscriptions}
               prepaidPackages={hubPrepaidPackages}
+              products={products}
               adminUsername={adminUsername}
               showToast={showToast}
             />
@@ -540,6 +543,13 @@ function AppContent() {
           {activeTab === 'admin-access' && (
             <AdminAccessPage
               adminUsername={adminUsername}
+              selectedHubId={selectedHubId}
+              showToast={showToast}
+            />
+          )}
+
+          {activeTab === 'quality-reports' && (
+            <QualityReportsPage
               selectedHubId={selectedHubId}
               showToast={showToast}
             />

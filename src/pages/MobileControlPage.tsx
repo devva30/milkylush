@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Plus, Tag, Smartphone, Image as ImageIcon, Bell, Send, History } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Tag, Smartphone, Image as ImageIcon, Bell, Send, History, ShieldCheck, Share2, Sparkles, Save, Headphones, Trash2, HelpCircle } from 'lucide-react';
+import { doc, getDoc, setDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import type { Banner, OnboardingSlide } from '../types';
 
 interface MobileControlPageProps {
@@ -35,7 +37,106 @@ export default function MobileControlPage({
   onDeleteOnboardingSlide,
   showToast,
 }: MobileControlPageProps) {
-  const [activeTab, setActiveTab] = useState<'onboarding' | 'banners' | 'broadcast'>('onboarding');
+  const [activeTab, setActiveTab] = useState<'onboarding' | 'banners' | 'broadcast' | 'fssai-social' | 'popup-ad' | 'help-desk'>('onboarding');
+
+  // FSSAI & Social Links State
+  const [fssaiNumber, setFssaiNumber] = useState('12423999000123');
+  const [instagramUrl, setInstagramUrl] = useState('https://instagram.com/milkylush');
+  const [youtubeUrl, setYoutubeUrl] = useState('https://youtube.com/@milkylush');
+  const [facebookUrl, setFacebookUrl] = useState('https://facebook.com/milkylush');
+  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919876543210');
+
+  // Pop-up Offer Ad State
+  const [popupActive, setPopupActive] = useState(true);
+  const [popupTitle, setPopupTitle] = useState('Special Morning Milk Offer 🥛');
+  const [popupSubtitle, setPopupSubtitle] = useState('Subscribe today to get 20% Extra off on 30-Day Glass Bottle Packs!');
+  const [popupImageUrl, setPopupImageUrl] = useState('https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800');
+  const [popupCtaText, setPopupCtaText] = useState('Subscribe Now →');
+  const [popupHubScope, setPopupHubScope] = useState('all');
+  const [popupTimerSeconds, setPopupTimerSeconds] = useState(3);
+
+  // Help & Support Desk State
+  const [helpPhone, setHelpPhone] = useState('+91 99028 82332');
+  const [helpWhatsapp, setHelpWhatsapp] = useState('+91 99028 82332');
+  const [helpEmail, setHelpEmail] = useState('milkylushorganic@gmail.com');
+  const [helpAddress, setHelpAddress] = useState('Off Hosur Road, Near Electronic City, Bangalore - 560100');
+  const [helpFaqs, setHelpFaqs] = useState<{ id: string; question: string; answer: string }[]>([
+    {
+      id: 'faq_1',
+      question: 'What are the daily delivery slots?',
+      answer: 'Our fresh milk drops occur every morning between 05:00 AM and 07:00 AM. Any subscription modifications must be saved before 8:30 PM the previous night.'
+    },
+    {
+      id: 'faq_2',
+      question: 'How do glass bottle returns work?',
+      answer: 'Simply rinse your empty glass bottles and leave them outside your door. Our delivery partner collects them during sunrise drops, crediting eco points to your account.'
+    },
+    {
+      id: 'faq_3',
+      question: 'Can I pause my subscription when traveling?',
+      answer: 'Yes! You can pause or resume your daily milk subscription anytime from the Subscriptions tab without extra charges.'
+    }
+  ]);
+
+  const [newFaqQuestion, setNewFaqQuestion] = useState('');
+  const [newFaqAnswer, setNewFaqAnswer] = useState('');
+
+  // Load Firestore configurations
+  useEffect(() => {
+    const loadConfigs = async () => {
+      try {
+        const appDoc = await getDoc(doc(db, 'settings', 'mobile_app'));
+        if (appDoc.exists()) {
+          const data = appDoc.data();
+          if (data.fssaiNumber) setFssaiNumber(data.fssaiNumber);
+          if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
+          if (data.youtubeUrl) setYoutubeUrl(data.youtubeUrl);
+          if (data.facebookUrl) setFacebookUrl(data.facebookUrl);
+          if (data.whatsappUrl) setWhatsappUrl(data.whatsappUrl);
+        }
+
+        const popupDoc = await getDoc(doc(db, 'settings', 'popup_ad'));
+        if (popupDoc.exists()) {
+          const p = popupDoc.data();
+          if (p.active !== undefined) setPopupActive(p.active);
+          if (p.title) setPopupTitle(p.title);
+          if (p.subtitle) setPopupSubtitle(p.subtitle);
+          if (p.imageUrl) setPopupImageUrl(p.imageUrl);
+          if (p.ctaText) setPopupCtaText(p.ctaText);
+          if (p.hubScope) setPopupHubScope(p.hubScope);
+          if (p.autoCloseSeconds !== undefined) setPopupTimerSeconds(p.autoCloseSeconds);
+        }
+
+        const helpDoc = await getDoc(doc(db, 'settings', 'help_support'));
+        if (helpDoc.exists()) {
+          const h = helpDoc.data();
+          if (h.phone) setHelpPhone(h.phone);
+          if (h.whatsapp) setHelpWhatsapp(h.whatsapp);
+          if (h.email) setHelpEmail(h.email);
+          if (h.address !== undefined) setHelpAddress(h.address);
+          if (h.faqs && Array.isArray(h.faqs)) setHelpFaqs(h.faqs);
+        }
+
+        const broadcastsSnap = await getDocs(collection(db, 'broadcasts'));
+        const loadedCampaigns: CampaignLog[] = broadcastsSnap.docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            title: data.title || 'Broadcast',
+            target: data.target || 'All Users',
+            type: data.type || 'Offer',
+            recipients: data.recipients || 1,
+            sentAt: data.sentAt ? new Date(data.sentAt).toLocaleString() : 'Just Now',
+            bodyPreview: data.bodyPreview || data.body || '',
+          };
+        });
+        setCampaignHistory(loadedCampaigns);
+      } catch (err) {
+        console.error('Error loading mobile settings:', err);
+      }
+    };
+    loadConfigs();
+  }, []);
 
   // Internal state for banners & slides directly synced with Firestore snapshots
   const [localSlides, setLocalSlides] = useState<OnboardingSlide[]>(onboardingSlides || []);
@@ -161,34 +262,155 @@ export default function MobileControlPage({
     showToast('Banner deleted.', 'info');
   };
 
-  // Broadcast Handler
-  const handleSendBroadcast = (e: React.FormEvent) => {
+  // Broadcast Handler (Writes live notification documents to Firestore for mobile system push bar)
+  const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastTitle.trim() || !broadcastBody.trim()) {
       showToast('Please fill out both Headline Title and Message Body.', 'error');
       return;
     }
 
-    const newLog: CampaignLog = {
-      id: `cmp_${Date.now()}`,
-      title: broadcastTitle.trim(),
-      target: targetAudience,
-      type: alertCategory === 'Special Offer' ? 'Offer' : 'Wishes & Info',
-      recipients: targetAudience.includes('Single User') ? 1 : 4,
-      sentAt: new Date().toLocaleString(),
-      bodyPreview: broadcastBody.trim()
-    };
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const notifType = alertCategory === 'Special Offer' ? 'offer' : 'general';
+      const now = new Date();
 
-    setCampaignHistory([newLog, ...campaignHistory]);
-    showToast(`Broadcast notification "${broadcastTitle}" sent to mobile app users! 🚀`, 'success');
-    setBroadcastTitle('');
-    setBroadcastBody('');
+      let recipientCount = 0;
+      for (const userDoc of usersSnap.docs) {
+        const notifRef = doc(collection(db, 'users', userDoc.id, 'notifications'));
+        await setDoc(notifRef, {
+          title: broadcastTitle.trim(),
+          body: broadcastBody.trim(),
+          type: notifType,
+          timestamp: now,
+          isRead: false
+        });
+        recipientCount++;
+      }
+
+      const campaignId = `cmp_${Date.now()}`;
+      await setDoc(doc(db, 'broadcasts', campaignId), {
+        id: campaignId,
+        title: broadcastTitle.trim(),
+        bodyPreview: broadcastBody.trim(),
+        target: targetAudience,
+        type: alertCategory === 'Special Offer' ? 'Offer' : 'Wishes & Info',
+        recipients: recipientCount || 1,
+        sentAt: now.toISOString()
+      });
+
+      const newLog: CampaignLog = {
+        id: campaignId,
+        title: broadcastTitle.trim(),
+        target: targetAudience,
+        type: alertCategory === 'Special Offer' ? 'Offer' : 'Wishes & Info',
+        recipients: recipientCount || 1,
+        sentAt: now.toLocaleString(),
+        bodyPreview: broadcastBody.trim()
+      };
+
+      setCampaignHistory([newLog, ...campaignHistory]);
+      showToast(`Broadcast notification "${broadcastTitle}" pushed live to ${recipientCount || 1} mobile app notification bar(s)! 🚀`, 'success');
+      setBroadcastTitle('');
+      setBroadcastBody('');
+    } catch (err) {
+      console.error('Error sending broadcast:', err);
+      showToast(`Error sending broadcast notification: ${err}`, 'error');
+    }
+  };
+
+  const handleDeleteBroadcast = async (campaignId: string) => {
+    try {
+      await deleteDoc(doc(db, 'broadcasts', campaignId));
+      setCampaignHistory(prev => prev.filter(c => c.id !== campaignId));
+      showToast('Broadcast campaign log deleted.', 'info');
+    } catch (err) {
+      console.error('Error deleting broadcast campaign:', err);
+      showToast(`Error deleting campaign log: ${err}`, 'error');
+    }
+  };
+
+  // FSSAI & Social Media Save Handler
+  const handleSaveSocialFssai = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'settings', 'mobile_app'), {
+        fssaiNumber,
+        instagramUrl,
+        youtubeUrl,
+        facebookUrl,
+        whatsappUrl,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      showToast('FSSAI & Social Links saved successfully!', 'success');
+    } catch (err) {
+      showToast(`Error saving settings: ${err}`, 'error');
+    }
+  };
+
+  // Pop-up Offer Ad Save Handler
+  const handleSavePopupAd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'settings', 'popup_ad'), {
+        active: popupActive,
+        title: popupTitle,
+        subtitle: popupSubtitle,
+        imageUrl: popupImageUrl,
+        ctaText: popupCtaText,
+        hubScope: popupHubScope,
+        autoCloseSeconds: popupTimerSeconds,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      showToast('Home Screen Pop-up Offer Ad updated live for customer app!', 'success');
+    } catch (err) {
+      showToast(`Error saving pop-up offer ad: ${err}`, 'error');
+    }
+  };
+
+  // Help & Support Desk Handler
+  const handleSaveHelpSupport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'settings', 'help_support'), {
+        phone: helpPhone,
+        whatsapp: helpWhatsapp,
+        email: helpEmail,
+        address: helpAddress,
+        faqs: helpFaqs,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      showToast('Help & Support Desk settings & FAQs saved live!', 'success');
+    } catch (err) {
+      showToast(`Error saving Help & Support settings: ${err}`, 'error');
+    }
+  };
+
+  const handleAddFaq = () => {
+    if (!newFaqQuestion.trim() || !newFaqAnswer.trim()) {
+      showToast('Please enter both Question and Answer.', 'error');
+      return;
+    }
+    const newFaq = {
+      id: `faq_${Date.now()}`,
+      question: newFaqQuestion.trim(),
+      answer: newFaqAnswer.trim()
+    };
+    setHelpFaqs([...helpFaqs, newFaq]);
+    setNewFaqQuestion('');
+    setNewFaqAnswer('');
+    showToast('New FAQ added.', 'info');
+  };
+
+  const handleDeleteFaq = (id: string) => {
+    setHelpFaqs(helpFaqs.filter(f => f.id !== id));
+    showToast('FAQ deleted.', 'info');
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       
-      {/* Sub-Navigation Header Pills matching Screenshots 1, 3, 5 */}
+      {/* Sub-Navigation Header Pills */}
       <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <button
           onClick={() => setActiveTab('onboarding')}
@@ -248,6 +470,66 @@ export default function MobileControlPage({
           }}
         >
           <Bell size={16} /> Broadcast Push Alerts
+        </button>
+
+        <button
+          onClick={() => setActiveTab('fssai-social')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '0.6rem 1.25rem',
+            borderRadius: '12px',
+            border: activeTab === 'fssai-social' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
+            backgroundColor: activeTab === 'fssai-social' ? '#ECFDF5' : '#FFFFFF',
+            color: activeTab === 'fssai-social' ? '#047857' : '#374151',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'fssai-social' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
+          }}
+        >
+          <ShieldCheck size={16} /> FSSAI &amp; Social Links
+        </button>
+
+        <button
+          onClick={() => setActiveTab('popup-ad')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '0.6rem 1.25rem',
+            borderRadius: '12px',
+            border: activeTab === 'popup-ad' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
+            backgroundColor: activeTab === 'popup-ad' ? '#ECFDF5' : '#FFFFFF',
+            color: activeTab === 'popup-ad' ? '#047857' : '#374151',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'popup-ad' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
+          }}
+        >
+          <Sparkles size={16} /> Pop-up Offer Ad Screen
+        </button>
+
+        <button
+          onClick={() => setActiveTab('help-desk')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '0.6rem 1.25rem',
+            borderRadius: '12px',
+            border: activeTab === 'help-desk' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
+            backgroundColor: activeTab === 'help-desk' ? '#ECFDF5' : '#FFFFFF',
+            color: activeTab === 'help-desk' ? '#047857' : '#374151',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'help-desk' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
+          }}
+        >
+          <Headphones size={16} /> Help &amp; Support Desk
         </button>
       </div>
 
@@ -568,11 +850,21 @@ export default function MobileControlPage({
                       outline: 'none'
                     }}
                   >
-                    <option value="All Registered Users (4 customers)">📢 All Registered Users (4 customers)</option>
-                    <option value="Single User 👤">👤 Single User</option>
-                    <option value="Active Subscribers Only">📅 Active Subscribers Only</option>
-                    <option value="Hosur Hub Only">📍 Hosur Hub Only</option>
-                    <option value="Bangalore Hub Only">📍 Bangalore Hub Only</option>
+                    {selectedHubId.includes('hosur') ? (
+                      <>
+                        <option value="All Registered Users (Hosur)">📢 All Registered Users (Hosur Hub)</option>
+                        <option value="Hosur Hub Only">📍 Hosur Hub Only</option>
+                        <option value="Single User 👤">👤 Single User</option>
+                        <option value="Active Subscribers Only">📅 Active Subscribers Only</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="All Registered Users (Bangalore)">📢 All Registered Users (Bangalore Hub)</option>
+                        <option value="Bangalore Hub Only">📍 Bangalore Hub Only</option>
+                        <option value="Single User 👤">👤 Single User</option>
+                        <option value="Active Subscribers Only">📅 Active Subscribers Only</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -798,6 +1090,7 @@ export default function MobileControlPage({
                     <th style={{ padding: '0.85rem 1rem' }}>RECIPIENTS</th>
                     <th style={{ padding: '0.85rem 1rem' }}>SENT DATE &amp; TIME</th>
                     <th style={{ padding: '0.85rem 1rem' }}>MESSAGE BODY PREVIEW</th>
+                    <th style={{ padding: '0.85rem 1rem', textTransform: 'uppercase' }}>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -827,8 +1120,29 @@ export default function MobileControlPage({
                       <td style={{ color: '#6B7280', padding: '0.85rem 1rem' }}>
                         {log.sentAt}
                       </td>
-                      <td style={{ color: '#6B7280', padding: '0.85rem 1rem', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <td style={{ color: '#6B7280', padding: '0.85rem 1rem', maxWidth: '260px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {log.bodyPreview}
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <button
+                          onClick={() => handleDeleteBroadcast(log.id)}
+                          title="Delete Campaign Log"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            backgroundColor: '#FEE2E2',
+                            color: '#DC2626',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={13} /> Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -837,6 +1151,605 @@ export default function MobileControlPage({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* TAB 4: FSSAI & SOCIAL LINKS CONTROL */}
+      {activeTab === 'fssai-social' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={22} style={{ color: '#047857' }} /> Customer Mobile App FSSAI &amp; Social Links Manager
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
+              Update the FSSAI License number and official social media channel links (Instagram, YouTube, Facebook, WhatsApp) shown on the Customer App Profile screen footer.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+            {/* Form */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
+              <form onSubmit={handleSaveSocialFssai} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    FSSAI License Number
+                  </label>
+                  <input
+                    type="text"
+                    value={fssaiNumber}
+                    onChange={(e) => setFssaiNumber(e.target.value)}
+                    placeholder="e.g. 12423999000123"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    Instagram Page URL
+                  </label>
+                  <input
+                    type="text"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="https://instagram.com/milkylush"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    YouTube Channel URL
+                  </label>
+                  <input
+                    type="text"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="https://youtube.com/@milkylush"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    Facebook Page URL
+                  </label>
+                  <input
+                    type="text"
+                    value={facebookUrl}
+                    onChange={(e) => setFacebookUrl(e.target.value)}
+                    placeholder="https://facebook.com/milkylush"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    WhatsApp Customer Care Link
+                  </label>
+                  <input
+                    type="text"
+                    value={whatsappUrl}
+                    onChange={(e) => setWhatsappUrl(e.target.value)}
+                    placeholder="https://wa.me/919876543210"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#047857',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '0.5rem'
+                  }}
+                >
+                  <Save size={16} /> Save FSSAI &amp; Social Links
+                </button>
+              </form>
+            </div>
+
+            {/* Live Mobile Profile Footer Preview */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '2px dashed #047857', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
+                App Profile Footer Live Preview
+              </div>
+
+              <div style={{ backgroundColor: '#FAFAFA', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
+                {/* FSSAI Official Logo Emblem Badge */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', padding: '6px 14px', borderRadius: '14px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 900, fontStyle: 'italic', fontFamily: 'serif', color: '#1E3A8A', letterSpacing: '-0.5px' }}>
+                    fssa<span style={{ color: '#EA580C' }}>i</span>
+                  </div>
+                  <div style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#64748B' }}>Food Safety License</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F3A2C' }}>Lic No. {fssaiNumber || '12423999000123'}</div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4B5563' }}>
+                  Connect with MilkyLush
+                </div>
+
+                {/* Social Icons Row matching App Theme */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '1.2px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#0F3A2C' }}>📸</div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '1.2px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#0F3A2C' }}>▶️</div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '1.2px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#0F3A2C' }}>📘</div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '1.2px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#0F3A2C' }}>💬</div>
+                </div>
+
+                <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.5rem' }}>
+                  MilkyLush Organic Farms &amp; Pure Glass Bottle Delivery v2.4.0
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: POP-UP OFFER AD SCREEN */}
+      {activeTab === 'popup-ad' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={22} style={{ color: '#047857' }} /> Home Screen In-App Pop-up Offer Ad Manager
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
+              Manage promotional dialog ads shown when users open the customer mobile app home screen. Supports timed auto-close (3s) or manual dismiss.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+            {/* Left Form Panel */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
+              <form onSubmit={handleSavePopupAd} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                
+                {/* Active Toggle Switch */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', backgroundColor: popupActive ? '#ECFDF5' : '#F9FAFB', borderRadius: '12px', border: popupActive ? '1px solid #A7F3D0' : '1px solid #E5E7EB' }}>
+                  <div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: popupActive ? '#047857' : '#374151' }}>
+                      Pop-up Offer Ad Status: {popupActive ? 'ACTIVE (LIVE)' : 'DISABLED'}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                      Show offer dialog on app start
+                    </div>
+                  </div>
+
+                  <input
+                    type="checkbox"
+                    checked={popupActive}
+                    onChange={(e) => setPopupActive(e.target.checked)}
+                    style={{ width: '20px', height: '20px', accentColor: '#047857', cursor: 'pointer' }}
+                  />
+                </div>
+
+                {/* Offer Title */}
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    Offer Dialog Title
+                  </label>
+                  <input
+                    type="text"
+                    value={popupTitle}
+                    onChange={(e) => setPopupTitle(e.target.value)}
+                    placeholder="e.g. Special Morning Milk Offer 🥛"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                {/* Offer Subtitle / Details */}
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    Subtitle / Promotional Details
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={popupSubtitle}
+                    onChange={(e) => setPopupSubtitle(e.target.value)}
+                    placeholder="e.g. Subscribe today to get 20% Extra off on 30-Day Glass Bottle Packs!"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                {/* Promo Image URL */}
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    Pop-up Offer Image URL
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      value={popupImageUrl}
+                      onChange={(e) => setPopupImageUrl(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      style={{ flex: 1, padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.82rem', outline: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => showToast('Selected offer image.', 'info')}
+                      style={{ padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                    >
+                      📷 Choose
+                    </button>
+                  </div>
+                </div>
+
+                {/* CTA Button Text (Optional) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                      CTA Button Text (Optional)
+                    </label>
+                    <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>Leave blank to hide button</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={popupCtaText}
+                    onChange={(e) => setPopupCtaText(e.target.value)}
+                    placeholder="e.g. Subscribe Now → (Leave blank to hide button)"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                {/* 2-Column Row: Auto-close timer */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                      Auto-close Timer
+                    </label>
+                    <select
+                      value={popupTimerSeconds}
+                      onChange={(e) => setPopupTimerSeconds(parseInt(e.target.value))}
+                      style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', backgroundColor: '#FFFFFF', outline: 'none' }}
+                    >
+                      <option value={3}>3 Seconds (Recommended)</option>
+                      <option value={5}>5 Seconds</option>
+                      <option value={10}>10 Seconds</option>
+                      <option value={0}>0s (No timer, manual close only)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#047857',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '0.5rem'
+                  }}
+                >
+                  <Save size={16} /> Save Pop-up Offer Settings
+                </button>
+              </form>
+            </div>
+
+            {/* Right Interactive Mobile Screen Mockup Preview */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '2px dashed #047857', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827', width: '100%', textAlign: 'left' }}>
+                Live Pop-up Offer Ad Screen Preview
+              </div>
+
+              {/* Mobile Phone Mockup Box */}
+              <div style={{
+                width: '280px',
+                height: '480px',
+                borderRadius: '32px',
+                backgroundColor: '#1F2937',
+                padding: '12px',
+                boxShadow: '0 12px 30px rgba(0,0,0,0.15)',
+                position: 'relative'
+              }}>
+                {/* Phone Inner Screen Area */}
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '24px',
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                  position: 'relative'
+                }}>
+                  
+                  {/* Pop-up Offer Modal Box inside Mobile Screen */}
+                  <div style={{
+                    width: '100%',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                    position: 'relative',
+                    textAlign: 'center'
+                  }}>
+                    {/* Close Button X */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      color: '#FFFFFF',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 10
+                    }}>
+                      ✕
+                    </div>
+
+                    {/* Timer Badge (Timer-only count) */}
+                    {popupTimerSeconds > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        backgroundColor: '#FEF3C7',
+                        color: '#92400E',
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        zIndex: 10
+                      }}>
+                        {popupTimerSeconds}s
+                      </div>
+                    )}
+
+                    {/* Banner Image */}
+                    <div style={{ width: '100%', height: '120px', backgroundColor: '#F3F4F6' }}>
+                      <img src={popupImageUrl} alt="Offer" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+
+                    {/* Content */}
+                    <div style={{ padding: '0.85rem' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                        {popupTitle || 'Special Offer Title'}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '4px', lineHeight: '1.3' }}>
+                        {popupSubtitle || 'Offer description text goes here.'}
+                      </div>
+
+                      {/* Optional CTA Button */}
+                      {popupCtaText.trim() && (
+                        <button style={{
+                          marginTop: '10px',
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: '10px',
+                          backgroundColor: '#047857',
+                          color: '#FFFFFF',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          border: 'none'
+                        }}>
+                          {popupCtaText}
+                        </button>
+                      )}
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: HELP & SUPPORT DESK */}
+      {activeTab === 'help-desk' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Headphones size={22} style={{ color: '#047857' }} /> Help &amp; Support Desk Management
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
+              Configure customer care contact channels (Phone, WhatsApp, Email, Location) and dynamic FAQs displayed in the customer mobile app.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+            {/* LEFT COLUMN: Support Contact Channels */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', marginTop: 0, marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.5rem' }}>
+                📞 Support Contact Channels
+              </h3>
+
+              <form onSubmit={handleSaveHelpSupport} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    Customer Helpline Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={helpPhone}
+                    onChange={(e) => setHelpPhone(e.target.value)}
+                    placeholder="e.g. +91 99028 82332"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    Support WhatsApp Number
+                  </label>
+                  <input
+                    type="text"
+                    value={helpWhatsapp}
+                    onChange={(e) => setHelpWhatsapp(e.target.value)}
+                    placeholder="e.g. +91 99028 82332"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    Customer Support Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={helpEmail}
+                    onChange={(e) => setHelpEmail(e.target.value)}
+                    placeholder="e.g. milkylushorganic@gmail.com"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    Office Address / Hub Location (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={helpAddress}
+                    onChange={(e) => setHelpAddress(e.target.value)}
+                    placeholder="Leave empty if location card should be hidden"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                  <span style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '2px', display: 'block' }}>
+                    If left blank, the office location card will be hidden in the mobile app.
+                  </span>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#047857',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '0.5rem'
+                  }}
+                >
+                  <Save size={16} /> Save Support Contact Details
+                </button>
+              </form>
+            </div>
+
+            {/* RIGHT COLUMN: Manage Dynamic FAQs */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', marginTop: 0, marginBottom: 0, borderBottom: '1px solid #F3F4F6', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <HelpCircle size={18} style={{ color: '#047857' }} /> Manage Frequently Asked Questions (FAQs)
+              </h3>
+
+              {/* Add New FAQ Form */}
+              <div style={{ backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '12px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>
+                  + Add New FAQ Item
+                </span>
+                
+                <input
+                  type="text"
+                  placeholder="Question (e.g. What are the delivery slots?)"
+                  value={newFaqQuestion}
+                  onChange={(e) => setNewFaqQuestion(e.target.value)}
+                  style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', outline: 'none' }}
+                />
+
+                <textarea
+                  rows={2}
+                  placeholder="Answer explanation text..."
+                  value={newFaqAnswer}
+                  onChange={(e) => setNewFaqAnswer(e.target.value)}
+                  style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', outline: 'none' }}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleAddFaq}
+                  style={{
+                    alignSelf: 'flex-start',
+                    padding: '0.55rem 1rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#047857',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Plus size={14} /> Add FAQ to List
+                </button>
+              </div>
+
+              {/* Existing FAQs List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '380px', overflowY: 'auto' }}>
+                {helpFaqs.map((faq, idx) => (
+                  <div key={faq.id} style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.85rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>
+                        {idx + 1}. {faq.question}
+                      </span>
+                      <span style={{ fontSize: '0.78rem', color: '#4B5563', lineHeight: '1.4' }}>
+                        {faq.answer}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFaq(faq.id)}
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: '#FEE2E2',
+                        color: '#DC2626',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

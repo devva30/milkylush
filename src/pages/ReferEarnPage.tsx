@@ -237,12 +237,41 @@ export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
     }
   };
 
-  const handleShareCode = (code: string) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(code);
-      showToast?.(`Copied promo code '${code}' to clipboard!`, 'success');
-    } else {
-      showToast?.(`Promo code: ${code}`, 'info');
+  const handleShareCode = async (code: string) => {
+    const shareText = `Use promo code '${code}' on MilkyLush to get instant discounts on pure farm-fresh milk & dairy products!`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'MilkyLush Promo Code',
+          text: shareText,
+        });
+        showToast?.(`Shared promo code '${code}'!`, 'success');
+        return;
+      }
+    } catch (e) {
+      // User cancelled or share API error, fallback to clipboard
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code);
+        showToast?.(`Copied promo code '${code}' to clipboard! 📋`, 'success');
+        return;
+      }
+    } catch (e) {
+      // Fallback for non-secure origin
+    }
+
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = code;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      showToast?.(`Copied promo code '${code}' to clipboard! 📋`, 'success');
+    } catch (e) {
+      showToast?.(`Promo Code: ${code}`, 'info');
     }
   };
 

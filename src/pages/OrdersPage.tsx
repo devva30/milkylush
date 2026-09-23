@@ -589,9 +589,32 @@ export default function OrdersPage({
                 const u = users.find((usr) => usr.id === o.userId);
                 const isSub = o.isSubscriptionDelivery || o.orderType === 'subscription';
                 const customerName = u?.name || 'Customer';
-                const rawAddr = o.address || o.deliveryAddress;
-                const isValidAddr = rawAddr && rawAddr !== 'Doorstep Delivery' && rawAddr !== 'Doorstep';
-                const displayAddress = isValidAddr ? rawAddr : (u?.address || u?.savedAddresses?.[0] || 'Address Pending');
+                let displayAddress = o.address || o.deliveryAddress || '';
+                const isExplicitValid = displayAddress && displayAddress.length > 5 && !displayAddress.startsWith('Doorstep') && !displayAddress.startsWith('Hub Area');
+                if (!isExplicitValid && u) {
+                  if (u.savedAddresses && u.savedAddresses.length > 0) {
+                    const activeIdx = u.activeAddressIndex ?? (u.savedAddresses.length - 1);
+                    const activeAddr = u.savedAddresses[activeIdx];
+                    if (activeAddr && activeAddr.length > 5) {
+                      const isAddrHosur = activeAddr.toLowerCase().includes('hosur') || activeAddr.toLowerCase().includes('tamil nadu') || activeAddr.toLowerCase().includes('tn');
+                      if (isHosur === isAddrHosur || u.savedAddresses.length === 1) {
+                        displayAddress = activeAddr;
+                      }
+                    }
+                    if (!displayAddress) {
+                      const matched = u.savedAddresses.find(a => {
+                        const isH = a.toLowerCase().includes('hosur') || a.toLowerCase().includes('tamil nadu') || a.toLowerCase().includes('tn');
+                        return isHosur ? isH : !isH;
+                      });
+                      displayAddress = matched || u.savedAddresses[0];
+                    }
+                  } else if (u.address && u.address.length > 5) {
+                    displayAddress = u.address;
+                  }
+                }
+                if (!displayAddress || displayAddress.startsWith('Doorstep')) {
+                  displayAddress = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+                }
 
                 const productsText = o.items && o.items.length > 0
                   ? o.items.map((i) => `${i.product?.name || 'Milk Product'} - ${i.product?.unit || '500ml'} (x${i.quantity})`).join(', ')

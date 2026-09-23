@@ -18,9 +18,6 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
 
   const [fcmKey, setFcmKey] = useState(() => localStorage.getItem('fcm_server_key') || '');
   const [emailWebhook, setEmailWebhook] = useState(() => localStorage.getItem('email_webhook_url') || '');
-  const [getgabsApiKey, setGetgabsApiKey] = useState(() => localStorage.getItem('GETGABS_API_KEY') || '');
-  const [getgabsTemplate, setGetgabsTemplate] = useState(() => localStorage.getItem('GETGABS_WELCOME_TEMPLATE') || 'milkylush_welcome');
-  const [getgabsSender, setGetgabsSender] = useState(() => localStorage.getItem('GETGABS_SENDER_NUMBER') || '919902882332');
 
   // Edit Profile Modal state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -32,9 +29,6 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
     e.preventDefault();
     localStorage.setItem('fcm_server_key', fcmKey);
     localStorage.setItem('email_webhook_url', emailWebhook);
-    localStorage.setItem('GETGABS_API_KEY', getgabsApiKey);
-    localStorage.setItem('GETGABS_WELCOME_TEMPLATE', getgabsTemplate);
-    localStorage.setItem('GETGABS_SENDER_NUMBER', getgabsSender);
     showToast('System preferences & API credentials saved successfully!', 'success');
   };
 
@@ -256,64 +250,6 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                 onChange={(e) => setEmailWebhook(e.target.value)}
                 style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
               />
-            </div>
-
-            {/* Getgabs WhatsApp Integration */}
-            <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '1rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                💬 Getgabs WhatsApp Auto-Greeting
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                    Getgabs API Key
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Your Getgabs API Key"
-                    value={getgabsApiKey}
-                    onChange={(e) => setGetgabsApiKey(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                    Welcome Template Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. milkylush_welcome"
-                    value={getgabsTemplate}
-                    onChange={(e) => setGetgabsTemplate(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                  <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '4px' }}>
-                    Must match your approved template name in Getgabs dashboard exactly (e.g. 7days_free_milk or milkylush_welcome).
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                    Registered WhatsApp Sender Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 919902882332"
-                    value={getgabsSender}
-                    onChange={(e) => setGetgabsSender(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                  <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '4px' }}>
-                    Your official business WhatsApp number registered in your Getgabs account (e.g. 919902882332).
-                  </div>
-                </div>
-
-                <div style={{ backgroundColor: '#ECFDF5', borderRadius: '10px', padding: '0.75rem', border: '1px solid #A7F3D0', fontSize: '0.78rem', color: '#065F46' }}>
-                  ✅ <strong>Auto-Greeting Active:</strong> When a new customer signs up via the MilkyLush mobile app and the admin panel is open, a WhatsApp welcome message will be sent automatically via Getgabs.
-                </div>
-              </div>
             </div>
 
             <button

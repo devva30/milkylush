@@ -3,12 +3,13 @@ import { BarChart2, Plus, TrendingUp, Edit3, Trash2, RefreshCw } from 'lucide-re
 import { setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logAdminAuditAction } from '../utils/auditLogger';
-import type { Subscription, PrepaidPackage } from '../types';
+import type { Subscription, PrepaidPackage, Product } from '../types';
 
 interface ManageSubscriptionsPageProps {
   selectedHubId: string;
   subscriptions: Subscription[];
   prepaidPackages?: PrepaidPackage[];
+  products?: Product[];
   adminUsername?: string;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -28,6 +29,7 @@ interface ExpiringSubscription {
 export default function ManageSubscriptionsPage({
   selectedHubId,
   prepaidPackages: initialPackages,
+  products = [],
   adminUsername,
   showToast,
 }: ManageSubscriptionsPageProps) {
@@ -52,9 +54,25 @@ export default function ManageSubscriptionsPage({
   const [pkgOrder, setPkgOrder] = useState('1');
   const [pkgRecommended, setPkgRecommended] = useState(false);
   const [pkgActive, setPkgActive] = useState(true);
+  const [pkgHubId, setPkgHubId] = useState('all');
+  const [pkgProductId, setPkgProductId] = useState('all');
 
   const isHosur = selectedHubId === 'hub_hosur_main';
   const hubCodeName = isHosur ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub';
+
+  // Filter products to list ONLY subscription-enabled products for subscription packages
+  const subscriptionProducts = useMemo(() => {
+    return products.filter((p) => p.isSubscriptionEnabled);
+  }, [products]);
+
+  // Filter package list by current active admin hub
+  const displayedPackages = useMemo(() => {
+    return prepaidPackages.filter((pkg) => {
+      if (!pkg.hubId || pkg.hubId === 'all') return true;
+      if (selectedHubId && pkg.hubId !== selectedHubId) return false;
+      return true;
+    });
+  }, [prepaidPackages, selectedHubId]);
 
   const handleOpenAddPackage = () => {
     setEditingPackage(null);
@@ -65,6 +83,8 @@ export default function ManageSubscriptionsPage({
     setPkgOrder(String(prepaidPackages.length + 1));
     setPkgRecommended(false);
     setPkgActive(true);
+    setPkgHubId(selectedHubId || 'all');
+    setPkgProductId('all');
     setIsPackageModalOpen(true);
   };
 
@@ -77,6 +97,8 @@ export default function ManageSubscriptionsPage({
     setPkgOrder(String(pkg.displayOrder));
     setPkgRecommended(!!pkg.isRecommended);
     setPkgActive(pkg.isActive ?? true);
+    setPkgHubId(pkg.hubId || 'all');
+    setPkgProductId(pkg.productId || 'all');
     setIsPackageModalOpen(true);
   };
 
@@ -85,6 +107,10 @@ export default function ManageSubscriptionsPage({
       showToast('Please enter a package title', 'error');
       return;
     }
+
+    const selectedProduct = products.find((p) => p.id === pkgProductId);
+    const selProductName = pkgProductId === 'all' ? 'All Products' : selectedProduct ? selectedProduct.name : '';
+
     const newPkg: PrepaidPackage = {
       id: editingPackage ? editingPackage.id : `pkg_${Date.now()}`,
       name: pkgTitle,
@@ -96,7 +122,9 @@ export default function ManageSubscriptionsPage({
       displayOrder: parseInt(pkgOrder) || 1,
       isRecommended: pkgRecommended,
       isActive: pkgActive,
-      hubId: selectedHubId,
+      hubId: pkgHubId,
+      productId: pkgProductId,
+      productName: selProductName,
     };
 
     if (editingPackage) {
@@ -122,6 +150,8 @@ export default function ManageSubscriptionsPage({
         active: newPkg.isActive,
         isActive: newPkg.isActive,
         hubId: newPkg.hubId || 'all',
+        productId: newPkg.productId || 'all',
+        productName: newPkg.productName || 'All Products',
       };
       await setDoc(doc(db, 'subscription_plans', newPkg.id), planData);
       await setDoc(doc(db, 'prepaid_packages', newPkg.id), newPkg);
@@ -130,7 +160,7 @@ export default function ManageSubscriptionsPage({
         'tomadmin@gmail.com',
         'Super Admin',
         'Catalog & Pricing',
-        `Saved Prepaid Package "${newPkg.title}" (${newPkg.durationDays} Days, ${newPkg.discountPercent}% OFF)`,
+        `Saved Prepaid Package "${newPkg.title}" (${newPkg.durationDays} Days, ${newPkg.discountPercent}% OFF, Hub: ${newPkg.hubId}, Product: ${selProductName || 'All'})`,
         `Prepaid Package #${newPkg.id}`,
         newPkg,
         selectedHubId
@@ -335,13 +365,13 @@ export default function ManageSubscriptionsPage({
           </div>
 
           <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 10px', borderRadius: '12px' }}>
-            {prepaidPackages.filter((p: PrepaidPackage) => p.isActive).length} Active Checkout Packages
+            {displayedPackages.filter((p: PrepaidPackage) => p.isActive).length} Active Checkout Packages ({hubCodeName})
           </span>
         </div>
 
         {/* Packages Cards Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.1rem' }}>
-          {prepaidPackages.map((pkg: PrepaidPackage) => (
+          {displayedPackages.map((pkg: PrepaidPackage) => (
             <div
               key={pkg.id}
               style={{
@@ -394,6 +424,31 @@ export default function ManageSubscriptionsPage({
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', marginTop: '0.35rem' }}>
                   <span>Duration: <strong>{pkg.durationDays} Days</strong></span>
                   <span>Discount: <strong>{pkg.discountPercent || 0}% OFF</strong></span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    backgroundColor: '#F3F4F6',
+                    color: '#374151',
+                    padding: '2px 7px',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E7EB'
+                  }}>
+                    🏢 Hub: {pkg.hubId === 'hub_hosur_main' ? 'Hosur' : pkg.hubId === 'hub_blr_ecity' ? 'Bangalore E-City' : 'All Hubs (Global)'}
+                  </span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    backgroundColor: '#EFF6FF',
+                    color: '#1D4ED8',
+                    padding: '2px 7px',
+                    borderRadius: '6px',
+                    border: '1px solid #BFDBFE'
+                  }}>
+                    🥛 Product: {pkg.productName || (pkg.productId && pkg.productId !== 'all' ? pkg.productId : 'All Products')}
+                  </span>
                 </div>
 
                 <div style={{ fontSize: '0.74rem', color: pkg.isActive ? '#047857' : '#DC2626', fontWeight: 700, marginTop: '0.5rem' }}>
@@ -692,6 +747,36 @@ export default function ManageSubscriptionsPage({
                     onChange={(e) => setPkgDiscount(e.target.value)}
                     style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.82rem', outline: 'none' }}
                   />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Target Operating Hub</label>
+                  <select
+                    value={pkgHubId}
+                    onChange={(e) => setPkgHubId(e.target.value)}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.82rem', outline: 'none', color: 'var(--text-main)' }}
+                  >
+                    <option value="all">🌐 All Hubs (Global)</option>
+                    <option value="hub_hosur_main">🏢 Hosur Central Hub</option>
+                    <option value="hub_blr_ecity">🏢 Bangalore Electronic City Hub</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Target Specific Product</label>
+                  <select
+                    value={pkgProductId}
+                    onChange={(e) => setPkgProductId(e.target.value)}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.82rem', outline: 'none', color: 'var(--text-main)' }}
+                  >
+                    <option value="all">🥛 All Subscription Products (Global Default)</option>
+                    {subscriptionProducts.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} (₹{p.price}/{p.unit})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

@@ -48,9 +48,9 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
         address: b.address,
         route: b.route || 'Hosur Central Route 1',
         assignedRider: b.assignedRider || 'Rider #1 (Karthik)',
-        issuedCount: b.issuedCount || 10,
+        issuedCount: b.issuedCount ?? 0,
         returnedCount: b.returnedCount || 0,
-        pendingCount: b.pendingCount || (b.issuedCount - b.returnedCount),
+        pendingCount: b.pendingCount ?? Math.max(0, (b.issuedCount || 0) - (b.returnedCount || 0)),
         damagedCount: b.damagedCount || 0,
         lastCollectedDate: b.lastCollectedDate || '2026-09-09',
         status: (b.pendingCount === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
@@ -64,12 +64,12 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
         address: u.address || u.savedAddresses?.[0] || 'Hosur Central Town',
         route: idx % 2 === 0 ? 'Hosur Central Route 1' : 'Hosur Industrial Hub',
         assignedRider: idx % 2 === 0 ? 'Rider #1 (Karthik)' : 'Rider #2 (Suresh)',
-        issuedCount: (u.emptyBottlesReturned || 0) + (u.bottlesAtHome || 0) || 12,
+        issuedCount: (u.emptyBottlesReturned || 0) + (u.bottlesAtHome || 0),
         returnedCount: u.emptyBottlesReturned || 0,
         pendingCount: u.bottlesAtHome || 0,
-        damagedCount: idx % 4 === 0 ? 1 : 0,
+        damagedCount: 0,
         lastCollectedDate: '2026-09-09',
-        status: (u.bottlesAtHome === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
+        status: ((u.bottlesAtHome || 0) === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
       }));
     }
     return [];
@@ -709,41 +709,15 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
                     rider: selectedRecord.assignedRider,
                     status: o.status === 'delivered' ? 'Delivered & Empty Returned' : 'Out for Delivery'
                   };
-                }) : [
-                  {
-                    id: 'ord_evt_20260920',
-                    date: new Date().toISOString().split('T')[0],
-                    time: '06:15 AM Morning Doorstep Drop',
-                    items: 'Farm Fresh Pure Organic Milk (500ml) x 2',
-                    bottlesIssued: 2,
-                    bottlesReturned: 2,
-                    pendingBalance: 0,
-                    rider: selectedRecord.assignedRider,
-                    status: 'Delivered & Empty Bottle Returned'
-                  },
-                  {
-                    id: 'ord_evt_20260918',
-                    date: '2026-09-18',
-                    time: '06:20 AM Morning Doorstep Drop',
-                    items: 'A2 Vedic Desi Cow Milk (500ml) x 2',
-                    bottlesIssued: 2,
-                    bottlesReturned: 1,
-                    pendingBalance: 1,
-                    rider: selectedRecord.assignedRider,
-                    status: 'Delivered (1 Empty Pending Return)'
-                  },
-                  {
-                    id: 'ord_evt_20260915',
-                    date: '2026-09-15',
-                    time: '06:10 AM Morning Doorstep Drop',
-                    items: 'Pure Buffalo Milk (1L) x 1',
-                    bottlesIssued: 1,
-                    bottlesReturned: 1,
-                    pendingBalance: 0,
-                    rider: selectedRecord.assignedRider,
-                    status: 'Delivered & Empty Bottle Returned'
-                  }
-                ];
+                }) : [];
+
+                if (displayEvents.length === 0) {
+                  return (
+                    <div style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', backgroundColor: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                      No delivery or empty bottle return history recorded for this customer yet.
+                    </div>
+                  );
+                }
 
                 return displayEvents.map(evt => (
                   <div 

@@ -17,6 +17,22 @@ interface ProductsPageProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+function getDiscountedPrice(price: number, offerTag?: string): number {
+  if (!offerTag || !offerTag.trim()) return price;
+  const tag = offerTag.trim();
+  const pctMatch = tag.match(/(\d+)\s*%/);
+  if (pctMatch) {
+    const pct = parseFloat(pctMatch[1]);
+    if (pct > 0) return Math.round(price * (1 - pct / 100));
+  }
+  const flatMatch = tag.match(/(?:₹|rs\.?|flat)?\s*(\d+)\s*(?:off|discount)?/i);
+  if (flatMatch) {
+    const amt = parseFloat(flatMatch[1]);
+    if (amt > 0 && amt < price) return Math.round(price - amt);
+  }
+  return price;
+}
+
 export default function ProductsPage({
   selectedHubId = 'hub_hosur_main',
   products,
@@ -63,19 +79,17 @@ export default function ProductsPage({
     isSubscriptionEnabled: true,
     isFeatured: true,
     inStock: true,
-    nutrients: {
-      Calcium: '',
-      Energy: '',
-      'Fat Content': '',
-      Phosphorus: '',
-      Protein: ''
-    }
+    stockStatus: 'in_stock',
+    stockQuantity: 20,
+    nutrients: {}
   });
 
   const startEditProduct = (prod: Product) => {
     setEditingProduct(prod);
     setIsCreatingNew(false);
     const imgs = prod.images || [];
+    const initialQty = prod.stockQuantity !== undefined ? prod.stockQuantity : (prod.inStock === false ? 0 : 20);
+    const initialStatus = prod.stockStatus || (initialQty > 5 ? 'in_stock' : (initialQty > 0 ? 'limited_stock' : 'out_of_stock'));
     setFormData({
       ...prod,
       displayOrder: prod.displayOrder ?? 1,
@@ -87,13 +101,9 @@ export default function ProductsPage({
       img2: imgs[1] || '',
       img3: imgs[2] || '',
       img4: imgs[3] || '',
-      nutrients: prod.nutrients || {
-        Calcium: '',
-        Energy: '',
-        'Fat Content': '',
-        Phosphorus: '',
-        Protein: ''
-      }
+      stockQuantity: initialQty,
+      stockStatus: initialStatus,
+      nutrients: prod.nutrients ? { ...prod.nutrients } : {}
     });
   };
 
@@ -111,7 +121,7 @@ export default function ProductsPage({
       fatPercentage: '6.5%',
       shelfLife: '48 Hours',
       farmSource: 'Green Valley Eco-Farms',
-      offerTag: '10% OFF',
+      offerTag: '',
       imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80&w=600&auto=format&fit=crop',
       img2: '',
       img3: '',
@@ -119,13 +129,9 @@ export default function ProductsPage({
       isSubscriptionEnabled: true,
       isFeatured: false,
       inStock: true,
-      nutrients: {
-        Calcium: '',
-        Energy: '',
-        'Fat Content': '',
-        Phosphorus: '',
-        Protein: ''
-      }
+      stockStatus: 'in_stock',
+      stockQuantity: 20,
+      nutrients: {}
     });
   };
 
@@ -152,11 +158,24 @@ export default function ProductsPage({
       });
     }
 
+    const qty = formData.stockQuantity !== undefined ? formData.stockQuantity : 20;
+    let computedStatus = formData.stockStatus;
+    if (computedStatus !== 'coming_soon') {
+      if (qty > 5) computedStatus = 'in_stock';
+      else if (qty > 0) computedStatus = 'limited_stock';
+      else computedStatus = 'out_of_stock';
+    }
+
+    const isInStockBool = computedStatus === 'in_stock' || computedStatus === 'limited_stock';
+
     const payload: Partial<Product> = {
       ...formData,
       imageUrl: formData.imageUrl || (imagesList.length > 0 ? imagesList[0] : ''),
       images: imagesList,
       nutrients: finalNutrients,
+      stockQuantity: qty,
+      stockStatus: computedStatus,
+      inStock: isInStockBool,
       hubIds: [selectedHubId],
     };
     delete (payload as any).img2;
@@ -255,7 +274,7 @@ export default function ProductsPage({
             </select>
           </div>
 
-          {/* Price, Unit, Rank Grid */}
+          {/* Price, Stock Quantity, Unit, Rank Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <div>
               <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Catalog Price (₹)</label>
@@ -264,6 +283,26 @@ export default function ProductsPage({
                 value={formData.price || 0} 
                 onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                 style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', fontWeight: 700 }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Stock Quantity (Units)</label>
+              <input 
+                type="number" 
+                value={formData.stockQuantity !== undefined ? formData.stockQuantity : 20} 
+                onChange={(e) => {
+                  const q = Number(e.target.value);
+                  let st = formData.stockStatus;
+                  if (st !== 'coming_soon') {
+                    if (q > 5) st = 'in_stock';
+                    else if (q > 0) st = 'limited_stock';
+                    else st = 'out_of_stock';
+                  }
+                  setFormData({ ...formData, stockQuantity: q, stockStatus: st, inStock: q > 0 && st !== 'coming_soon' });
+                }}
+                placeholder="20"
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', fontWeight: 700, color: '#047857' }}
               />
             </div>
 
@@ -330,8 +369,19 @@ export default function ProductsPage({
                 type="text" 
                 value={formData.offerTag || ''} 
                 onChange={(e) => setFormData({ ...formData, offerTag: e.target.value })}
-                placeholder="e.g. 10% OFF"
+                placeholder="e.g. 10% OFF or ₹20 OFF"
                 style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.85rem', outline: 'none' }}
+              />
+            </div>
+
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '4px' }}>🛡️ Guarantee Banner Note (Mobile Product Detail Screen)</label>
+              <input 
+                type="text" 
+                value={formData.guaranteeNote || ''} 
+                onChange={(e) => setFormData({ ...formData, guaranteeNote: e.target.value })}
+                placeholder="e.g. Cold-chain guarantee - delivered under 4°C to ensure peak freshness"
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5', fontSize: '0.85rem', outline: 'none', fontWeight: 600, color: '#064E3B' }}
               />
             </div>
           </div>
@@ -417,16 +467,46 @@ export default function ProductsPage({
               />
               <span>Featured Product Highlight</span>
             </label>
+          </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={formData.inStock !== false} 
-                onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
-                style={{ width: '16px', height: '16px', accentColor: '#047857' }}
-              />
-              <span>Mark Product In Stock</span>
+          {/* Stock Availability 4-Way Selector */}
+          <div>
+            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+              Stock Availability & Catalog Status (Auto-updates with Stock Quantity)
             </label>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'in_stock', label: `🟢 In Stock (${formData.stockQuantity !== undefined ? formData.stockQuantity : 20})`, color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+                { id: 'limited_stock', label: `🟡 Limited Stock (${formData.stockQuantity !== undefined ? formData.stockQuantity : 5})`, color: '#B45309', bg: '#FEF3C7', border: '#FDE68A' },
+                { id: 'out_of_stock', label: '🔴 Out of Stock (0)', color: '#DC2626', bg: '#FEE2E2', border: '#FCA5A5' },
+                { id: 'coming_soon', label: '🩶 Coming Soon (Gray)', color: '#475569', bg: '#F1F5F9', border: '#CBD5E1' },
+              ].map((st) => (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => {
+                    let newQty = formData.stockQuantity !== undefined ? formData.stockQuantity : 20;
+                    if (st.id === 'out_of_stock') newQty = 0;
+                    else if (st.id === 'limited_stock' && newQty > 5) newQty = 5;
+                    else if (st.id === 'in_stock' && newQty <= 5) newQty = 20;
+                    const isInStock = st.id === 'in_stock' || st.id === 'limited_stock';
+                    setFormData({ ...formData, stockStatus: st.id as any, stockQuantity: newQty, inStock: isInStock });
+                  }}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: formData.stockStatus === st.id ? `2px solid ${st.color}` : `1px solid ${st.border}`,
+                    backgroundColor: formData.stockStatus === st.id ? st.bg : '#FFFFFF',
+                    color: st.color,
+                  }}
+                >
+                  {st.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Operating Hub Assignment */}
@@ -660,13 +740,33 @@ export default function ProductsPage({
             }}
           >
             <div>
-              {/* Product Cover Image with SUBSCRIPTION OK badge */}
+              {/* Product Cover Image with Red Offer Tag & SUBSCRIPTION OK badge */}
               <div style={{ width: '100%', height: '180px', overflow: 'hidden', position: 'relative', backgroundColor: '#F3F4F6' }}>
                 <img
                   src={prod.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80&w=600'}
                   alt={prod.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
+
+                {/* Offer Tag - Solid Red Capsule Top-Left */}
+                {prod.offerTag && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.03em',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    zIndex: 2
+                  }}>
+                    {prod.offerTag}
+                  </div>
+                )}
 
                 <div style={{
                   position: 'absolute',
@@ -680,8 +780,26 @@ export default function ProductsPage({
                   fontWeight: 800,
                   letterSpacing: '0.05em'
                 }}>
-                  SUBSCRIPTION OK
+                  {prod.isSubscriptionEnabled ? 'SUBSCRIPTION OK' : 'ONE-TIME ONLY'}
                 </div>
+
+                {(prod.stockStatus === 'coming_soon' || prod.stockStatus === 'out_of_stock' || prod.inStock === false) && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    left: '10px',
+                    backgroundColor: prod.stockStatus === 'coming_soon' ? '#475569' : '#DC2626',
+                    color: '#FFFFFF',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.05em',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}>
+                    {prod.stockStatus === 'coming_soon' ? '🩶 COMING SOON' : '🔴 OUT OF STOCK'}
+                  </div>
+                )}
               </div>
 
               {/* Tags & Rank Row */}
@@ -697,19 +815,32 @@ export default function ProductsPage({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                    Rank #{prod.displayOrder || 1} <ChevronUp size={12} /><ChevronDown size={12} />
+                    Rank #{prod.displayOrder || 1}
                   </span>
 
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: prod.inStock !== false ? '#059669' : '#DC2626',
-                    backgroundColor: prod.inStock !== false ? '#DCFCE7' : '#FEE2E2',
-                    padding: '2px 8px',
-                    borderRadius: '10px'
-                  }}>
-                    {prod.inStock !== false ? '🟢 In Stock' : '🔴 Out of Stock'}
-                  </span>
+                  {(() => {
+                    const st = prod.stockStatus || (prod.inStock === false ? 'out_of_stock' : 'in_stock');
+                    const qty = prod.stockQuantity !== undefined ? prod.stockQuantity : 20;
+                    const badgeMap: Record<string, { text: string; color: string; bg: string }> = {
+                      in_stock: { text: `🟢 In Stock (${qty})`, color: '#059669', bg: '#DCFCE7' },
+                      limited_stock: { text: `🟡 Limited (${qty} left)`, color: '#B45309', bg: '#FEF3C7' },
+                      out_of_stock: { text: '🔴 Out of Stock', color: '#DC2626', bg: '#FEE2E2' },
+                      coming_soon: { text: '🩶 Coming Soon', color: '#475569', bg: '#F1F5F9' },
+                    };
+                    const b = badgeMap[st] || badgeMap.in_stock;
+                    return (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: b.color,
+                        backgroundColor: b.bg,
+                        padding: '2px 8px',
+                        borderRadius: '10px'
+                      }}>
+                        {b.text}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -734,32 +865,54 @@ export default function ProductsPage({
             {/* Price & Actions Row matching Screenshot 2 */}
             <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)' }}>
-                  ₹{prod.price}
-                </span>
-                {prod.offerTag && (
-                  <span style={{ fontSize: '0.85rem', color: '#9CA3AF', textDecoration: 'line-through' }}>
-                    {prod.offerTag}
-                  </span>
-                )}
+                {(() => {
+                  const discPrice = getDiscountedPrice(prod.price, prod.offerTag);
+                  const hasDisc = discPrice < prod.price;
+                  return (
+                    <>
+                      <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#047857', fontFamily: 'var(--font-title)' }}>
+                        ₹{discPrice}
+                      </span>
+                      {hasDisc && (
+                        <span style={{ fontSize: '0.85rem', color: '#9CA3AF', textDecoration: 'line-through', fontWeight: 600 }}>
+                          ₹{prod.price}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  onClick={() => onToggleStock(prod.id, prod.inStock !== false)}
+                {/* 4-way stock status dropdown toggle */}
+                <select
+                  value={prod.stockStatus || (prod.inStock === false ? 'out_of_stock' : 'in_stock')}
+                  onChange={(e) => {
+                    const newStatus = e.target.value as any;
+                    const isInStock = newStatus === 'in_stock' || newStatus === 'limited_stock';
+                    if (onSaveProduct) {
+                      onSaveProduct({ ...prod, stockStatus: newStatus, inStock: isInStock });
+                      showToast(`Updated "${prod.name}" status to ${newStatus}`, 'success');
+                    } else {
+                      onToggleStock(prod.id, !isInStock);
+                    }
+                  }}
                   style={{
-                    backgroundColor: '#FFFFFF',
-                    color: '#DC2626',
-                    border: '1px solid #FCA5A5',
+                    padding: '0.35rem 0.5rem',
                     borderRadius: '6px',
-                    padding: '0.35rem 0.75rem',
-                    fontSize: '0.78rem',
+                    fontSize: '0.76rem',
                     fontWeight: 700,
-                    cursor: 'pointer'
+                    border: '1px solid #D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                    cursor: 'pointer',
+                    color: '#374151'
                   }}
                 >
-                  {prod.inStock !== false ? 'Mark Out' : 'Mark In'}
-                </button>
+                  <option value="in_stock">🟢 In Stock</option>
+                  <option value="limited_stock">🟡 Limited Stock</option>
+                  <option value="out_of_stock">🔴 Out of Stock</option>
+                  <option value="coming_soon">🟣 Coming Soon</option>
+                </select>
 
                 <button
                   onClick={() => startEditProduct(prod)}

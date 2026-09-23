@@ -26,3 +26,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Friend's separate copy, kept for reference only
+MilkyLush_website_fixed/

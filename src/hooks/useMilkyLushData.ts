@@ -292,9 +292,7 @@ export function useMilkyLushData(selectedHubId: string) {
         // A manual signup has a phone and gets WhatsApp; a Google signup has only
         // an email and gets the welcome mail. With neither there is nothing to
         // send yet, so wait: the next update re-delivers this document.
-        const reachable =
-          user.phone || (user as any).phoneNumber || (user as any).mobile || user.email;
-        if (!reachable) continue;
+        if (!(user.phone || (user as any).phoneNumber || (user as any).mobile || user.email)) continue;
 
         sendWelcomeToNewCustomer(userId)
           .then(({ sent, channel, reason }) => {

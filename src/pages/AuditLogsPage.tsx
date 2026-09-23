@@ -265,7 +265,6 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
                 <th style={{ padding: '0.85rem 1rem' }}>CATEGORY</th>
                 <th style={{ padding: '0.85rem 1rem' }}>ACTION DETAILS</th>
                 <th style={{ padding: '0.85rem 1rem' }}>TARGET MODULE</th>
-                <th style={{ padding: '0.85rem 1rem' }}>IP &amp; SESSION</th>
                 <th style={{ padding: '0.85rem 1rem' }}>PAYLOAD</th>
               </tr>
             </thead>
@@ -314,12 +313,6 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
                     {log.targetEntity}
                   </td>
 
-                  {/* IP & SESSION Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{log.ipAddress}</div>
-                    <div style={{ fontSize: '0.72rem' }}>{log.deviceSession}</div>
-                  </td>
-
                   {/* PAYLOAD Column */}
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <button
@@ -343,7 +336,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
               ))}
               {paginatedLogs.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No admin audit logs match your search filters.
                   </td>
                 </tr>
