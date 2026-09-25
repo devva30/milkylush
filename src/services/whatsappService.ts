@@ -37,7 +37,7 @@ export const DEFAULT_WELCOME_TEMPLATE: string =
 // values, and so a choice survives a browser change or a redeploy.
 const AUTOMATIONS_DOC = ['settings', 'whatsapp_automations'] as const;
 
-export type AutomationKey = 'welcome' | 'subscriptionExpiry';
+export type AutomationKey = 'welcome' | 'subscriptionExpiry' | 'subscriptionConfirmation';
 
 export interface AutomationRule {
   enabled: boolean;
@@ -56,11 +56,16 @@ export const AUTOMATION_LABELS: Record<AutomationKey, { title: string; descripti
     title: 'Subscription expiry reminder',
     description: 'Sent once to each customer the day before their subscription ends.',
   },
+  subscriptionConfirmation: {
+    title: 'New subscription confirmation',
+    description: 'Sent once when a customer subscribes to a product, confirming the plan and its start date.',
+  },
 };
 
 const DEFAULT_AUTOMATIONS: Record<AutomationKey, AutomationRule> = {
   welcome: { enabled: true, template: DEFAULT_WELCOME_TEMPLATE },
   subscriptionExpiry: { enabled: false, template: 'subscription_expiry_alert', daysBefore: 1 },
+  subscriptionConfirmation: { enabled: false, template: 'subscription_confirmation' },
 };
 
 export const getAutomations = async (): Promise<Record<AutomationKey, AutomationRule>> => {
@@ -69,6 +74,7 @@ export const getAutomations = async (): Promise<Record<AutomationKey, Automation
     return {
       welcome: { ...DEFAULT_AUTOMATIONS.welcome, ...(stored.welcome ?? {}) },
       subscriptionExpiry: { ...DEFAULT_AUTOMATIONS.subscriptionExpiry, ...(stored.subscriptionExpiry ?? {}) },
+      subscriptionConfirmation: { ...DEFAULT_AUTOMATIONS.subscriptionConfirmation, ...(stored.subscriptionConfirmation ?? {}) },
     };
   } catch {
     return DEFAULT_AUTOMATIONS;
