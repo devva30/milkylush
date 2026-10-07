@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Settings, Plus, Ticket, Trash2, PauseCircle, PlayCircle, Share2 } from 'lucide-react';
 import { collection, onSnapshot, setDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { User } from '../types';
+import type { User, Product } from '../types';
 import { useToast } from '../context/ToastContext';
 
 interface ReferEarnPageProps {
   users: User[];
+  products?: Product[];
   showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -20,6 +21,8 @@ export interface PromoCodeItem {
   validityDays?: number;
   expiryDate?: string;
   purchaseType: 'all' | 'onetime' | 'subscription';
+  targetProductId?: string;
+  targetProductName?: string;
   maxUsageLimit: number;
   perUserLimit: number;
   targetHub: string;
@@ -38,7 +41,7 @@ interface RedemptionLog {
   dateTime: string;
 }
 
-export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
+export default function ReferEarnPage({ users: _users, products = [] }: ReferEarnPageProps) {
   const { showToast } = useToast();
 
   // Campaign config state
@@ -56,6 +59,7 @@ export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
   const [newMinCart, setNewMinCart] = useState('100');
   const [newValidityDays, setNewValidityDays] = useState('30');
   const [newPurchaseType, setNewPurchaseType] = useState<'all' | 'onetime' | 'subscription'>('all');
+  const [newTargetProductId, setNewTargetProductId] = useState<string>('all');
   const [newMaxUsageLimit, setNewMaxUsageLimit] = useState('100');
   const [newPerUserLimit, setNewPerUserLimit] = useState('1');
 
@@ -186,6 +190,9 @@ export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
       expiryStr = expDate.toISOString().slice(0, 10);
     }
 
+    const selectedProd = products.find((p) => p.id === newTargetProductId);
+    const targetProdName = selectedProd ? selectedProd.name : (newTargetProductId === 'all' ? undefined : 'Specific Product');
+
     const created: PromoCodeItem = {
       code: codeClean,
       discountType: newDiscountType,
@@ -195,6 +202,8 @@ export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
       validityDays: validityNum,
       expiryDate: expiryStr,
       purchaseType: newPurchaseType,
+      targetProductId: newTargetProductId === 'all' ? undefined : newTargetProductId,
+      targetProductName: targetProdName,
       maxUsageLimit: maxLimitNum,
       perUserLimit: perUserNum,
       targetHub: 'Hosur Hub 📍',
@@ -353,30 +362,72 @@ export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
           />
         </div>
 
-        {/* Row 4: Campaign Status Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#374151' }}>Campaign Status:</span>
-          <button 
+        {/* Row 4: Campaign Status Pill & Save Button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#374151' }}>Campaign Status:</span>
+            <button 
+              type="button"
+              onClick={() => {
+                setIsCampaignActive(!isCampaignActive);
+                showToast?.(`Referral campaign is now ${!isCampaignActive ? 'Active' : 'Paused'}`, 'info');
+              }}
+              style={{
+                padding: '0.45rem 1rem',
+                borderRadius: '20px',
+                border: 'none',
+                backgroundColor: isCampaignActive ? '#047857' : '#6B7280',
+                color: '#FFFFFF',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              {isCampaignActive ? '🟢 Campaign Active' : '⚪ Campaign Paused'}
+            </button>
+          </div>
+
+          <button
             type="button"
-            onClick={() => {
-              setIsCampaignActive(!isCampaignActive);
-              showToast?.(`Referral campaign is now ${!isCampaignActive ? 'Active' : 'Paused'}`, 'info');
+            onClick={async () => {
+              try {
+                await setDoc(doc(db, 'settings', 'referral'), {
+                  title: bannerHeading,
+                  subtitle: bannerSubtitle,
+                  offerType,
+                  offerValue,
+                  minCart: Number(minCart) || 0,
+                  isActive: isCampaignActive,
+                  step2Title: "Friend Unlocks Special Offer",
+                  step2Sub: `When they register using your code, an exclusive offer coupon is applied on their 1st order.`,
+                  step3Title: "You Unlock Exclusive Offer",
+                  step3Sub: "Once their first milk drop is delivered, an exclusive referral offer discount coupon is unlocked for your next order!",
+                  updatedAt: new Date().toISOString(),
+                }, { merge: true });
+                showToast?.('Referral campaign settings saved & published to mobile app! 📱', 'success');
+              } catch (err) {
+                showToast?.(`Error saving settings to Firestore: ${err}`, 'error');
+              }
             }}
             style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '20px',
+              padding: '0.6rem 1.4rem',
+              borderRadius: '10px',
               border: 'none',
-              backgroundColor: isCampaignActive ? '#047857' : '#6B7280',
+              backgroundColor: '#047857',
               color: '#FFFFFF',
-              fontSize: '0.82rem',
+              fontSize: '0.85rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(4, 120, 87, 0.2)'
             }}
           >
-            {isCampaignActive ? '🟢 Campaign Active' : '⚪ Campaign Paused'}
+            💾 Save &amp; Publish Content to Mobile App
           </button>
         </div>
 
@@ -494,6 +545,26 @@ export default function ReferEarnPage({ users: _users }: ReferEarnPageProps) {
                 <option value="subscription">Daily Subscriptions Only</option>
               </select>
               <span style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '2px', display: 'block' }}>Scope of applicability</span>
+            </div>
+
+            {/* Field 6B: Specific Target Product from Stock Inventory (Optional) */}
+            <div>
+              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '4px' }}>
+                🎯 TARGET SPECIFIC STOCK PRODUCT <span style={{ color: '#6B7280', fontWeight: 600 }}>(Optional)</span>
+              </label>
+              <select 
+                value={newTargetProductId}
+                onChange={(e) => setNewTargetProductId(e.target.value)}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5', fontSize: '0.85rem', outline: 'none', fontWeight: 700, color: '#047857' }}
+              >
+                <option value="all">📦 All Catalog Products (Default)</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    🥛 {p.name} ({p.unit || 'unit'}) - ₹{p.price}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontSize: '0.72rem', color: '#059669', marginTop: '2px', display: 'block' }}>Apply code specifically to selected product from stock</span>
             </div>
 
             {/* Field 7: Total Usage Limit */}

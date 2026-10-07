@@ -7,6 +7,7 @@ import type { User, Order, BottleRecordItem } from '../types';
 
 export interface BottleRecord {
   id: string;
+  customerId?: string;
   customerName: string;
   phone: string;
   address: string;
@@ -26,10 +27,11 @@ interface BottleManagementPageProps {
   orders?: Order[];
   bottleRecords?: BottleRecordItem[];
   adminUsername?: string;
+  onNavigateTab?: (tabName: string, targetId?: string) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export default function BottleManagementPage({ selectedHubId, users = [], orders = [], bottleRecords = [], adminUsername, showToast }: BottleManagementPageProps) {
+export default function BottleManagementPage({ selectedHubId, users = [], orders = [], bottleRecords = [], adminUsername, onNavigateTab, showToast }: BottleManagementPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'today' | 'overdue'>('all');
   
@@ -38,42 +40,75 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<BottleRecord | null>(null);
 
+  // Direct Admin Edit State inside Details Modal
+  const [editReturnedInput, setEditReturnedInput] = useState<number>(0);
+  const [editDamagedInput, setEditDamagedInput] = useState<number>(0);
+  const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
+
   // Dynamic live bottle records mapped from real Firestore users and bottleRecords
   const liveRecords: BottleRecord[] = useMemo(() => {
+    if (users && users.length > 0) {
+      return users.map((u) => {
+        const userOrders = (orders || []).filter(o => o.userId === u.id && o.status === 'delivered');
+        let calculatedIssued = 0;
+        userOrders.forEach(o => {
+          if (o.items && o.items.length > 0) {
+            o.items.forEach(it => {
+              const pName = (it.product?.name || '').toLowerCase();
+              const pUnit = (it.product?.unit || '').toLowerCase();
+              const isGlass = it.product?.isGlassBottle || pName.includes('milk') || pUnit.includes('glass') || pUnit.includes('bottle');
+              if (isGlass) {
+                calculatedIssued += (it.quantity || 1);
+              }
+            });
+          }
+        });
+
+        const returned = u.emptyBottlesReturned || 0;
+        const damaged = u.damagedBottles || 0;
+        const totalIssued = calculatedIssued > 0 ? calculatedIssued : (returned + (u.bottlesAtHome || 0) + damaged);
+        const pending = u.bottlesAtHome ?? Math.max(0, totalIssued - returned - damaged);
+        const cleanAddr = u.address || u.savedAddresses?.[0] || 'Hosur Central Hub Area';
+        const areaRoute = cleanAddr.split(',')[0] || 'Hosur Hub Region';
+
+        return {
+          id: `btl_${u.id}`,
+          customerId: u.id,
+          customerName: u.name || 'Valued Customer',
+          phone: u.phone || 'N/A',
+          address: cleanAddr,
+          route: areaRoute,
+          assignedRider: u.assignedDeliveryAgentName || 'Unassigned Express Rider',
+          issuedCount: totalIssued,
+          returnedCount: returned,
+          pendingCount: pending,
+          damagedCount: damaged,
+          lastCollectedDate: new Date().toISOString().slice(0, 10),
+          status: (pending === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
+        };
+      });
+    }
+
     if (bottleRecords.length > 0) {
       return bottleRecords.map(b => ({
         id: b.id,
+        customerId: b.customerId,
         customerName: b.customerName,
         phone: b.phone,
         address: b.address,
-        route: b.route || 'Hosur Central Route 1',
-        assignedRider: b.assignedRider || 'Rider #1 (Karthik)',
+        route: b.route || b.address.split(',')[0] || 'Hosur Hub Region',
+        assignedRider: b.assignedRider || 'Unassigned Express Rider',
         issuedCount: b.issuedCount ?? 0,
         returnedCount: b.returnedCount || 0,
         pendingCount: b.pendingCount ?? Math.max(0, (b.issuedCount || 0) - (b.returnedCount || 0)),
         damagedCount: b.damagedCount || 0,
-        lastCollectedDate: b.lastCollectedDate || '2026-09-09',
+        lastCollectedDate: b.lastCollectedDate || new Date().toISOString().slice(0, 10),
         status: (b.pendingCount === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
       }));
     }
-    if (users.length > 0) {
-      return users.map((u, idx) => ({
-        id: `btl_${u.id}`,
-        customerName: u.name,
-        phone: u.phone,
-        address: u.address || u.savedAddresses?.[0] || 'Hosur Central Town',
-        route: idx % 2 === 0 ? 'Hosur Central Route 1' : 'Hosur Industrial Hub',
-        assignedRider: idx % 2 === 0 ? 'Rider #1 (Karthik)' : 'Rider #2 (Suresh)',
-        issuedCount: (u.emptyBottlesReturned || 0) + (u.bottlesAtHome || 0),
-        returnedCount: u.emptyBottlesReturned || 0,
-        pendingCount: u.bottlesAtHome || 0,
-        damagedCount: 0,
-        lastCollectedDate: '2026-09-09',
-        status: ((u.bottlesAtHome || 0) === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
-      }));
-    }
+
     return [];
-  }, [users, bottleRecords]);
+  }, [users, orders, bottleRecords]);
 
   const [recordsState, setRecordsState] = useState<BottleRecord[]>([]);
   const records = recordsState.length > 0 ? recordsState : liveRecords;
@@ -81,7 +116,7 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
   const [damagedInputQty, setDamagedInputQty] = useState('0');
   const [remarks, setRemarks] = useState('');
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hub_hosur_main' || selectedHubId === 'hub_hosur';
   const hubName = isHosur ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub';
 
   // Filtered List
@@ -122,7 +157,7 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
     const damagedCount = parseInt(damagedInputQty, 10) || 0;
 
     const newReturned = selectedRecord.returnedCount + qty;
-    const newPending = Math.max(0, selectedRecord.issuedCount - newReturned);
+    const newPending = Math.max(0, selectedRecord.issuedCount - newReturned - (selectedRecord.damagedCount + damagedCount));
     const newDamaged = selectedRecord.damagedCount + damagedCount;
 
     const updatedDoc: BottleRecord = {
@@ -130,7 +165,7 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
       returnedCount: newReturned,
       pendingCount: newPending,
       damagedCount: newDamaged,
-      lastCollectedDate: '2026-09-09',
+      lastCollectedDate: new Date().toISOString().slice(0, 10),
       status: newPending === 0 ? 'Collected Today' : 'Pending Return',
     };
 
@@ -140,15 +175,24 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
     });
 
     try {
+      const custId = selectedRecord.customerId || selectedRecord.id.replace('btl_', '');
+      await setDoc(doc(db, 'users', custId), {
+        emptyBottlesReturned: newReturned,
+        bottlesAtHome: newPending,
+        damagedBottles: newDamaged,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
       await setDoc(doc(collection(db, 'bottle_tracking'), selectedRecord.id), {
         ...updatedDoc,
         remarks: remarks || '',
         updatedAt: new Date().toISOString(),
         hubId: selectedHubId
       });
+
       await logAdminAuditAction(
-        adminUsername || 'Tom SuperAdmin',
-        'tomadmin@gmail.com',
+        adminUsername || 'Super Admin',
+        'admin@milkylush.com',
         'Super Admin',
         'Hub Operations',
         `Recorded return of ${qty} bottle(s) (${damagedCount} damaged) for ${selectedRecord.customerName}`,
@@ -190,6 +234,8 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
 
   const handleOpenHistoryModal = (rec: BottleRecord) => {
     setSelectedRecord(rec);
+    setEditReturnedInput(rec.returnedCount);
+    setEditDamagedInput(rec.damagedCount);
     setIsHistoryModalOpen(true);
   };
 
@@ -650,11 +696,32 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
               <div>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   Doorstep Delivery &amp; Empty Bottle History
                 </h3>
-                <div style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 700, marginTop: '2px' }}>
-                  {selectedRecord.customerName} • {selectedRecord.phone}
+                <div style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>{selectedRecord.customerName} • 📞 {selectedRecord.phone}</span>
+                  {onNavigateTab && (
+                    <button
+                      onClick={() => {
+                        setIsHistoryModalOpen(false);
+                        const targetId = selectedRecord.customerId || selectedRecord.id.replace('btl_', '');
+                        onNavigateTab('customers', targetId);
+                      }}
+                      style={{
+                        padding: '3px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: '#ECFDF5',
+                        color: '#047857',
+                        border: '1px solid #A7F3D0',
+                        fontWeight: 800,
+                        fontSize: '0.74rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      👤 View Customer Profile &amp; Plan →
+                    </button>
+                  )}
                 </div>
               </div>
               <button 
@@ -666,7 +733,7 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
             </div>
 
             {/* Quick Summary Chips */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>TOTAL ISSUED</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0284C7' }}>{selectedRecord.issuedCount} Bottles</div>
@@ -678,6 +745,83 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>PENDING PICKUP</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#D97706' }}>{selectedRecord.pendingCount} Bottles</div>
+              </div>
+              <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>DAMAGED</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#DC2626' }}>{selectedRecord.damagedCount} Units</div>
+              </div>
+            </div>
+
+            {/* Admin Manual Override Controls */}
+            <div style={{ backgroundColor: '#ECFDF5', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #A7F3D0', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', marginBottom: '6px' }}>
+                ⚙️ Admin Manual Bottle Counter Override (Syncs directly to Customer Profile)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '0.75rem', alignItems: 'center' }}>
+                <div>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '2px' }}>Returned Bottles</label>
+                  <input
+                    type="number"
+                    value={editReturnedInput}
+                    onChange={(e) => setEditReturnedInput(Number(e.target.value))}
+                    style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #A7F3D0', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#DC2626', display: 'block', marginBottom: '2px' }}>Damaged / Broken</label>
+                  <input
+                    type="number"
+                    value={editDamagedInput}
+                    onChange={(e) => setEditDamagedInput(Number(e.target.value))}
+                    style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #FCA5A5', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
+                  />
+                </div>
+                <button
+                  disabled={isSavingEdit}
+                  onClick={async () => {
+                    setIsSavingEdit(true);
+                    try {
+                      const custId = selectedRecord.customerId || selectedRecord.id.replace('btl_', '');
+                      const newPending = Math.max(0, selectedRecord.issuedCount - editReturnedInput - editDamagedInput);
+                      const updatedDoc: BottleRecord = {
+                        ...selectedRecord,
+                        returnedCount: editReturnedInput,
+                        damagedCount: editDamagedInput,
+                        pendingCount: newPending,
+                        status: newPending === 0 ? 'Collected Today' : 'Pending Return'
+                      };
+                      setSelectedRecord(updatedDoc);
+                      setRecordsState((prev) => {
+                        const base = prev.length > 0 ? prev : liveRecords;
+                        return base.map(r => r.id === selectedRecord.id ? updatedDoc : r);
+                      });
+                      await setDoc(doc(db, 'users', custId), {
+                        emptyBottlesReturned: editReturnedInput,
+                        damagedBottles: editDamagedInput,
+                        bottlesAtHome: newPending,
+                        updatedAt: new Date().toISOString()
+                      }, { merge: true });
+                      showToast(`Updated bottle counters for ${selectedRecord.customerName} in Firestore!`, 'success');
+                    } catch (err) {
+                      showToast('Failed to update bottle counters: ' + String(err), 'error');
+                    } finally {
+                      setIsSavingEdit(false);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: '#047857',
+                    color: '#FFFFFF',
+                    fontWeight: 800,
+                    fontSize: '0.78rem',
+                    padding: '0.55rem 0.85rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    marginTop: '16px'
+                  }}
+                >
+                  {isSavingEdit ? 'Saving...' : 'Save & Sync Customer Profile'}
+                </button>
               </div>
             </div>
 

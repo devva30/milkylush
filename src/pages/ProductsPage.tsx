@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, 
-  ChevronUp, ChevronDown 
+  ChevronUp, ChevronDown, RefreshCw
 } from 'lucide-react';
+import { collection, getDocs, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import type { Product } from '../types';
-import { DEFAULT_CATALOG_PRODUCTS } from '../hooks/useMilkyLushData';
 
 interface ProductsPageProps {
   selectedHubId?: string;
@@ -103,6 +104,7 @@ export default function ProductsPage({
       img4: imgs[3] || '',
       stockQuantity: initialQty,
       stockStatus: initialStatus,
+      isGlassBottle: prod.isGlassBottle ?? (prod.category === 'Milk' || prod.category === 'Flavored Milk' || (prod.unit || '').toLowerCase().includes('glass') || (prod.unit || '').toLowerCase().includes('bottle')),
       nutrients: prod.nutrients ? { ...prod.nutrients } : {}
     });
   };
@@ -127,6 +129,7 @@ export default function ProductsPage({
       img3: '',
       img4: '',
       isSubscriptionEnabled: true,
+      isGlassBottle: true,
       isFeatured: false,
       inStock: true,
       stockStatus: 'in_stock',
@@ -451,6 +454,16 @@ export default function ProductsPage({
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 
+                checked={formData.isGlassBottle !== false} 
+                onChange={(e) => setFormData({ ...formData, isGlassBottle: e.target.checked })}
+                style={{ width: '16px', height: '16px', accentColor: '#047857' }}
+              />
+              <span style={{ color: '#047857', fontWeight: 800 }}>🥛 Glass Bottle Product (Triggers Empty Bottle Return Tracking)</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
                 checked={formData.isSubscriptionEnabled !== false} 
                 onChange={(e) => setFormData({ ...formData, isSubscriptionEnabled: e.target.checked })}
                 style={{ width: '16px', height: '16px', accentColor: '#047857' }}
@@ -615,7 +628,7 @@ export default function ProductsPage({
     );
   }
 
-  const displayProducts: Product[] = (products && products.length > 0) ? products : DEFAULT_CATALOG_PRODUCTS;
+  const displayProducts: Product[] = products || [];
 
   const filteredCatalog = displayProducts.filter((p) => {
     const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
@@ -639,24 +652,26 @@ export default function ProductsPage({
           </p>
         </div>
 
-        <button 
-          onClick={startCreateProduct}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.85rem',
-            fontWeight: 700,
-            padding: '0.65rem 1.25rem',
-            borderRadius: '10px',
-            backgroundColor: '#047857',
-            color: '#FFFFFF',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          <Plus size={16} /> Add Product
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button 
+            onClick={startCreateProduct}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              padding: '0.65rem 1.25rem',
+              borderRadius: '10px',
+              backgroundColor: '#047857',
+              color: '#FFFFFF',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <Plus size={16} /> Add Product
+          </button>
+        </div>
       </div>
 
       {/* Category Pills & Search Input matching Screenshot 2 */}

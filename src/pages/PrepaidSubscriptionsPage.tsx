@@ -34,6 +34,39 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
     }
   };
 
+  // Helper to format exact subscription timestamp with time in 24-hour format (e.g. 06 Oct 2026, 18:30)
+  const formatSubscribedTime = (sub: Subscription) => {
+    if (!sub) return 'N/A';
+    const raw = sub.createdAt || (sub as any).subscribedAt || (sub as any).timestamp || (sub as any).createdAtIso || sub.startDate;
+    if (!raw) return 'N/A';
+    try {
+      let d: Date | null = null;
+      if (typeof raw === 'object' && raw !== null) {
+        if (typeof (raw as any).toDate === 'function') {
+          d = (raw as any).toDate();
+        } else if (typeof (raw as any).seconds === 'number') {
+          d = new Date((raw as any).seconds * 1000);
+        } else if (typeof (raw as any)._seconds === 'number') {
+          d = new Date((raw as any)._seconds * 1000);
+        }
+      }
+      if (!d) {
+        const str = String(raw).trim();
+        if (/^\d+$/.test(str)) {
+          d = new Date(Number(str));
+        } else {
+          d = new Date(str);
+        }
+      }
+      if (!d || isNaN(d.getTime())) return 'N/A';
+      const dateFormatted = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const timeFormatted = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+      return `${dateFormatted}, ${timeFormatted}`;
+    } catch (e) {
+      return 'N/A';
+    }
+  };
+
   // Helper to compute effective dispatch start date taking skipped/paused dates into account
   const getEffectiveStartDate = (sub: Subscription): Date => {
     const baseStart = sub.startDate ? new Date(sub.startDate) : new Date();
@@ -397,8 +430,13 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
                   return (
                     <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>{s.userName || 'Subscriber'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700, marginTop: '2px' }}>{s.id}</div>
+                        <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                          {s.userName || (s as any).customerName || (s as any).name || 'Customer'}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '1px' }}>
+                          🕒 Subscribed: {formatSubscribedTime(s)}
+                        </div>
+                        <div style={{ fontSize: '0.73rem', color: '#047857', fontWeight: 700, marginTop: '2px' }}>{s.id}</div>
                       </td>
                       
                       <td style={{ padding: '0.85rem 1rem' }}>
@@ -510,7 +548,8 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.85rem', color: 'var(--text-main)' }}>
-              <div><strong>Customer Name:</strong> {selectedSub.userName}</div>
+              <div><strong>Customer Name:</strong> {selectedSub.userName || (selectedSub as any).customerName || (selectedSub as any).name || 'Customer'}</div>
+              <div><strong>Subscribed On (Time):</strong> <span style={{ color: '#047857', fontWeight: 800 }}>{formatSubscribedTime(selectedSub)}</span></div>
               <div><strong>Product Plan:</strong> {selectedSub.productName || selectedSub.product?.name}</div>
               <div><strong>Delivery Address:</strong> {selectedSub.deliveryAddress || 'Hosur Main Route'}</div>
               <div><strong>Prepaid Advance Paid:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>₹{selectedSub.prepaidAmountPaid}</span></div>

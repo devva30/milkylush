@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { CheckCircle2, Search, Download, ArrowLeft, ExternalLink, Phone, Calendar, Printer, User as UserIcon, MapPin, Camera } from 'lucide-react';
 import type { Order, User, DeliveryAgent } from '../types';
 import { useToast } from '../context/ToastContext';
+import { formatAddressDetails, getGoogleMapsUrl } from '../utils/addressFormatter';
 
 interface DeliveredHistoryPageProps {
   orders: Order[];
@@ -562,37 +563,102 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem' }}>
-                <div style={{ fontSize: '0.76rem', color: '#6B7280', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Delivery address
-                </div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', marginBottom: '0.75rem', lineHeight: 1.4 }}>
-                  {addressText}
-                </div>
+              {(() => {
+                const formattedAddrObj = formatAddressDetails(addressText);
+                const googleMapsUrl = getGoogleMapsUrl(formattedAddrObj);
 
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(addressText)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    color: '#0284C7',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    textDecoration: 'none'
-                  }}
-                >
-                  <MapPin size={14} /> Open in maps ↗
-                </a>
-              </div>
+                return (
+                  <div style={{ borderTop: '1px solid var(--border-color, #E2E8F0)', paddingTop: '0.9rem', marginTop: '0.9rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                      DELIVERY ADDRESS DETAILS
+                    </div>
+                    
+                    {/* Clean Structured Address Grid - Only display fields entered by customer */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', fontSize: '0.82rem', marginBottom: '0.85rem' }}>
+                      {formattedAddrObj.doorNo && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Door no.</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.doorNo}</span>
+                        </div>
+                      )}
+                      {formattedAddrObj.street && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Street / road</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.street}</span>
+                        </div>
+                      )}
+                      {formattedAddrObj.building && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Building</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.building}</span>
+                        </div>
+                      )}
+                      {formattedAddrObj.floor && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Floor</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.floor}</span>
+                        </div>
+                      )}
+                      {formattedAddrObj.area && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Area / locality</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.area}</span>
+                        </div>
+                      )}
+                      {formattedAddrObj.landmark && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Landmark</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.landmark}</span>
+                        </div>
+                      )}
+                      {(formattedAddrObj.city || formattedAddrObj.pincode) && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>City / PIN</span>
+                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                            {[formattedAddrObj.city, formattedAddrObj.pincode].filter(Boolean).join(' · ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {formattedAddrObj.cleanAddress && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #475569)', marginBottom: '0.75rem', lineHeight: '1.4', backgroundColor: 'var(--bg-main, #F8FAFC)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color, #E2E8F0)' }}>
+                        <strong>Full Address:</strong> {formattedAddrObj.cleanAddress}
+                      </div>
+                    )}
+
+                    <a
+                      href={googleMapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem 1rem',
+                        borderRadius: '10px',
+                        backgroundColor: '#047857',
+                        color: '#FFFFFF',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxSizing: 'border-box',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                    >
+                      <MapPin size={15} /> Open exact pin in maps
+                    </a>
+                  </div>
+                );
+              })()}
 
             </div>
 
             {/* Card 2: Fulfillment rider information */}
-            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.85rem 0', color: '#111827' }}>
+            <div style={{ backgroundColor: 'var(--bg-card, #FFFFFF)', border: '1px solid var(--border-color, #E2E8F0)', borderRadius: '20px', padding: '1.35rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 0.85rem 0', color: 'var(--text-main, #0F172A)' }}>
                 Fulfillment rider information
               </h3>
 
@@ -601,8 +667,9 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   width: '42px',
                   height: '42px',
                   borderRadius: '50%',
-                  backgroundColor: '#F3F4F6',
-                  color: '#374151',
+                  backgroundColor: '#ECFDF5',
+                  color: '#047857',
+                  border: '1px solid #A7F3D0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -610,23 +677,127 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   fontSize: '0.9rem',
                   flexShrink: 0
                 }}>
-                  {((agent?.name || 'Ravi Kumar').substring(0, 2)).toUpperCase()}
+                  {((agent?.name || 'Rider').substring(0, 2)).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
-                    {agent?.name || 'Ravi Kumar'}
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
+                    {agent?.name || 'Rider'}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '1px' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
                     Rider ID: RID-0442 · Hosur Central Hub
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#374151', fontWeight: 600 }}>
-                <Phone size={14} style={{ color: '#6B7280' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-main, #0F172A)', fontWeight: 600 }}>
+                <Phone size={14} style={{ color: 'var(--text-muted, #64748B)' }} />
                 {agent?.phone || '89899889898'}
               </div>
 
+            </div>
+
+            {/* Card 3: Logistics history and audit logs */}
+            <div style={{ backgroundColor: 'var(--bg-card, #FFFFFF)', border: '1px solid var(--border-color, #E2E8F0)', borderRadius: '20px', padding: '1.35rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1rem 0', color: 'var(--text-main, #0F172A)' }}>
+                Logistics history and audit logs
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                {(() => {
+                  const logs: Array<{ tag: string; title: string; subtitle: string; bg: string; color: string; border: string }> = [];
+
+                  // 1. Order Placed
+                  logs.push({
+                    tag: 'ordered',
+                    title: 'Order Registered & Hub Queued',
+                    subtitle: `Logged ${formatDateWithTime(o.orderDate)} · Customer: ${customerName}`,
+                    bg: '#ECFDF5',
+                    color: '#047857',
+                    border: '#A7F3D0'
+                  });
+
+                  // 2. Hub Packing
+                  logs.push({
+                    tag: 'packed',
+                    title: 'Hub Packing & Dispatch Ready',
+                    subtitle: 'Consolidated at Hosur Central Hub (TN)',
+                    bg: '#FEF3C7',
+                    color: '#B45309',
+                    border: '#FDE68A'
+                  });
+
+                  // 3. Out For Delivery
+                  logs.push({
+                    tag: 'transit',
+                    title: 'Out For Delivery',
+                    subtitle: `Dispatched with rider: ${agent?.name || 'Fleet Rider'}`,
+                    bg: '#FEF3C7',
+                    color: '#B45309',
+                    border: '#FDE68A'
+                  });
+
+                  // 4. Delivered / Cancelled
+                  const isDelivered = o.status === 'delivered';
+                  const isCancelled = o.status === 'cancelled';
+                  logs.push({
+                    tag: isDelivered ? 'delivered' : isCancelled ? 'cancelled' : 'completed',
+                    title: isDelivered 
+                      ? `Delivered by Rider (${agent?.name || 'Rider'})` 
+                      : isCancelled 
+                        ? `Cancelled by Rider (${agent?.name || 'Rider'})` 
+                        : 'Delivery Status Updated',
+                    subtitle: isDelivered 
+                      ? `Doorstep photo & GPS verified at ${formatDateWithTime(o.orderDate)}` 
+                      : isCancelled 
+                        ? `Reason: "${(o as any).cancellationReason || 'Customer unreachable / Delivery issue'}"` 
+                        : 'Completed dropoff',
+                    bg: isDelivered ? '#ECFDF5' : isCancelled ? '#FEE2E2' : '#F1F5F9',
+                    color: isDelivered ? '#047857' : isCancelled ? '#DC2626' : '#64748B',
+                    border: isDelivered ? '#A7F3D0' : isCancelled ? '#FCA5A5' : '#E2E8F0'
+                  });
+
+                  // Custom History Log from Firestore
+                  const customLogs: any[] = (o as any).historyLog || (o as any).auditLogs || [];
+                  if (customLogs.length > 0) {
+                    customLogs.forEach((log) => {
+                      logs.push({
+                        tag: log.status || log.action || 'audit log',
+                        title: log.title || log.note || log.message || 'Audit Event Record',
+                        subtitle: log.timestamp || log.date ? new Date(log.timestamp || log.date).toLocaleString('en-GB') : 'Realtime event logged',
+                        bg: '#F8FAFC',
+                        color: '#0F172A',
+                        border: '#CBD5E1'
+                      });
+                    });
+                  }
+
+                  return logs.map((log, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                      <span style={{
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        backgroundColor: log.bg,
+                        color: log.color,
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        border: `1px solid ${log.border}`,
+                        marginTop: '1px',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {log.tag}
+                      </span>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
+                          {log.title}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
+                          {log.subtitle}
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
 
           </div>

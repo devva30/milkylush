@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Tag, Smartphone, Image as ImageIcon, Bell, Send, History, ShieldCheck, Share2, Sparkles, Save, Headphones, Trash2, HelpCircle } from 'lucide-react';
+import { Plus, Tag, Smartphone, Image as ImageIcon, Bell, Send, History, ShieldCheck, Share2, Sparkles, Save, Headphones, Trash2, HelpCircle, Gift } from 'lucide-react';
 import { doc, getDoc, setDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Banner, OnboardingSlide } from '../types';
@@ -37,7 +37,7 @@ export default function MobileControlPage({
   onDeleteOnboardingSlide,
   showToast,
 }: MobileControlPageProps) {
-  const [activeTab, setActiveTab] = useState<'onboarding' | 'banners' | 'broadcast' | 'fssai-social' | 'popup-ad' | 'help-desk'>('onboarding');
+  const [activeTab, setActiveTab] = useState<'onboarding' | 'banners' | 'broadcast' | 'fssai-social' | 'popup-ad' | 'help-desk' | 'free-sample'>('onboarding');
 
   // FSSAI & Social Links State
   const [fssaiNumber, setFssaiNumber] = useState('12423999000123');
@@ -54,6 +54,16 @@ export default function MobileControlPage({
   const [popupCtaText, setPopupCtaText] = useState('Subscribe Now →');
   const [popupHubScope, setPopupHubScope] = useState('all');
   const [popupTimerSeconds, setPopupTimerSeconds] = useState(3);
+
+  // Free Sample State
+  const [fsActive, setFsActive] = useState(true);
+  const [fsTitle, setFsTitle] = useState('Get Free Sample Today! 🥛');
+  const [fsSubtitle, setFsSubtitle] = useState('Taste our farm fresh organic A2 milk delivered directly to your doorstep. 100% Free!');
+  const [fsProductName, setFsProductName] = useState('Free Sample 500ml A2 Desi Cow Milk');
+  const [fsImageUrl, setFsImageUrl] = useState('https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800');
+  const [fsOnlyNew, setFsOnlyNew] = useState(true);
+  const [fsShowInAuth, setFsShowInAuth] = useState(true);
+  const [fsAuthTitle, setFsAuthTitle] = useState('Get Free Sample Today! 🥛');
 
   // Help & Support Desk State
   const [helpPhone, setHelpPhone] = useState('+91 99028 82332');
@@ -115,6 +125,19 @@ export default function MobileControlPage({
           if (h.email) setHelpEmail(h.email);
           if (h.address !== undefined) setHelpAddress(h.address);
           if (h.faqs && Array.isArray(h.faqs)) setHelpFaqs(h.faqs);
+        }
+
+        const fsDoc = await getDoc(doc(db, 'settings', 'free_sample'));
+        if (fsDoc.exists()) {
+          const f = fsDoc.data();
+          if (f.active !== undefined) setFsActive(f.active);
+          if (f.title) setFsTitle(f.title);
+          if (f.subtitle) setFsSubtitle(f.subtitle);
+          if (f.productName) setFsProductName(f.productName);
+          if (f.imageUrl) setFsImageUrl(f.imageUrl);
+          if (f.onlyNewCustomers !== undefined) setFsOnlyNew(f.onlyNewCustomers);
+          if (f.showInAuth !== undefined) setFsShowInAuth(f.showInAuth);
+          if (f.authTitle) setFsAuthTitle(f.authTitle);
         }
 
         const broadcastsSnap = await getDocs(collection(db, 'broadcasts'));
@@ -386,6 +409,27 @@ export default function MobileControlPage({
     }
   };
 
+  // Free Sample Campaign Control Handler
+  const handleSaveFreeSample = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'settings', 'free_sample'), {
+        active: fsActive,
+        title: fsTitle,
+        subtitle: fsSubtitle,
+        productName: fsProductName,
+        imageUrl: fsImageUrl,
+        onlyNewCustomers: fsOnlyNew,
+        showInAuth: fsShowInAuth,
+        authTitle: fsAuthTitle,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      showToast('Free Sample Gateway Controls updated live for customer app!', 'success');
+    } catch (err) {
+      showToast(`Error saving Free Sample settings: ${err}`, 'error');
+    }
+  };
+
   const handleAddFaq = () => {
     if (!newFaqQuestion.trim() || !newFaqAnswer.trim()) {
       showToast('Please enter both Question and Answer.', 'error');
@@ -531,6 +575,8 @@ export default function MobileControlPage({
         >
           <Headphones size={16} /> Help &amp; Support Desk
         </button>
+
+
       </div>
 
       {/* TAB 1: ONBOARDING SLIDES */}
@@ -1752,6 +1798,8 @@ export default function MobileControlPage({
           </div>
         </div>
       )}
+
+
 
       {/* EDIT / ADD ONBOARDING SLIDE MODAL matching Screenshot 2 */}
       {isSlideModalOpen && editingSlide && (

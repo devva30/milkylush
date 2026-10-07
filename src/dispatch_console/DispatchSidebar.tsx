@@ -66,6 +66,7 @@ export default function DispatchSidebar({
         { id: 'rider-attendance', label: 'Rider Attendance', icon: Calendar },
         { id: 'live-tracking', label: 'Live Rider Tracking', icon: MapPin },
         { id: 'register-partner', label: 'Register Partner', icon: UserPlus },
+        { id: 'service-area', label: 'Service Areas & Hub Map', icon: MapPin },
       ]
     },
     {

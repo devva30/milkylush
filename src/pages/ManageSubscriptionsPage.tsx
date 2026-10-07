@@ -239,24 +239,68 @@ export default function ManageSubscriptionsPage({
           </div>
         </div>
 
-        <button
-          onClick={handleOpenAddPackage}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '10px',
-            backgroundColor: '#047857',
-            color: '#FFFFFF',
-            fontWeight: 700,
-            fontSize: '0.8rem',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <Plus size={16} /> Create New Prepaid Package
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => {
+              const headers = ['Package Title', 'Duration Days', 'Discount %', 'Active Subscribers', 'Est. Inflow Revenue', 'Target Hub', 'Target Product'];
+              const rows = displayedPackages.map((pkg) => {
+                const count = (subscriptions || []).filter((s) => (s.prepaidPlanId && s.prepaidPlanId.includes(String(pkg.durationDays))) || (s.prepaidDays === pkg.durationDays)).length;
+                const estRev = count * 110 * pkg.durationDays * (1 - (pkg.discountPercent || 0) / 100);
+                return [
+                  `"${pkg.title}"`,
+                  pkg.durationDays,
+                  `"${pkg.discountPercent || 0}%"`,
+                  count,
+                  `"₹${Math.round(estRev)}"`,
+                  `"${pkg.hubId || 'All'}"`,
+                  `"${pkg.productName || 'All'}"`
+                ].join(',');
+              });
+              const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+              const link = document.createElement('a');
+              link.setAttribute('href', encodeURI(csvContent));
+              link.setAttribute('download', `Subscription_Packages_Analytics_${isHosur ? 'Hosur' : 'Bangalore'}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              showToast('Exported Subscription Analytics to CSV!', 'success');
+            }}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              color: '#047857',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              border: '1px solid #A7F3D0',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            📊 Export Analytics CSV
+          </button>
+
+          <button
+            onClick={handleOpenAddPackage}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '10px',
+              backgroundColor: '#047857',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Plus size={16} /> Create New Prepaid Package
+          </button>
+        </div>
       </div>
 
       {/* SECTION 1: Subscription Growth & Retention Analytics Dashboard */}

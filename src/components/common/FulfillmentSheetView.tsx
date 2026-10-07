@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Camera, AlertTriangle, CheckCircle2, ShieldChe
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import type { Order, DeliveryAgent, User } from '../../types';
+import { formatAddressDetails, getGoogleMapsUrl } from '../../utils/addressFormatter';
 
 interface FulfillmentSheetViewProps {
   order: Order;
@@ -37,12 +38,17 @@ export default function FulfillmentSheetView({
   const u = users.find((usr) => usr.id === o.userId);
   const customerName = o.customerName || u?.name || 'Valued Customer';
   const customerPhone = o.customerPhone || u?.phone || '9876543210';
-  const addressText = o.deliveryAddress || o.address || u?.savedAddresses?.[0] || u?.address || 'Hosur Central Hub Area, TN';
+  const rawAddressText = o.deliveryAddress || o.address || u?.savedAddresses?.[0] || u?.address || 'Hosur Central Hub Area, TN';
+  const formattedAddr = formatAddressDetails(rawAddressText);
+  const { cleanAddress, addressType, contactInfo, hubId: parsedHubId, gpsCoords } = formattedAddr;
+  const addressText = cleanAddress;
+  const googleMapsLink = getGoogleMapsUrl(formattedAddr);
 
   const isHosur = selectedHubId.includes('hosur') || !selectedHubId.includes('bengaluru');
   const hubCodeName = isHosur ? 'Hosur Central Hub (TN)' : 'Bangalore Tech Hub (KA)';
 
   // Authoritative Bill Calculation
+  const isFreeSample = (o as any).isFreeSample || o.id.startsWith('FS_');
   const rawAmount = o.totalAmount ?? (o as any).amount ?? (o as any).grandTotal ?? (o as any).totalPrice ?? (o as any).price ?? 0;
   const itemsSum = Array.isArray(o.items)
     ? o.items.reduce((sum: number, item: any) => {
@@ -51,8 +57,8 @@ export default function FulfillmentSheetView({
         return sum + (pr * q);
       }, 0)
     : 0;
-  const dropValue = rawAmount > 0 ? rawAmount : (itemsSum > 0 ? itemsSum : 110);
-  const isSubscription = o.isSubscriptionDelivery || o.orderType === 'subscription' || (o as any).subscriptionId;
+  const dropValue = isFreeSample ? 0 : (rawAmount > 0 ? rawAmount : (itemsSum > 0 ? itemsSum : 110));
+  const isSubscription = !isFreeSample && (o.isSubscriptionDelivery || o.orderType === 'subscription' || (o as any).subscriptionId);
   const subscriptionId = (o as any).subscriptionId || `sub_${o.id.replace(/[^0-9]/g, '') || '91307'}`;
   const totalPlanValue = isSubscription ? dropValue * 30 : dropValue;
 
@@ -133,7 +139,145 @@ export default function FulfillmentSheetView({
         color: 'var(--text-main, #0F172A)'
       }}
     >
-      
+      {/* PRINT-ONLY OFFICIAL TAX INVOICE & DELIVERY BILL (Visible only when user exports/prints) */}
+      <div className="print-only-bill">
+        {/* Header Section */}
+        <div style={{ borderBottom: '2px solid #047857', paddingBottom: '10px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: '18px', fontWeight: 900, color: '#047857', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              🥛 MILKYLUSH ORGANIC DAIRY &amp; FARM PRODUCTS
+            </div>
+            <div style={{ fontSize: '10px', color: '#334155', marginTop: '2px', fontWeight: 600 }}>
+              100% Pure A2 Buffalo &amp; Cow Milk · Farm Fresh Daily Delivery · FSSAI Reg. 22424578000192
+            </div>
+            <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
+              Hub: {hubCodeName} · Phone: +91 9658686686 · Email: support@milkylush.com
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase' }}>
+              TAX INVOICE &amp; DELIVERY BILL
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: 800, color: '#047857', marginTop: '2px' }}>
+              Bill #: {o.orderNumber || o.id}
+            </div>
+            <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>
+              Date: {formattedCreatedDate}
+            </div>
+          </div>
+        </div>
+
+        {/* Customer & Delivery Address Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px', backgroundColor: '#F8FAFC' }}>
+            <div style={{ fontSize: '10px', fontWeight: 800, color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>
+              CUSTOMER DETAILS
+            </div>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A' }}>{customerName}</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', marginTop: '2px' }}>Phone: {customerPhone}</div>
+            <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>User ID: {o.userId || u?.id || 'N/A'}</div>
+          </div>
+
+          <div style={{ border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px', backgroundColor: '#F8FAFC' }}>
+            <div style={{ fontSize: '10px', fontWeight: 800, color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>
+              DELIVERY ADDRESS &amp; INSTRUCTIONS
+            </div>
+            <div style={{ fontSize: '10px', color: '#0F172A', lineHeight: '1.4' }}>
+              {formattedAddr.doorNo && <span>Door: <strong>{formattedAddr.doorNo}</strong> · </span>}
+              {formattedAddr.street && <span>Street: <strong>{formattedAddr.street}</strong><br/></span>}
+              {formattedAddr.area && <span>Area: <strong>{formattedAddr.area}</strong> · </span>}
+              {formattedAddr.city && <span>City: <strong>{formattedAddr.city} {formattedAddr.pincode || ''}</strong><br/></span>}
+              {formattedAddr.landmark && <span>Landmark: <strong>{formattedAddr.landmark}</strong></span>}
+            </div>
+            <div style={{ fontSize: '10px', color: '#047857', fontWeight: 700, marginTop: '4px', borderTop: '1px dashed #CBD5E1', paddingTop: '4px' }}>
+              Note: {o.deliveryInstructions || 'Standard doorstep dropoff. Ring doorbell.'}
+            </div>
+          </div>
+        </div>
+
+        {/* Itemized Table */}
+        <div style={{ marginBottom: '12px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#047857', color: '#FFFFFF', textAlign: 'left', fontWeight: 800 }}>
+                <th style={{ padding: '6px 8px' }}>#</th>
+                <th style={{ padding: '6px 8px' }}>ITEM DESCRIPTION</th>
+                <th style={{ padding: '6px 8px' }}>PACK SIZE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'center' }}>QTY</th>
+                <th style={{ padding: '6px 8px', textAlign: 'right' }}>RATE</th>
+                <th style={{ padding: '6px 8px', textAlign: 'right' }}>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {o.items && o.items.length > 0 ? (
+                o.items.map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                    <td style={{ padding: '6px 8px', color: '#64748B' }}>{idx + 1}</td>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>{item.product?.name || 'Fresh Organic Buffalo Milk'}</td>
+                    <td style={{ padding: '6px 8px', color: '#475569' }}>{item.product?.unit || '750ml Glass Bottle'}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 700 }}>{item.quantity || 1}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>₹{item.product?.price || dropValue}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800 }}>₹{(item.quantity || 1) * (item.product?.price || dropValue)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                  <td style={{ padding: '6px 8px', color: '#64748B' }}>1</td>
+                  <td style={{ padding: '6px 8px', fontWeight: 700 }}>Fresh Organic Buffalo Milk</td>
+                  <td style={{ padding: '6px 8px', color: '#475569' }}>750ml Glass Bottle</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 700 }}>1</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>₹{dropValue}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800 }}>₹{dropValue}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Bill Summary & Payment Info */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div style={{ fontSize: '10px', color: '#475569', maxWidth: '60%' }}>
+            <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: '2px' }}>PLAN &amp; LOGISTICS SUMMARY:</div>
+            {isSubscription ? (
+              <div>Prepaid Subscription Plan ({subscriptionId}). Drop value ₹{dropValue} deducted per schedule.</div>
+            ) : isFreeSample ? (
+              <div>Free Sample Promotional Drop. ₹0 Charged to Customer.</div>
+            ) : (
+              <div>One-time Order. Payment Status: Completed / Verified.</div>
+            )}
+            <div style={{ marginTop: '3px' }}>Assigned Rider: {assignedRiderName} | Delivery Status: {o.status?.toUpperCase()}</div>
+          </div>
+
+          <div style={{ width: '220px', border: '1px solid #047857', borderRadius: '6px', padding: '8px', backgroundColor: '#ECFDF5' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
+              <span>This Drop Value:</span>
+              <span style={{ fontWeight: 700 }}>₹{dropValue}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px', color: '#047857' }}>
+              <span>Delivery Charge:</span>
+              <span style={{ fontWeight: 800 }}>FREE</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 900, color: '#047857', borderTop: '1.5px solid #047857', paddingTop: '4px', marginTop: '4px' }}>
+              <span>TOTAL AMOUNT:</span>
+              <span>₹{dropValue}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bill Footer */}
+        <div style={{ borderTop: '2px solid #047857', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px' }}>
+          <div style={{ color: '#047857', fontWeight: 800 }}>
+            💚 Thank you for choosing MilkyLush Organic Dairy! Pure &amp; Fresh Everyday.
+          </div>
+          <div style={{ textAlign: 'right', color: '#334155' }}>
+            <div style={{ height: '24px' }}></div>
+            <div style={{ borderTop: '1px solid #475569', paddingTop: '2px', fontWeight: 800 }}>
+              Authorized Signatory (MilkyLush Logistics)
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 1. TOP HEADER BAR */}
       <div
         className="no-print"
@@ -207,7 +351,7 @@ export default function FulfillmentSheetView({
                 transition: 'all 0.15s ease'
               }}
             >
-              🏢 Admin View
+              Admin View
             </button>
             <button
               onClick={() => setViewMode('customer')}
@@ -223,7 +367,7 @@ export default function FulfillmentSheetView({
                 transition: 'all 0.15s ease'
               }}
             >
-              👤 Customer View
+              Customer View
             </button>
             <button
               onClick={() => setViewMode('rider')}
@@ -239,22 +383,22 @@ export default function FulfillmentSheetView({
                 transition: 'all 0.15s ease'
               }}
             >
-              🛵 Delivery Person View
+              Delivery Person View
             </button>
           </div>
 
-          {/* Subscription drop badge */}
+          {/* Drop type badge */}
           <span style={{
             padding: '6px 14px',
             borderRadius: '9999px',
             fontWeight: 700,
             fontSize: '0.78rem',
-            backgroundColor: isSubscription ? '#ECFDF5' : '#F1F5F9',
-            color: isSubscription ? '#047857' : '#475569',
-            border: isSubscription ? '1px solid #A7F3D0' : '1px solid #E2E8F0',
+            backgroundColor: isFreeSample ? '#FEF3C7' : isSubscription ? '#ECFDF5' : '#F1F5F9',
+            color: isFreeSample ? '#D97706' : isSubscription ? '#047857' : '#475569',
+            border: isFreeSample ? '1px solid #FDE68A' : isSubscription ? '1px solid #A7F3D0' : '1px solid #E2E8F0',
             whiteSpace: 'nowrap'
           }}>
-            {isSubscription ? 'subscription drop' : 'one-time drop'}
+            {isFreeSample ? 'free sample drop' : isSubscription ? 'subscription drop' : 'one-time drop'}
           </span>
 
           {/* Status badge */}
@@ -770,14 +914,19 @@ export default function FulfillmentSheetView({
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                margin: 0,
-                color: 'var(--text-main, #0F172A)'
-              }}>
-                Customer details
-              </h3>
+              <div>
+                <h3 style={{
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  margin: 0,
+                  color: 'var(--text-main, #0F172A)'
+                }}>
+                  Customer details
+                </h3>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main, #0F172A)', marginTop: '4px' }}>
+                  {customerName} · <span style={{ color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>{customerPhone}</span>
+                </div>
+              </div>
 
               {onNavigateTab && (
                 <button
@@ -786,106 +935,143 @@ export default function FulfillmentSheetView({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '5px',
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     borderRadius: '8px',
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
                     border: 'none',
-                    fontSize: '0.74rem',
+                    fontSize: '0.76rem',
                     fontWeight: 700,
                     cursor: 'pointer'
                   }}
                 >
-                  <UserIcon size={13} /> View Customer Details
+                  <UserIcon size={13} /> View Profile
                 </button>
               )}
             </div>
 
-            {/* Avatar + Name + Phone */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '1.1rem' }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                backgroundColor: '#ECFDF5',
-                color: '#047857',
-                border: '1px solid #A7F3D0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                flexShrink: 0
-              }}>
-                {customerName.substring(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
-                  {customerName}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                  📞 {customerPhone}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid var(--border-color, #E2E8F0)', paddingTop: '0.9rem' }}>
-              <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted, #64748B)', textTransform: 'none', marginBottom: '0.35rem' }}>
-                Delivery address
+            {/* Structured Address Breakdown Grid */}
+            <div style={{
+              backgroundColor: 'var(--bg-main, #F8FAFC)',
+              borderRadius: '16px',
+              padding: '1.25rem',
+              border: '1px solid var(--border-color, #E2E8F0)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  DELIVERY ADDRESS
+                </span>
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: '#047857',
+                  backgroundColor: '#ECFDF5',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #A7F3D0'
+                }}>
+                  {(addressType || 'home').toLowerCase()}
+                </span>
               </div>
 
-              <div style={{ fontSize: '0.86rem', color: 'var(--text-main, #0F172A)', fontWeight: 600, lineHeight: 1.45, marginBottom: '0.4rem' }}>
-                {addressText}
-              </div>
+              {/* Clean Structured Address Grid - Only show fields actually present! */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.85rem' }}>
+                {formattedAddr.doorNo && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Door no.</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {formattedAddr.doorNo}
+                    </div>
+                  </div>
+                )}
 
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginBottom: '0.85rem' }}>
-                Type: Home · Fulfilling hub: {hubCodeName}
-              </div>
+                {formattedAddr.street && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Street / road</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {formattedAddr.street}
+                    </div>
+                  </div>
+                )}
 
-              {/* Clean Open in Maps action button */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(addressText)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: '#ECFDF5',
-                    color: '#047857',
-                    border: '1px solid #A7F3D0',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    textDecoration: 'none'
-                  }}
-                >
-                  <MapPin size={14} /> Open in Maps ↗
-                </a>
+                {formattedAddr.building && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Building</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {formattedAddr.building}
+                    </div>
+                  </div>
+                )}
 
-                {onNavigateTab && (
-                  <button
-                    onClick={() => onNavigateTab('customers', o.userId || u?.id || customerName)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: 'var(--bg-main, #F8FAFC)',
-                      color: 'var(--text-main, #0F172A)',
-                      border: '1px solid var(--border-color, #CBD5E1)',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <UserIcon size={14} /> Customer Profile
-                  </button>
+                {formattedAddr.floor && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Floor</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {formattedAddr.floor}
+                    </div>
+                  </div>
+                )}
+
+                {formattedAddr.area && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Area / locality</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {formattedAddr.area}
+                    </div>
+                  </div>
+                )}
+
+                {formattedAddr.landmark && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Landmark</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {formattedAddr.landmark}
+                    </div>
+                  </div>
+                )}
+
+                {(formattedAddr.city || formattedAddr.pincode) && (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>City / PIN</div>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                      {[formattedAddr.city, formattedAddr.pincode].filter(Boolean).join(' · ')}
+                    </div>
+                  </div>
                 )}
               </div>
+
+              {/* Full Address Display */}
+              {addressText && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #475569)', lineHeight: '1.4', backgroundColor: 'var(--bg-card, #FFFFFF)', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color, #E2E8F0)' }}>
+                  <strong>Full Address:</strong> {addressText}
+                </div>
+              )}
+
+              {/* Full Width Green Maps Button */}
+              <a
+                href={googleMapsLink}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  backgroundColor: '#047857',
+                  color: '#FFFFFF',
+                  padding: '0.65rem 1rem',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  transition: 'background-color 0.15s ease'
+                }}
+              >
+                <ExternalLink size={15} /> Open exact pin in maps
+              </a>
             </div>
           </div>
 
@@ -895,7 +1081,8 @@ export default function FulfillmentSheetView({
             borderRadius: '20px',
             padding: '1.35rem',
             border: '1px solid var(--border-color, #E2E8F0)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            marginBottom: '1.25rem'
           }}>
             <h3 style={{
               fontSize: '1.05rem',
@@ -940,115 +1127,107 @@ export default function FulfillmentSheetView({
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              {/* Event 1: ordered */}
-              <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                <span style={{
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
-                  backgroundColor: '#ECFDF5',
+              {/* Dynamic Realtime Event Logs */}
+              {(() => {
+                const logs: Array<{ tag: string; title: string; subtitle: string; bg: string; color: string; border: string }> = [];
+
+                // 1. Order Placed
+                logs.push({
+                  tag: 'ordered',
+                  title: 'Order Registered & Hub Queued',
+                  subtitle: `Logged ${formattedCreatedDate} · Customer: ${customerName}`,
+                  bg: '#ECFDF5',
                   color: '#047857',
-                  fontWeight: 700,
-                  fontSize: '0.72rem',
-                  border: '1px solid #A7F3D0',
-                  marginTop: '1px'
-                }}>
-                  ordered
-                </span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
-                    Logged and registered
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    {formattedCreatedDate}
-                  </div>
-                </div>
-              </div>
+                  border: '#A7F3D0'
+                });
 
-              {/* Event 2: packed */}
-              <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                <span style={{
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
-                  backgroundColor: '#FEF3C7',
-                  color: '#B45309',
-                  fontWeight: 700,
-                  fontSize: '0.72rem',
-                  border: '1px solid #FDE68A',
-                  marginTop: '1px'
-                }}>
-                  packed
-                </span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
-                    Prepared for dispatch
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    Hub consolidation logs updated
-                  </div>
-                </div>
-              </div>
+                // 2. Hub Processing / Dispatch
+                if (o.status === 'packed' || o.status === 'outForDelivery' || isDelivered || isCancelled) {
+                  logs.push({
+                    tag: 'packed',
+                    title: 'Hub Processing & Packing Completed',
+                    subtitle: `Consolidated at ${hubCodeName}`,
+                    bg: '#FEF3C7',
+                    color: '#B45309',
+                    border: '#FDE68A'
+                  });
+                }
 
-              {/* Event 3: transit */}
-              <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                <span style={{
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
-                  backgroundColor: '#FEF3C7',
-                  color: '#B45309',
-                  fontWeight: 700,
-                  fontSize: '0.72rem',
-                  border: '1px solid #FDE68A',
-                  marginTop: '1px'
-                }}>
-                  transit
-                </span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
-                    Out for delivery
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    Dispatched with rider: {assignedRiderName}
-                  </div>
-                </div>
-              </div>
+                // 3. Out For Delivery
+                if (o.status === 'outForDelivery' || isDelivered || isCancelled) {
+                  logs.push({
+                    tag: 'transit',
+                    title: 'Out For Delivery',
+                    subtitle: `Assigned rider: ${assignedRiderName}`,
+                    bg: '#FEF3C7',
+                    color: '#B45309',
+                    border: '#FDE68A'
+                  });
+                }
 
-              {/* Event 4: pending / delivered / cancelled / skipped */}
-              <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                <span style={{
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
-                  backgroundColor: isDelivered ? '#ECFDF5' : (isCancelled || o.status === 'skipped') ? '#FEE2E2' : '#F1F5F9',
-                  color: isDelivered ? '#047857' : (isCancelled || o.status === 'skipped') ? '#DC2626' : '#64748B',
-                  fontWeight: 700,
-                  fontSize: '0.72rem',
-                  border: isDelivered ? '1px solid #A7F3D0' : (isCancelled || o.status === 'skipped') ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
-                  marginTop: '1px'
-                }}>
-                  {isDelivered ? 'delivered' : o.status === 'skipped' ? 'skipped' : isCancelled ? 'cancelled' : 'pending'}
-                </span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
-                    {isDelivered 
-                      ? `Delivered by Rider (${assignedRiderName})` 
-                      : (isCancelled || o.status === 'skipped') 
-                        ? `Cancelled/Skipped by Rider (${assignedRiderName})` 
-                        : 'Awaiting dropoff'}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                    {isDelivered 
-                      ? `Doorstep photo & GPS verified at ${formattedCreatedDate}` 
-                      : (isCancelled || o.status === 'skipped') 
-                        ? `Reason: "${cancelReason || (o as any).skipReason || 'Customer unreachable / Delivery issue'}"` 
-                        : 'In transit on route'}
-                  </div>
-                </div>
-              </div>
+                // 4. Final Status (Delivered / Cancelled / Pending)
+                logs.push({
+                  tag: isDelivered ? 'delivered' : isCancelled ? 'cancelled' : 'pending',
+                  title: isDelivered 
+                    ? `Delivered by Rider (${assignedRiderName})` 
+                    : isCancelled 
+                      ? `Cancelled by Rider (${assignedRiderName})` 
+                      : 'Awaiting Dropoff',
+                  subtitle: isDelivered 
+                    ? `Doorstep photo & GPS verified at ${formattedCreatedDate}` 
+                    : isCancelled 
+                      ? `Reason: "${cancelReason || 'Customer unreachable / Delivery issue'}"` 
+                      : 'In transit on route',
+                  bg: isDelivered ? '#ECFDF5' : isCancelled ? '#FEE2E2' : '#F1F5F9',
+                  color: isDelivered ? '#047857' : isCancelled ? '#DC2626' : '#64748B',
+                  border: isDelivered ? '#A7F3D0' : isCancelled ? '#FCA5A5' : '#E2E8F0'
+                });
 
+                // Render custom historyLog entries if available in Firestore
+                const customHistory: any[] = (o as any).historyLog || (o as any).auditLogs || [];
+                if (customHistory.length > 0) {
+                  customHistory.forEach((log) => {
+                    logs.push({
+                      tag: log.status || log.action || 'audit log',
+                      title: log.title || log.note || log.message || 'Audit Log Event',
+                      subtitle: log.timestamp || log.date ? new Date(log.timestamp || log.date).toLocaleString('en-GB') : 'Realtime event recorded',
+                      bg: '#F8FAFC',
+                      color: '#0F172A',
+                      border: '#CBD5E1'
+                    });
+                  });
+                }
+
+                return logs.map((log, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                    <span style={{
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      backgroundColor: log.bg,
+                      color: log.color,
+                      fontWeight: 700,
+                      fontSize: '0.72rem',
+                      border: `1px solid ${log.border}`,
+                      marginTop: '1px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {log.tag}
+                    </span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
+                        {log.title}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
+                        {log.subtitle}
+                      </div>
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
 
         </div>
-
       </div>
 
       {/* Photo Lightbox Modal */}
@@ -1107,7 +1286,7 @@ export default function FulfillmentSheetView({
           </div>
         </div>
       )}
-
     </div>
   );
 }
+

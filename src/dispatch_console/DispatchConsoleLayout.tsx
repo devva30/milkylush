@@ -19,6 +19,7 @@ import DispatchDeliveriesArchivePage from './pages/DispatchDeliveriesArchivePage
 import DispatchDeliveryHistoryPage from './pages/DispatchDeliveryHistoryPage';
 import DispatchSystemControlsPage from './pages/DispatchSystemControlsPage';
 import DispatchHubContactSettingsPage from './pages/DispatchHubContactSettingsPage';
+import ServiceAreasPage from '../pages/ServiceAreasPage';
 
 import type { DeliveryAgent, Order, Subscription, User, Product } from '../types';
 
@@ -32,6 +33,13 @@ interface DispatchConsoleLayoutProps {
   hubSubscriptions?: Subscription[];
   hubUsers?: User[];
   products?: Product[];
+  deliverySettings?: {
+    address: string;
+    hubLatitude: string;
+    hubLongitude: string;
+    radiusKm: string;
+  };
+  onSaveServiceArea?: (address: string, lat: string, lng: string, radius: string) => void;
   onUpdateOrderStatus?: (orderId: string, status: Order['status']) => void;
   onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
   adminUsername?: string;
@@ -47,6 +55,13 @@ export default function DispatchConsoleLayout({
   hubSubscriptions = [],
   hubUsers = [],
   products = [],
+  deliverySettings = {
+    address: 'Electronic City, Bengaluru',
+    hubLatitude: '12.8676977',
+    hubLongitude: '77.6667214',
+    radiusKm: '5.0',
+  },
+  onSaveServiceArea,
   onUpdateOrderStatus,
   onUpdateOrderDriver,
   adminUsername = 'Tomadmin@gmail.com'
@@ -260,6 +275,15 @@ export default function DispatchConsoleLayout({
           {activeTab === 'hub-contacts' && (
             <DispatchHubContactSettingsPage
               selectedHubId={selectedHubId}
+              showToast={showToast}
+            />
+          )}
+
+          {activeTab === 'service-area' && (
+            <ServiceAreasPage
+              selectedHubId={selectedHubId}
+              deliverySettings={deliverySettings}
+              onSaveSettings={onSaveServiceArea || (() => {})}
               showToast={showToast}
             />
           )}

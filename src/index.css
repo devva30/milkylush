@@ -1636,5 +1636,74 @@ body {
   }
 }
 
+/* Print Stylesheet for 1-Page Official Tax Invoice & Delivery Bill */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 4mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .sidebar,
+  .sidebar-container,
+  .top-bar-header,
+  header,
+  nav,
+  .no-print,
+  button,
+  .mobile-header,
+  .mobile-menu-btn {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .print-only-bill,
+  .print-only-bill * {
+    visibility: visible !important;
+  }
+
+  .print-only-bill {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 98vh !important;
+    margin: 0 !important;
+    padding: 16px 20px !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    z-index: 999999 !important;
+  }
+}
+
+@media screen {
+  .print-only-bill {
+    display: none !important;
+  }
+}
+
+
+
 
 

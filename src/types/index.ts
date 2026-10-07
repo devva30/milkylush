@@ -20,6 +20,7 @@ export interface Product {
   stockStatus?: 'in_stock' | 'out_of_stock' | 'limited_stock' | 'coming_soon';
   stockQuantity?: number;
   guaranteeNote?: string;
+  isGlassBottle?: boolean;
   hubIds?: string[];
   outOfStockHubs?: string[];
 }
@@ -38,10 +39,13 @@ export interface User {
   activeAddressIndex: number;
   hubId?: string;
   bottlesAtHome?: number;
+  damagedBottles?: number;
   password?: string;
   createdAt?: string;
   assignedDeliveryAgentId?: string;
   assignedDeliveryAgentName?: string;
+  hasClaimedFreeSample?: boolean;
+  freeSampleClaimedAt?: string;
 }
 
 export type UserProfile = User;

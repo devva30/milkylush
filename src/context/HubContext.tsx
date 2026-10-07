@@ -32,6 +32,16 @@ export const HUBS: Record<string, HubInfo> = {
     latitude: '12.8676977',
     longitude: '77.6667214',
   },
+  hub_blr_ecity: {
+    id: 'hub_blr_ecity',
+    name: 'Bangalore Electronic City Hub',
+    code: 'KA-BLR',
+    location: 'Electronic City, Bangalore',
+    state: 'Karnataka',
+    address: 'Bangalore Electronic City Hub, Karnataka',
+    latitude: '12.8676977',
+    longitude: '77.6667214',
+  },
 };
 
 interface HubContextType {

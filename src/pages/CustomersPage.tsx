@@ -4,14 +4,16 @@ import {
   User as UserIcon, Phone, Mail, CreditCard, Package, Calendar,
   CheckCircle2, PauseCircle, Clock, ExternalLink, ShieldAlert, Trash2
 } from 'lucide-react';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { User, Order, Subscription } from '../types';
 import { useToast } from '../context/ToastContext';
+import { formatAddressDetails, getGoogleMapsUrl } from '../utils/addressFormatter';
 
 interface CustomerExtended extends User {
   status: 'active' | 'inactive' | 'vacation' | 'skipped';
   customerType: 'subscription' | 'onetime' | 'both' | 'new';
+  hasClaimedFreeSample: boolean;
 }
 
 interface CustomersPageProps {
@@ -27,10 +29,25 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<'all' | 'active' | 'inactive' | 'vacation' | 'skipped'>('all');
   const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'subscription' | 'onetime' | 'both' | 'new'>('all');
+  const [activeFreeSampleFilter, setActiveFreeSampleFilter] = useState<'all' | 'new_customers' | 'claimed' | 'not_claimed'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerExtended | null>(null);
-  const [newAddressText, setNewAddressText] = useState('');
   const [customerAddresses, setCustomerAddresses] = useState<Record<string, string[]>>({});
+
+  // Structured Add Address Form State (matching App fields exactly)
+  const [showAddAddressForm, setShowAddAddressForm] = useState(false);
+  const [addCity, setAddCity] = useState<'Hosur, Tamil Nadu' | 'Bengaluru, Karnataka'>('Hosur, Tamil Nadu');
+  const [addArea, setAddArea] = useState('');
+  const [addHouseNo, setAddHouseNo] = useState('');
+  const [addStreet, setAddStreet] = useState('');
+  const [addBuilding, setAddBuilding] = useState('');
+  const [addFloor, setAddFloor] = useState('');
+  const [addLandmark, setAddLandmark] = useState('');
+  const [addPin, setAddPin] = useState('');
+  const [addReceiverName, setAddReceiverName] = useState('');
+  const [addReceiverPhone, setAddReceiverPhone] = useState('');
+  const [addAddressType, setAddAddressType] = useState<'Home' | 'Work' | 'Hotel' | 'Other'>('Home');
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   // 20-Second Delete Customer Modal State
   const [deleteCustomerModal, setDeleteCustomerModal] = useState<{ id: string; name: string } | null>(null);
@@ -93,10 +110,16 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
           statusVal = 'inactive';
         }
 
+        const userSampleOrders = userOrders.filter(
+          (o) => o.isFreeSample === true || o.id.startsWith('FS_') || (o as any).paymentMethod === 'DIRECT_FREE_SAMPLE'
+        );
+        const claimed = u.hasClaimedFreeSample === true || userSampleOrders.length > 0;
+
         return {
           ...u,
           status: statusVal,
           customerType: typeVal,
+          hasClaimedFreeSample: claimed,
         };
       });
     }
@@ -114,6 +137,7 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
 
   const totalRegistered = demoUsers.length;
   const activeSubsCount = demoUsers.filter(u => u.status === 'active' && u.customerType === 'subscription').length;
+  const claimedFreeSampleCount = demoUsers.filter(u => u.hasClaimedFreeSample).length;
 
   const filteredUsers = useMemo(() => {
     return demoUsers.filter(user => {
@@ -136,9 +160,16 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         if (activeTypeFilter === 'new' && user.customerType !== 'new') return false;
       }
 
+      // Free Sample Claim Filter (new_customers, claimed, not_claimed)
+      if (activeFreeSampleFilter !== 'all') {
+        if (activeFreeSampleFilter === 'new_customers' && user.customerType !== 'new') return false;
+        if (activeFreeSampleFilter === 'claimed' && !user.hasClaimedFreeSample) return false;
+        if (activeFreeSampleFilter === 'not_claimed' && user.hasClaimedFreeSample) return false;
+      }
+
       return true;
     });
-  }, [demoUsers, searchQuery, activeStatusFilter, activeTypeFilter]);
+  }, [demoUsers, searchQuery, activeStatusFilter, activeTypeFilter, activeFreeSampleFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / (pageSize === 9999 ? filteredUsers.length || 1 : pageSize)));
 
@@ -150,25 +181,126 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
 
   // Render Redesigned Customer Profile Details Sub-View
   if (selectedCustomer) {
-    const userSubs = subscriptions.filter(s => s.userId === selectedCustomer.id || s.userName?.toLowerCase() === selectedCustomer.name.toLowerCase());
-    const userOrders = orders.filter(o => o.userId === selectedCustomer.id);
-    const addresses = customerAddresses[selectedCustomer.id] || selectedCustomer.savedAddresses || [selectedCustomer.address || 'Default Hub Delivery Address'];
+    const userSubs = subscriptions.filter(s =>
+      s.userId === selectedCustomer.id ||
+      (selectedCustomer.email && s.userId === selectedCustomer.email) ||
+      (selectedCustomer.phone && s.userId === selectedCustomer.phone) ||
+      s.userName?.toLowerCase() === selectedCustomer.name.toLowerCase()
+    );
+    const userOrders = orders.filter(o =>
+      o.userId === selectedCustomer.id ||
+      (selectedCustomer.email && o.userId === selectedCustomer.email) ||
+      (selectedCustomer.phone && o.userId === selectedCustomer.phone) ||
+      (selectedCustomer.email && (o as any).customerEmail === selectedCustomer.email) ||
+      (selectedCustomer.phone && (o as any).customerPhone === selectedCustomer.phone)
+    );
+
+    const matchingUserDocs = hubUsers.filter(u =>
+      u.id === selectedCustomer.id ||
+      (u.email && selectedCustomer.email && u.email.toLowerCase() === selectedCustomer.email.toLowerCase()) ||
+      (u.phone && selectedCustomer.phone && u.phone.replaceAll('+91', '').trim() === selectedCustomer.phone.replaceAll('+91', '').trim())
+    );
+
+    const rawAddressesList = [
+      ...matchingUserDocs.flatMap(u => u.savedAddresses || []),
+      ...matchingUserDocs.map(u => u.address).filter(Boolean),
+      ...matchingUserDocs.map(u => (u as any).activeAddress).filter(Boolean),
+      ...(selectedCustomer.savedAddresses || []),
+      ...(selectedCustomer.address ? [selectedCustomer.address] : []),
+      ...((selectedCustomer as any).activeAddress ? [(selectedCustomer as any).activeAddress] : []),
+      ...userOrders.map(o => o.address || o.deliveryAddress).filter(Boolean),
+      ...userSubs.map(s => s.address || s.deliveryAddress).filter(Boolean),
+    ].filter(a => a && a.trim().length > 3 && a.toLowerCase() !== 'no address added');
+
+    const addresses = Array.from(new Set(rawAddressesList));
 
     const displaySubs = userSubs;
     const displayOrders = userOrders;
 
-    const handleAddAddress = () => {
-      if (!newAddressText.trim()) return;
-      const updated = [...addresses, newAddressText.trim()];
-      setCustomerAddresses({ ...customerAddresses, [selectedCustomer.id]: updated });
-      setNewAddressText('');
-      showToast("Added new delivery address to registry", "success");
+    const handleAddAddress = async () => {
+      if (!addArea.trim()) {
+        showToast("Please enter Area / Locality", "error");
+        return;
+      }
+      setIsSavingAddress(true);
+      try {
+        const targetHubId = addCity.includes('Hosur') ? 'hub_hosur_main' : 'hub_blr_ecity';
+        const addressParts: string[] = [];
+        if (addHouseNo.trim()) addressParts.push(addHouseNo.trim());
+        if (addStreet.trim()) addressParts.push(addStreet.trim());
+        if (addBuilding.trim()) addressParts.push(addBuilding.trim());
+        if (addFloor.trim()) addressParts.push(addFloor.trim());
+        if (addArea.trim()) addressParts.push(addArea.trim());
+        if (addLandmark.trim()) addressParts.push(`Landmark: ${addLandmark.trim()}`);
+        if (addPin.trim()) addressParts.push(`PIN: ${addPin.trim()}`);
+        addressParts.push(addCity);
+
+        const mainAddressText = addressParts.join(', ');
+        const rName = addReceiverName.trim() || selectedCustomer.name;
+        const rPhone = addReceiverPhone.trim() || selectedCustomer.phone;
+        const fullAddressString = `${mainAddressText} | Contact: ${rName} (${rPhone}) | Type: ${addAddressType} | Hub: ${targetHubId}`;
+
+        const currentSaved = selectedCustomer.savedAddresses && selectedCustomer.savedAddresses.length > 0
+          ? selectedCustomer.savedAddresses
+          : (selectedCustomer.address ? [selectedCustomer.address] : []);
+
+        const updatedSaved = [...currentSaved, fullAddressString];
+
+        await updateDoc(doc(db, 'users', selectedCustomer.id), {
+          savedAddresses: updatedSaved,
+          activeAddress: updatedSaved[0],
+          address: updatedSaved[0],
+          activeHubId: targetHubId,
+        });
+
+        setSelectedCustomer({
+          ...selectedCustomer,
+          savedAddresses: updatedSaved,
+          address: updatedSaved[0],
+        });
+
+        setAddArea('');
+        setAddHouseNo('');
+        setAddStreet('');
+        setAddBuilding('');
+        setAddFloor('');
+        setAddLandmark('');
+        setAddPin('');
+        setAddReceiverName('');
+        setAddReceiverPhone('');
+        setShowAddAddressForm(false);
+        showToast("Address saved to customer registry in Firestore! 📍", "success");
+      } catch (err) {
+        showToast(`Failed to save address: ${err}`, "error");
+      } finally {
+        setIsSavingAddress(false);
+      }
     };
 
-    const handleDeleteAddress = (index: number) => {
-      const updated = addresses.filter((_, i) => i !== index);
-      setCustomerAddresses({ ...customerAddresses, [selectedCustomer.id]: updated });
-      showToast("Address removed from registry", "info");
+    const handleDeleteAddress = async (index: number) => {
+      try {
+        const currentSaved = selectedCustomer.savedAddresses && selectedCustomer.savedAddresses.length > 0
+          ? selectedCustomer.savedAddresses
+          : (selectedCustomer.address ? [selectedCustomer.address] : []);
+
+        const updatedSaved = currentSaved.filter((_, i) => i !== index);
+
+        await updateDoc(doc(db, 'users', selectedCustomer.id), {
+          savedAddresses: updatedSaved,
+          activeAddress: updatedSaved.length > 0 ? updatedSaved[0] : '',
+          address: updatedSaved.length > 0 ? updatedSaved[0] : '',
+        });
+
+        setSelectedCustomer({
+          ...selectedCustomer,
+          savedAddresses: updatedSaved,
+          address: updatedSaved.length > 0 ? updatedSaved[0] : '',
+        });
+
+        showToast("Address removed from customer registry in Firestore!", "info");
+      } catch (err) {
+        showToast(`Failed to delete address: ${err}`, "error");
+      }
     };
 
     return (
@@ -243,13 +375,14 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
             <div style={{
-              width: '64px',
-              height: '64px',
+              width: '60px',
+              height: '60px',
               borderRadius: '50%',
-              backgroundColor: '#047857',
-              color: '#FFFFFF',
+              backgroundColor: '#ECFDF5',
+              color: '#047857',
+              border: '1.5px solid #A7F3D0',
               fontWeight: 800,
-              fontSize: '1.5rem',
+              fontSize: '1.4rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -262,14 +395,22 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                 {selectedCustomer.name}
               </h3>
               <div style={{ fontSize: '0.85rem', color: '#4B5563', marginTop: '6px', display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Phone size={14} style={{ color: '#047857' }} /> {selectedCustomer.phone}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Mail size={14} style={{ color: '#047857' }} /> {selectedCustomer.email || 'No email registered'}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <UserIcon size={14} style={{ color: '#047857' }} /> ID: {selectedCustomer.id}
+                <a
+                  href={`tel:${selectedCustomer.phone}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  <Phone size={14} /> {selectedCustomer.phone}
+                </a>
+                {selectedCustomer.email && (
+                  <a
+                    href={`mailto:${selectedCustomer.email}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    <Mail size={14} /> {selectedCustomer.email}
+                  </a>
+                )}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B' }}>
+                  <UserIcon size={14} /> ID: {selectedCustomer.id}
                 </span>
               </div>
             </div>
@@ -278,30 +419,20 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button 
               onClick={() => handleOpenDeleteCustomerModal(selectedCustomer.id, selectedCustomer.name)}
-              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', border: '1px solid #FCA5A5', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Trash2 size={15} /> Delete Customer
             </button>
           </div>
         </div>
 
-        {/* 4 Metric Counter Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        {/* 2 Metric Counter Cards Grid (Plastic Saved & Wallet Balance removed as requested!) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
           
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '14px', border: '1px solid #E5E7EB' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>PLASTIC SAVED</span>
-              <Package size={16} style={{ color: '#047857' }} />
-            </div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#111827', marginTop: '6px' }}>
-              {selectedCustomer.plasticSaved || 0} kg
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '14px', border: '1px solid #E5E7EB' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>BOTTLES RETURNED</span>
-              <CheckCircle2 size={16} style={{ color: '#059669' }} />
+              <CheckCircle2 size={18} style={{ color: '#059669' }} />
             </div>
             <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#111827', marginTop: '6px' }}>
               {selectedCustomer.emptyBottlesReturned || 0} units
@@ -311,20 +442,10 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '14px', border: '1px solid #E5E7EB' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>BOTTLES AT HOME</span>
-              <Clock size={16} style={{ color: '#D97706' }} />
+              <Clock size={18} style={{ color: '#D97706' }} />
             </div>
             <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#111827', marginTop: '6px' }}>
               {selectedCustomer.bottlesAtHome || 0} units
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '14px', border: '1px solid #E5E7EB' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>WALLET BALANCE</span>
-              <CreditCard size={16} style={{ color: '#2563EB' }} />
-            </div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#111827', marginTop: '6px' }}>
-              ₹{selectedCustomer.walletBalance || 0}
             </div>
           </div>
 
@@ -333,102 +454,46 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         {/* 2-Column Detailed Layout */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem', width: '100%' }}>
           
-          {/* LEFT COLUMN: Delivery Address Registry & Active Subscriptions */}
+          {/* LEFT COLUMN: Order & Delivery History + Delivery Address Registry */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0 }}>
             
-            {/* Delivery Address Registry Card */}
+            {/* Top Left: Order & Delivery History Card */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
               <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MapPin size={18} style={{ color: '#047857' }} /> Delivery Address Registry ({addresses.length})
+                <Package size={18} style={{ color: '#047857' }} /> Order &amp; Delivery History
               </div>
 
-              {/* Address Cards List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {addresses.map((addr, idx) => (
-                  <div key={idx} style={{ padding: '0.85rem 1rem', borderRadius: '12px', border: idx === 0 ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB', backgroundColor: idx === 0 ? '#ECFDF5' : '#F9FAFB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
-                      <MapPin size={16} style={{ color: idx === 0 ? '#059669' : '#6B7280', marginTop: '2px', flexShrink: 0 }} />
-                      <div style={{ fontSize: '0.82rem', color: idx === 0 ? '#065F46' : '#374151', fontWeight: 600, wordBreak: 'break-word' }}>
-                        {addr}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                      {idx === 0 && <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', backgroundColor: '#D1FAE5', padding: '2px 8px', borderRadius: '10px' }}>PRIMARY</span>}
-                      <button 
-                        onClick={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(addr)}`, '_blank')}
-                        title="View on Google Maps"
-                        style={{ fontSize: '0.75rem', fontWeight: 700, color: '#111827', backgroundColor: '#FFFFFF', border: '1px solid #D1D5DB', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <ExternalLink size={12} /> Map
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteAddress(idx)}
-                        title="Delete Address"
-                        style={{ fontSize: '0.75rem', fontWeight: 700, color: '#DC2626', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Add Address Input Form */}
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                <input 
-                  type="text" 
-                  placeholder="Enter new delivery address (e.g. Flat 301, Tower A)..." 
-                  value={newAddressText}
-                  onChange={(e) => setNewAddressText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddAddress()}
-                  style={{ flex: 1, padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.82rem', outline: 'none' }}
-                />
-                <button 
-                  onClick={handleAddAddress}
-                  style={{ padding: '0.65rem 1rem', borderRadius: '10px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', color: '#111827', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <Plus size={14} /> Add Address
-                </button>
-              </div>
-            </div>
-
-            {/* Active Delivery Subscriptions Card */}
-            <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calendar size={18} style={{ color: '#047857' }} /> Active Subscriptions ({displaySubs.length})
-              </div>
-
-              {displaySubs.length === 0 ? (
+              {displayOrders.length === 0 ? (
                 <div style={{ padding: '1.25rem', textAlign: 'center', color: '#6B7280', fontSize: '0.85rem', backgroundColor: '#F9FAFB', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
-                  No active subscriptions for this customer.
+                  No orders placed yet by this customer.
                 </div>
               ) : (
                 <div className="table-container" style={{ border: '1px solid #F3F4F6', borderRadius: '10px' }}>
                   <table className="admin-table" style={{ width: '100%', fontSize: '0.8rem' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
-                        <th>SUB ID</th>
-                        <th>PRODUCT</th>
-                        <th>FREQUENCY</th>
+                        <th>ORDER ID</th>
+                        <th>DATE</th>
+                        <th>AMOUNT</th>
                         <th>STATUS</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {displaySubs.map(sub => (
-                        <tr key={sub.id}>
+                      {displayOrders.map(order => (
+                        <tr key={order.id}>
                           <td>
                             <button 
-                              onClick={() => onNavigateTab('subscriptions')}
+                              onClick={() => onNavigateTab('orders', order.id)}
                               style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
                             >
-                              {sub.id} →
+                              {order.id} →
                             </button>
                           </td>
-                          <td style={{ fontWeight: 700, color: '#111827' }}>{sub.productName}</td>
-                          <td style={{ color: '#6B7280' }}>{sub.frequency}</td>
+                          <td style={{ color: '#6B7280' }}>{order.orderDate}</td>
+                          <td style={{ fontWeight: 800, color: '#111827' }}>₹{order.totalAmount}</td>
                           <td>
                             <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
-                              ACTIVE
+                              {order.status.toUpperCase()}
                             </span>
                           </td>
                         </tr>
@@ -437,47 +502,393 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                   </table>
                 </div>
               )}
+
+              <div style={{ marginTop: '1.25rem', padding: '1rem', borderRadius: '12px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
+                  Customer Account Notes
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#6B7280', lineHeight: '1.4' }}>
+                  {(() => {
+                    let formattedDate = 'recently';
+                    if (selectedCustomer.createdAt) {
+                      try {
+                        const d = typeof selectedCustomer.createdAt === 'object' && (selectedCustomer.createdAt as any).seconds
+                          ? new Date((selectedCustomer.createdAt as any).seconds * 1000)
+                          : new Date(selectedCustomer.createdAt);
+                        if (!isNaN(d.getTime())) formattedDate = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                      } catch (e) {
+                        formattedDate = 'recently';
+                      }
+                    }
+                    const noteText = selectedCustomer.customerType === 'new'
+                      ? 'Newly registered customer account. No orders or subscriptions placed yet.'
+                      : selectedCustomer.customerType === 'subscription'
+                      ? 'Active subscription customer with recurring delivery schedule.'
+                      : 'Customer with verified order history.';
+                    return `Registered ${formattedDate}. Verified phone number (${selectedCustomer.phone}). ${noteText}`;
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Left: Delivery Address Registry Card with Cover Button */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MapPin size={18} style={{ color: '#047857' }} /> Delivery Address Registry ({addresses.length})
+              </div>
+
+              {/* Address Cards List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {addresses.map((addr, idx) => {
+                  const formatted = formatAddressDetails(addr);
+                  const googleMapsLink = getGoogleMapsUrl(formatted);
+                  return (
+                    <div key={idx} style={{ padding: '1rem', borderRadius: '14px', border: idx === 0 ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB', backgroundColor: idx === 0 ? '#ECFDF5' : '#F9FAFB', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <MapPin size={16} style={{ color: '#047857' }} />
+                          <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>
+                            ADDRESS {idx + 1} {idx === 0 ? '· PRIMARY' : ''}
+                          </span>
+                        </div>
+
+                        <button 
+                          onClick={() => handleDeleteAddress(idx)}
+                          title="Delete Address"
+                          style={{ fontSize: '0.75rem', fontWeight: 700, color: '#DC2626', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
+
+                      {/* Structured Field Grid - Only show entered fields! */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.65rem', fontSize: '0.8rem', backgroundColor: '#FFFFFF', padding: '0.75rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                        {formatted.doorNo && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Door no.</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.doorNo}</span>
+                          </div>
+                        )}
+                        {formatted.street && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Street / road</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.street}</span>
+                          </div>
+                        )}
+                        {formatted.building && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Building</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.building}</span>
+                          </div>
+                        )}
+                        {formatted.floor && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Floor</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.floor}</span>
+                          </div>
+                        )}
+                        {formatted.area && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Area / locality</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.area}</span>
+                          </div>
+                        )}
+                        {formatted.landmark && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Landmark</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.landmark}</span>
+                          </div>
+                        )}
+                        {(formatted.city || formatted.pincode) && (
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>City / PIN</span>
+                            <span style={{ fontWeight: 800, color: '#0F172A' }}>
+                              {[formatted.city, formatted.pincode].filter(Boolean).join(' · ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.4' }}>
+                        <strong>Full Address Text:</strong> {formatted.cleanAddress}
+                      </div>
+
+                      {/* Full-width Cover Button for Map link */}
+                      <a 
+                        href={googleMapsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ 
+                          width: '100%', 
+                          padding: '0.55rem 1rem', 
+                          borderRadius: '10px', 
+                          backgroundColor: '#047857', 
+                          color: '#FFFFFF', 
+                          fontWeight: 800, 
+                          fontSize: '0.8rem', 
+                          textDecoration: 'none', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: '6px',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <ExternalLink size={14} /> Open exact pin in Google Maps →
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add Address Form Toggle & Structured Form */}
+              <div style={{ marginTop: '1.25rem', borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
+                {!showAddAddressForm ? (
+                  <button
+                    onClick={() => {
+                      setAddReceiverName(selectedCustomer.name);
+                      setAddReceiverPhone(selectedCustomer.phone);
+                      setShowAddAddressForm(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 1rem',
+                      borderRadius: '10px',
+                      border: '1.5px dashed #047857',
+                      backgroundColor: '#ECFDF5',
+                      color: '#047857',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Plus size={16} /> + Add New Delivery Address (App Fields)
+                  </button>
+                ) : (
+                  <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #D1D5DB', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>📍 Add New Address (App Fields)</span>
+                      <button onClick={() => setShowAddAddressForm(false)} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>✕ Cancel</button>
+                    </div>
+
+                    {/* Field 1: City Dropdown */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>City *</label>
+                      <select
+                        value={addCity}
+                        onChange={(e) => setAddCity(e.target.value as any)}
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none', backgroundColor: '#FFFFFF' }}
+                      >
+                        <option value="Hosur, Tamil Nadu">Hosur, Tamil Nadu (Hosur Hub)</option>
+                        <option value="Bengaluru, Karnataka">Bengaluru, Karnataka (Bangalore Hub)</option>
+                      </select>
+                    </div>
+
+                    {/* Field 2 & 3: Area & PIN Code */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Area / Locality *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Darga / E-City"
+                          value={addArea}
+                          onChange={(e) => setAddArea(e.target.value)}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>PIN Code *</label>
+                        <input
+                          type="text"
+                          placeholder="6-digit PIN code"
+                          value={addPin}
+                          maxLength={6}
+                          onChange={(e) => setAddPin(e.target.value.replace(/\D/g, ''))}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Field 4 & 5: Flat/Door No & Street */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Flat / House / Door No</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Flat 301"
+                          value={addHouseNo}
+                          onChange={(e) => setAddHouseNo(e.target.value)}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Street / Main / Cross</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 2nd Cross"
+                          value={addStreet}
+                          onChange={(e) => setAddStreet(e.target.value)}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Field 6 & 7: Building & Floor */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Building / Apartment</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Oakwood Hills"
+                          value={addBuilding}
+                          onChange={(e) => setAddBuilding(e.target.value)}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Floor</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 3rd Floor"
+                          value={addFloor}
+                          onChange={(e) => setAddFloor(e.target.value)}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Field 8: Landmark */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Landmark</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Opp Infosys Gate 4 / Near Water Tank"
+                        value={addLandmark}
+                        onChange={(e) => setAddLandmark(e.target.value)}
+                        style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                      />
+                    </div>
+
+                    {/* Field 9 & 10: Contact Name & Contact Phone */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Receiver Name</label>
+                        <input
+                          type="text"
+                          placeholder="Receiver Name"
+                          value={addReceiverName}
+                          onChange={(e) => setAddReceiverName(e.target.value)}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Receiver Phone</label>
+                        <input
+                          type="text"
+                          placeholder="10-digit mobile"
+                          value={addReceiverPhone}
+                          maxLength={10}
+                          onChange={(e) => setAddReceiverPhone(e.target.value.replace(/\D/g, ''))}
+                          style={{ width: '100%', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.8rem', outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Field 11: Save Address As (Tag) */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>Save Address As</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {(['Home', 'Work', 'Hotel', 'Other'] as const).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setAddAddressType(t)}
+                            style={{
+                              padding: '0.3rem 0.75rem',
+                              borderRadius: '6px',
+                              border: addAddressType === t ? '1.5px solid #047857' : '1px solid #D1D5DB',
+                              backgroundColor: addAddressType === t ? '#ECFDF5' : '#FFFFFF',
+                              color: addAddressType === t ? '#047857' : '#374151',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Submit Button */}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '0.5rem' }}>
+                      <button
+                        onClick={handleAddAddress}
+                        disabled={isSavingAddress}
+                        style={{
+                          flex: 1,
+                          padding: '0.55rem 1rem',
+                          borderRadius: '8px',
+                          backgroundColor: '#047857',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          cursor: isSavingAddress ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {isSavingAddress ? 'Saving...' : 'Save Address'}
+                      </button>
+                    </div>
+
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>
 
-          {/* RIGHT COLUMN: Order & Delivery History Card */}
+          {/* RIGHT COLUMN: Active Subscriptions Card */}
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB', minWidth: 0, height: 'fit-content' }}>
             <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Package size={18} style={{ color: '#047857' }} /> Order &amp; Delivery History
+              <Calendar size={18} style={{ color: '#047857' }} /> Active Subscriptions ({displaySubs.length})
             </div>
 
-            {displayOrders.length === 0 ? (
+            {displaySubs.length === 0 ? (
               <div style={{ padding: '1.25rem', textAlign: 'center', color: '#6B7280', fontSize: '0.85rem', backgroundColor: '#F9FAFB', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
-                No orders placed yet by this customer.
+                No active subscriptions for this customer.
               </div>
             ) : (
               <div className="table-container" style={{ border: '1px solid #F3F4F6', borderRadius: '10px' }}>
                 <table className="admin-table" style={{ width: '100%', fontSize: '0.8rem' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#F9FAFB', textTransform: 'uppercase', fontSize: '0.7rem', color: '#6B7280' }}>
-                      <th>ORDER ID</th>
-                      <th>DATE</th>
-                      <th>AMOUNT</th>
+                      <th>SUB ID</th>
+                      <th>PRODUCT</th>
+                      <th>FREQUENCY</th>
                       <th>STATUS</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {displayOrders.map(order => (
-                      <tr key={order.id}>
+                    {displaySubs.map(sub => (
+                      <tr key={sub.id}>
                         <td>
                           <button 
-                            onClick={() => onNavigateTab('orders')}
+                            onClick={() => onNavigateTab('subscriptions', sub.id)}
                             style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
                           >
-                            {order.id} →
+                            {sub.id} →
                           </button>
                         </td>
-                        <td style={{ color: '#6B7280' }}>{order.orderDate}</td>
-                        <td style={{ fontWeight: 800, color: '#111827' }}>₹{order.totalAmount}</td>
+                        <td style={{ fontWeight: 700, color: '#111827' }}>{sub.productName}</td>
+                        <td style={{ color: '#6B7280' }}>{sub.frequency}</td>
                         <td>
                           <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
-                            {order.status.toUpperCase()}
+                            ACTIVE
                           </span>
                         </td>
                       </tr>
@@ -486,33 +897,6 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                 </table>
               </div>
             )}
-
-            <div style={{ marginTop: '1.25rem', padding: '1rem', borderRadius: '12px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
-                Customer Account Notes
-              </div>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280', lineHeight: '1.4' }}>
-                {(() => {
-                  let formattedDate = 'recently';
-                  if (selectedCustomer.createdAt) {
-                    try {
-                      const d = typeof selectedCustomer.createdAt === 'object' && (selectedCustomer.createdAt as any).seconds
-                        ? new Date((selectedCustomer.createdAt as any).seconds * 1000)
-                        : new Date(selectedCustomer.createdAt);
-                      if (!isNaN(d.getTime())) formattedDate = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                    } catch (e) {
-                      formattedDate = 'recently';
-                    }
-                  }
-                  const noteText = selectedCustomer.customerType === 'new'
-                    ? 'Newly registered customer account. No orders or subscriptions placed yet.'
-                    : selectedCustomer.customerType === 'subscription'
-                    ? 'Active subscription customer with recurring delivery schedule.'
-                    : 'Customer with verified order history.';
-                  return `Registered ${formattedDate}. Verified phone number (${selectedCustomer.phone}). ${noteText}`;
-                })()}
-              </div>
-            </div>
           </div>
 
         </div>
@@ -534,25 +918,6 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
             Manage customer profiles, subscription states, and address registries.
           </p>
         </div>
-
-        <button 
-          onClick={() => setShowAddModal(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.85rem',
-            fontWeight: 700,
-            padding: '0.65rem 1.25rem',
-            borderRadius: '10px',
-            backgroundColor: '#047857',
-            color: '#FFFFFF',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          <Plus size={16} /> Add Customer
-        </button>
       </div>
 
       {/* 2 Top Metric Counter Cards */}
@@ -784,6 +1149,32 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
             </button>
           </div>
 
+          {/* Free Sample Filter Pills */}
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', backgroundColor: '#F9FAFB', padding: '4px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>FREE SAMPLE:</span>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'claimed', label: 'Claimed Sample' },
+              { id: 'not_claimed', label: 'Not Claimed' }
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFreeSampleFilter(f.id as any)}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: activeFreeSampleFilter === f.id ? '#D97706' : 'transparent',
+                  color: activeFreeSampleFilter === f.id ? '#FFFFFF' : '#374151',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Right Search Box & Export Button */}
@@ -875,22 +1266,33 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
 
                     {/* TYPE Column */}
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        color: user.customerType === 'new' ? '#2563EB' : user.customerType === 'subscription' ? '#0369A1' : '#475569',
-                        backgroundColor: user.customerType === 'new' ? '#EFF6FF' : user.customerType === 'subscription' ? '#E0F2FE' : '#F1F5F9',
-                        padding: '3px 8px',
-                        borderRadius: '8px'
-                      }}>
-                        {user.customerType === 'new' ? 'New Customer' : user.customerType === 'subscription' ? 'Subscription' : user.customerType === 'onetime' ? 'One-Time' : 'Both'}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: user.customerType === 'new' ? '#2563EB' : user.customerType === 'subscription' ? '#0369A1' : '#475569',
+                          backgroundColor: user.customerType === 'new' ? '#EFF6FF' : user.customerType === 'subscription' ? '#E0F2FE' : '#F1F5F9',
+                          padding: '3px 8px',
+                          borderRadius: '8px'
+                        }}>
+                          {user.customerType === 'new' ? 'New Customer' : user.customerType === 'subscription' ? 'Subscription' : user.customerType === 'onetime' ? 'One-Time' : 'Both'}
+                        </span>
+                        {user.hasClaimedFreeSample ? (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#D97706', backgroundColor: '#FEF3C7', padding: '2px 6px', borderRadius: '6px' }}>
+                            🎁 Free Sample Claimed
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '6px' }}>
+                            ⭕ Sample Not Claimed
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* PRIMARY ADDRESS Column */}
                     <td style={{ padding: '0.85rem 1rem', maxWidth: '340px' }}>
                       <div style={{ fontSize: '0.78rem', color: '#374151', lineHeight: '1.4', fontWeight: 500 }}>
-                        {user.address || (user.savedAddresses && user.savedAddresses.length > 0 ? user.savedAddresses[0] : 'No address set')}
+                        {formatAddressDetails(user.address || (user.savedAddresses && user.savedAddresses.length > 0 ? user.savedAddresses[0] : 'No address set')).cleanAddress}
                       </div>
                     </td>
 

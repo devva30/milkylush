@@ -34,12 +34,20 @@ export default function CommercialDashboardPage({
   const isHosur = selectedHubId === 'hub_hosur_main';
   const hubName = isHosur ? 'Hosur Central Hub' : 'Bangalore Hub';
 
-  // Calculate Key Commercial Metrics
+  // Calculate Key Commercial Metrics dynamically
   const completedOrders = orders.filter((o) => o.status === 'delivered');
-  const totalGrossRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), totalRevenue * 0.4);
-  const totalFarmerProcurementCost = totalGrossRevenue * 0.45; // ~45% Milk Procurement Cost
-  const totalDeliveryCost = completedOrders.length * 15; // ₹15 per delivery partner drop
-  const estimatedNetProfit = totalGrossRevenue - (totalFarmerProcurementCost + totalDeliveryCost);
+  const totalGrossRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), totalRevenue || 0);
+  const totalFarmerProcurementCost = totalGrossRevenue * 0.45;
+  const totalDeliveryCost = completedOrders.length * 15;
+  const estimatedNetProfit = totalGrossRevenue > 0 ? totalGrossRevenue - (totalFarmerProcurementCost + totalDeliveryCost) : 0;
+  
+  // Dynamic milk liters calculation from order items
+  const totalMilkLiters = completedOrders.reduce((sum, o) => {
+    if (o.items && o.items.length > 0) {
+      return sum + o.items.reduce((iSum, item) => iSum + (item.quantity || 1), 0);
+    }
+    return sum + 1;
+  }, 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -168,7 +176,7 @@ export default function CommercialDashboardPage({
             </div>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1E293B' }}>
-            1,850 Liters
+            {totalMilkLiters > 0 ? `${totalMilkLiters.toLocaleString()} Liters` : '0 Liters'}
           </div>
           <div style={{ fontSize: '0.78rem', color: '#D97706', marginTop: '6px', fontWeight: 700 }}>
             Avg Fat: 4.2% | Avg SNF: 8.5%

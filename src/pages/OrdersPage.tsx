@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
-import { Search, ArrowLeft, Calendar, Users as UsersIcon, Printer, X, Download } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Search, ArrowLeft, Calendar, Users as UsersIcon, Printer, X, Download, Edit2 } from 'lucide-react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import type { Order, User, Product, DeliveryAgent } from '../types';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 
@@ -9,6 +11,7 @@ interface OrdersPageProps {
   users: User[];
   products: Product[];
   deliveryAgents: DeliveryAgent[];
+  targetOrderId?: string | null;
   onOpenAddOrderModal?: () => void;
   onUpdateOrderStatus: (orderId: string, status: Order['status']) => void;
   onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
@@ -43,6 +46,7 @@ export default function OrdersPage({
   users,
   products = [],
   deliveryAgents = [],
+  targetOrderId,
   onOpenAddOrderModal,
   onUpdateOrderStatus,
   onUpdateOrderDriver,
@@ -51,15 +55,34 @@ export default function OrdersPage({
 }: OrdersPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'subscription' | 'onetime'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'subscription' | 'onetime' | 'freesample'>('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<Order | null>(null);
+
+  useEffect(() => {
+    if (targetOrderId && orders.length > 0) {
+      const found = orders.find(o => o.id === targetOrderId || targetOrderId.includes(o.id) || o.id.includes(targetOrderId));
+      if (found) {
+        setSelectedOrderDetail(found);
+      }
+    }
+  }, [targetOrderId, orders]);
   const [cancellationReason, setCancellationReason] = useState('');
 
   // Invoice Print Modal State
   const [showPrintBillModal, setShowPrintBillModal] = useState(false);
   const [activePrintOrder, setActivePrintOrder] = useState<Order | null>(null);
+
+  // Edit Address Modal State
+  const [editingAddressOrder, setEditingAddressOrder] = useState<Order | null>(null);
+  const [editHouseNo, setEditHouseNo] = useState<string>('');
+  const [editStreet, setEditStreet] = useState<string>('');
+  const [editArea, setEditArea] = useState<string>('');
+  const [editCity, setEditCity] = useState<string>('Hosur');
+  const [editState, setEditState] = useState<string>('Tamil Nadu');
+  const [editPin, setEditPin] = useState<string>('');
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState<boolean>(false);
 
   // Pagination State
   const pageSize = 10;
@@ -100,8 +123,10 @@ export default function OrdersPage({
 
       // Type Filter
       const isSub = o.isSubscriptionDelivery || o.orderType === 'subscription';
+      const isFS = (o as any).isFreeSample || o.id.startsWith('FS_');
       if (typeFilter === 'subscription' && !isSub) return false;
-      if (typeFilter === 'onetime' && isSub) return false;
+      if (typeFilter === 'onetime' && (isSub || isFS)) return false;
+      if (typeFilter === 'freesample' && !isFS) return false;
 
       // Date Filter & Custom Date Picker Evaluation
       const targetDateISO = customDate ? customDate : dateFilter === 'today' ? todayISO : dateFilter === 'yesterday' ? yesterdayISO : '';
@@ -440,7 +465,8 @@ export default function OrdersPage({
           {[
             { id: 'all', label: 'All Types' },
             { id: 'subscription', label: 'Subscription' },
-            { id: 'onetime', label: 'One-Time' }
+            { id: 'onetime', label: 'One-Time' },
+            { id: 'freesample', label: '🎁 Free Samples' }
           ].map((t) => (
             <button
               key={t.id}
@@ -548,23 +574,7 @@ export default function OrdersPage({
             <Download size={14} /> Export CSV
           </button>
 
-          {onOpenAddOrderModal && (
-            <button
-              onClick={onOpenAddOrderModal}
-              style={{
-                padding: '0.38rem 0.75rem',
-                borderRadius: '8px',
-                backgroundColor: '#0284C7',
-                color: '#FFFFFF',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-              }}
-            >
-              + Create Order
-            </button>
-          )}
+
         </div>
       </div>
 
@@ -616,6 +626,13 @@ export default function OrdersPage({
                   displayAddress = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
                 }
 
+                const cleanAddress = displayAddress
+                  .split('|')[0]
+                  .replace(/\(.*?\)/g, '')
+                  .replace(/,,+/g, ',')
+                  .replace(/,\s*,/g, ',')
+                  .trim();
+
                 const productsText = o.items && o.items.length > 0
                   ? o.items.map((i) => `${i.product?.name || 'Milk Product'} - ${i.product?.unit || '500ml'} (x${i.quantity})`).join(', ')
                   : 'Fresh Dairy Product - 500ml (x1)';
@@ -624,13 +641,20 @@ export default function OrdersPage({
                   <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{o.id}</td>
                     <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{customerName}</td>
-                    <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '240px', padding: '0.85rem 1rem', lineHeight: 1.4 }}>{displayAddress}</td>
+                    <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '240px', padding: '0.85rem 1rem', lineHeight: 1.4 }}>{cleanAddress}</td>
                     <td style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
                       {productsText}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <span style={{ backgroundColor: isSub ? '#ECFDF5' : '#FEF3C7', color: isSub ? '#047857' : '#D97706', padding: '3px 9px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 800 }}>
-                        {isSub ? 'Subscription' : 'One-Time'}
+                      <span style={{
+                        backgroundColor: (o as any).isFreeSample || o.id.startsWith('FS_') ? '#FEF3C7' : isSub ? '#ECFDF5' : '#F3F4F6',
+                        color: (o as any).isFreeSample || o.id.startsWith('FS_') ? '#D97706' : isSub ? '#047857' : '#374151',
+                        padding: '3px 9px',
+                        borderRadius: '12px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800
+                      }}>
+                        {(o as any).isFreeSample || o.id.startsWith('FS_') ? '🎁 Free Sample' : isSub ? 'Subscription' : 'One-Time'}
                       </span>
                     </td>
                     <td style={{ fontSize: '0.8rem', fontWeight: 700, color: '#111827', padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
@@ -642,16 +666,17 @@ export default function OrdersPage({
                       </span>
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => setSelectedOrderDetail(o)}
-                          style={{ padding: '0.4rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                          style={{ padding: '0.4rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
                         >
                           View Sheet
                         </button>
+
                         <button
                           onClick={() => { setSelectedOrderDetail(o); setShowPrintBillModal(true); }}
-                          style={{ padding: '0.4rem 0.75rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          style={{ padding: '0.4rem 0.65rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
                           <Printer size={14} /> Bill
                         </button>
@@ -715,6 +740,156 @@ export default function OrdersPage({
       </div>
 
       {renderPrintBillModal()}
+
+      {/* EDIT ADDRESS MODAL */}
+      {editingAddressOrder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-card)',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '520px',
+            padding: '1.5rem',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit2 size={18} color="#047857" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                  Edit Shipping Address ({editingAddressOrder.id})
+                </h3>
+              </div>
+              <button
+                onClick={() => setEditingAddressOrder(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>House / Door No.</label>
+                  <input
+                    type="text"
+                    value={editHouseNo}
+                    onChange={(e) => setEditHouseNo(e.target.value)}
+                    placeholder="e.g. Flat 302, Door 45"
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>Street / Road</label>
+                  <input
+                    type="text"
+                    value={editStreet}
+                    onChange={(e) => setEditStreet(e.target.value)}
+                    placeholder="e.g. Gandhi Road"
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>Area / Locality</label>
+                <input
+                  type="text"
+                  value={editArea}
+                  onChange={(e) => setEditArea(e.target.value)}
+                  placeholder="e.g. Darga / Electronic City"
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>City</label>
+                  <select
+                    value={editCity}
+                    onChange={(e) => {
+                      const newCity = e.target.value;
+                      setEditCity(newCity);
+                      setEditState(newCity === 'Hosur' ? 'Tamil Nadu' : 'Karnataka');
+                    }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}
+                  >
+                    <option value="Hosur">Hosur</option>
+                    <option value="Bengaluru">Bengaluru</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>State</label>
+                  <input
+                    type="text"
+                    value={editState}
+                    onChange={(e) => setEditState(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>PIN Code</label>
+                  <input
+                    type="text"
+                    value={editPin}
+                    onChange={(e) => setEditPin(e.target.value)}
+                    placeholder="e.g. 635109"
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => setEditingAddressOrder(null)}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!editingAddressOrder) return;
+                  setIsUpdatingAddress(true);
+                  try {
+                    const formattedAddress = `${editHouseNo ? editHouseNo + ', ' : ''}${editStreet ? editStreet + ', ' : ''}${editArea ? editArea + ', ' : ''}${editCity}, ${editState} - ${editPin}`;
+                    await updateDoc(doc(db, 'orders', editingAddressOrder.id), {
+                      deliveryAddress: formattedAddress,
+                      address: formattedAddress,
+                      updatedAt: new Date().toISOString(),
+                    });
+                    showToast(`Updated address for order ${editingAddressOrder.id}! 📍`, 'success');
+                    setEditingAddressOrder(null);
+                  } catch (err) {
+                    showToast(`Error updating address: ${err}`, 'error');
+                  } finally {
+                    setIsUpdatingAddress(false);
+                  }
+                }}
+                disabled={isUpdatingAddress}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+              >
+                {isUpdatingAddress ? 'Saving...' : 'Update Address'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

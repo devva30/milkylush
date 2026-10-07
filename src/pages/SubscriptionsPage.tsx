@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Search, Download, ArrowLeft, Calendar as CalendarIcon, Sparkles, X, ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, CheckCircle, PauseCircle, Headphones, Mail, MapPin, Phone, Trash2 } from 'lucide-react';
-import { updateDoc, doc, arrayUnion, deleteField } from 'firebase/firestore';
+import { updateDoc, doc, arrayUnion, deleteField, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { shiftEndDate } from '../utils/subscriptionDates';
 import type { Subscription, User, Product } from '../types';
@@ -38,6 +38,38 @@ const formatDateLabel = (dateStr?: string) => {
     return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   } catch (e) {
     return dateStr;
+  }
+};
+
+const formatSubscribedTime = (plan: any) => {
+  if (!plan) return 'N/A';
+  const raw = plan.createdAt || plan.subscribedAt || plan.timestamp || plan.createdAtIso || plan.startDate;
+  if (!raw) return 'N/A';
+  try {
+    let d: Date | null = null;
+    if (typeof raw === 'object' && raw !== null) {
+      if (typeof (raw as any).toDate === 'function') {
+        d = (raw as any).toDate();
+      } else if (typeof (raw as any).seconds === 'number') {
+        d = new Date((raw as any).seconds * 1000);
+      } else if (typeof (raw as any)._seconds === 'number') {
+        d = new Date((raw as any)._seconds * 1000);
+      }
+    }
+    if (!d) {
+      const str = String(raw).trim();
+      if (/^\d+$/.test(str)) {
+        d = new Date(Number(str));
+      } else {
+        d = new Date(str);
+      }
+    }
+    if (!d || isNaN(d.getTime())) return 'N/A';
+    const dateFormatted = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeFormatted = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${dateFormatted}, ${timeFormatted}`;
+  } catch (e) {
+    return 'N/A';
   }
 };
 
@@ -484,6 +516,200 @@ export default function SubscriptionsPage({
   const [deleteHistoryModal, setDeleteHistoryModal] = useState<{ planId: string; log: any } | null>(null);
   const [deleteCountdown, setDeleteCountdown] = useState<number>(5);
 
+  // Cancellation Modal State
+  const [cancelModalSub, setCancelModalSub] = useState<{ plan: any; customer: any } | null>(null);
+  const [cancelReasonType, setCancelReasonType] = useState<string>('Distance / Outside Delivery Zone (Refund Processed)');
+  const [cancelCustomNotes, setCancelCustomNotes] = useState<string>('');
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false);
+
+  // Reactivation Modal State
+  const [reactivateModalSub, setReactivateModalSub] = useState<{ plan: any; customer: any } | null>(null);
+  const [reactivateNotes, setReactivateNotes] = useState<string>('');
+  const [isSubmittingReactivate, setIsSubmittingReactivate] = useState<boolean>(false);
+
+  const PREDEFINED_CANCEL_REASONS = [
+    'Distance / Outside Delivery Zone (Refund Processed)',
+    'Customer Requested Cancellation',
+    'Product Out of Stock / Supply Issue',
+    'Quality or Packaging Concern',
+    'Address Unreachable / Logistics Issue',
+    'Other Operational Reason',
+  ];
+
+  const handleOpenCancelModal = (plan: any, customer: any) => {
+    setCancelModalSub({ plan, customer });
+    setCancelReasonType('Distance / Outside Delivery Zone (Refund Processed)');
+    setCancelCustomNotes('');
+  };
+
+  const handleOpenReactivateModal = (plan: any, customer: any) => {
+    setReactivateModalSub({ plan, customer });
+    setReactivateNotes('Address verified / Resubscribed by Admin');
+  };
+
+  const handleConfirmReactivatePlan = async () => {
+    if (!reactivateModalSub) return;
+    setIsSubmittingReactivate(true);
+    const { plan, customer } = reactivateModalSub;
+    const notes = reactivateNotes.trim() || 'Resubscribed by Admin';
+
+    // Optimistically update plan status
+    plan.status = 'active';
+    delete plan.cancellationReason;
+
+    if (selectedCustomer) {
+      setSelectedCustomer({
+        ...selectedCustomer,
+        plans: (selectedCustomer.plans || []).map((p: any) =>
+          p.id === plan.id ? { ...p, status: 'active', cancellationReason: undefined } : p
+        )
+      });
+    }
+    const subInHub = (hubSubscriptions || []).find((s) => s.id === plan.id);
+    if (subInHub) {
+      subInHub.status = 'active';
+      delete (subInHub as any).cancellationReason;
+    }
+
+    setReactivateModalSub(null);
+    setReactivateNotes('');
+    showToast(`Subscription plan reactivated! Notification sent to ${customer?.name || 'customer'}.`, 'success');
+
+    try {
+      await updateDoc(doc(db, 'subscriptions', plan.id), {
+        status: 'active',
+        cancellationReason: deleteField(),
+        cancellationType: deleteField(),
+        cancellationNotes: deleteField(),
+        cancelledAt: deleteField(),
+        cancelledByAdmin: deleteField(),
+        reactivatedAt: new Date().toISOString(),
+        historyLog: arrayUnion({
+          id: `log_${Date.now()}`,
+          type: 'admin_reactivated',
+          date: new Date().toISOString().split('T')[0],
+          reason: `Subscription Reactivated by Admin: ${notes}`,
+          actor: 'admin',
+          actorName: 'MilkyLush Admin',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      const userId = customer?.fullCustomerId || customer?.id || plan.userId;
+      if (userId) {
+        try {
+          await addDoc(collection(db, 'users', userId, 'notifications'), {
+            title: 'Subscription Reactivated',
+            message: `Your subscription plan (${plan.productName || 'Milk Plan'}) has been reactivated by admin. Note: ${notes}`,
+            type: 'subscription_reactivated',
+            createdAt: new Date().toISOString(),
+            read: false,
+          });
+        } catch (notifErr) {
+          console.error('Error writing customer notification:', notifErr);
+        }
+      }
+
+      logAdminAuditAction(
+        'Tom SuperAdmin',
+        'tomadmin@gmail.com',
+        'Super Admin',
+        'Hub Operations',
+        `Reactivated Subscription Plan ${plan.id} for ${customer?.name || 'Customer'}. Note: ${notes}`,
+        `Subscription: ${plan.id}`,
+        { notes },
+        selectedHubId
+      );
+    } catch (err) {
+      console.error('Error reactivating subscription:', err);
+      showToast('Failed to sync reactivation to server.', 'error');
+    } finally {
+      setIsSubmittingReactivate(false);
+    }
+  };
+
+  const handleConfirmCancelPlan = async () => {
+    if (!cancelModalSub) return;
+    setIsSubmittingCancel(true);
+    const { plan, customer } = cancelModalSub;
+
+    const fullReason = cancelCustomNotes.trim()
+      ? `${cancelReasonType} - ${cancelCustomNotes.trim()}`
+      : cancelReasonType;
+
+    // Optimistically update plan status & selectedCustomer state immediately (0ms UI latency)
+    plan.status = 'CANCELLED';
+    plan.cancellationReason = fullReason;
+    if (selectedCustomer) {
+      setSelectedCustomer({
+        ...selectedCustomer,
+        plans: (selectedCustomer.plans || []).map((p: any) =>
+          p.id === plan.id ? { ...p, status: 'CANCELLED', cancellationReason: fullReason } : p
+        )
+      });
+    }
+    const subInHub = (hubSubscriptions || []).find((s) => s.id === plan.id);
+    if (subInHub) {
+      subInHub.status = 'cancelled';
+      (subInHub as any).cancellationReason = fullReason;
+    }
+
+    setCancelModalSub(null);
+    setCancelCustomNotes('');
+    showToast(`Subscription plan cancelled. Notification sent to ${customer?.name || 'customer'}.`, 'success');
+
+    try {
+      await updateDoc(doc(db, 'subscriptions', plan.id), {
+        status: 'cancelled',
+        cancellationReason: fullReason,
+        cancellationType: cancelReasonType,
+        cancellationNotes: cancelCustomNotes.trim() || null,
+        cancelledAt: new Date().toISOString(),
+        cancelledByAdmin: true,
+        historyLog: arrayUnion({
+          id: `log_${Date.now()}`,
+          type: 'admin_cancellation',
+          date: new Date().toISOString().split('T')[0],
+          reason: `Subscription Cancelled by Admin: ${fullReason}`,
+          actor: 'admin',
+          actorName: 'MilkyLush Admin',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      const userId = customer?.fullCustomerId || customer?.id || plan.userId;
+      if (userId) {
+        try {
+          await addDoc(collection(db, 'users', userId, 'notifications'), {
+            title: 'Subscription Plan Cancelled',
+            message: `Your subscription plan (${plan.productName || 'Milk Plan'}) was cancelled by admin. Reason: ${fullReason}`,
+            type: 'subscription_cancelled',
+            createdAt: new Date().toISOString(),
+            read: false,
+          });
+        } catch (notifErr) {
+          console.error('Error writing customer notification:', notifErr);
+        }
+      }
+
+      logAdminAuditAction(
+        'Tom SuperAdmin',
+        'tomadmin@gmail.com',
+        'Super Admin',
+        'Hub Operations',
+        `Cancelled Subscription Plan ${plan.id} for ${customer?.name || 'Customer'}. Reason: ${fullReason}`,
+        `Subscription: ${plan.id}`,
+        { fullReason },
+        selectedHubId
+      );
+    } catch (err) {
+      console.error('Error cancelling subscription:', err);
+      showToast('Failed to sync cancellation to server.', 'error');
+    } finally {
+      setIsSubmittingCancel(false);
+    }
+  };
+
   useEffect(() => {
     if (!deleteHistoryModal) return;
     if (deleteCountdown <= 0) return;
@@ -618,6 +844,10 @@ export default function SubscriptionsPage({
           prepaidPaid: sub.prepaidAmountPaid || dailyQty * dailyRate * getDurationDays(sub.planDuration),
           startDate: sub.startDate,
           endDate: sub.endDate,
+          createdAt: sub.createdAt || (sub as any).subscribedAt || (sub as any).timestamp,
+          subscribedAt: (sub as any).subscribedAt || sub.createdAt || (sub as any).timestamp,
+          timestamp: (sub as any).timestamp || sub.createdAt || (sub as any).subscribedAt,
+          cancellationReason: sub.cancellationReason || (sub as any).cancellationReason,
           pausedDates: sub.pausedDates || [],
           historyLog: sub.historyLog || [],
           pausedDateReasons: sub.pausedDateReasons || {},
@@ -1053,10 +1283,78 @@ export default function SubscriptionsPage({
                   {plan.productName}
                 </h3>
               </div>
-              <span style={{ backgroundColor: '#ECFDF5', color: '#059669', padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 800 }}>
-                {plan.status}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {(() => {
+                  const isCancelled = String(plan.status || '').toUpperCase() === 'CANCELLED' || String(plan.status || '').toLowerCase() === 'cancelled';
+                  return (
+                    <>
+                      <span style={{
+                        backgroundColor: isCancelled ? '#FEF2F2' : '#ECFDF5',
+                        color: isCancelled ? '#DC2626' : '#059669',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 800
+                      }}>
+                        {isCancelled ? 'CANCELLED BY ADMIN 🛑' : plan.status}
+                      </span>
+                      {!isCancelled ? (
+                        <button
+                          onClick={() => handleOpenCancelModal(plan, cust)}
+                          style={{
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '8px',
+                            backgroundColor: '#FEF2F2',
+                            color: '#DC2626',
+                            border: '1px solid #FEE2E2',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <X size={14} /> Cancel Subscription Plan
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenReactivateModal(plan, cust)}
+                          style={{
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '8px',
+                            backgroundColor: '#ECFDF5',
+                            color: '#047857',
+                            border: '1px solid #A7F3D0',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Sparkles size={14} /> Reactivate / Resume Plan
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
+
+            {(String(plan.status || '').toUpperCase() === 'CANCELLED' || String(plan.status || '').toLowerCase() === 'cancelled') && (
+              <div style={{
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: '12px',
+                padding: '0.85rem 1.15rem',
+                fontSize: '0.82rem',
+                color: '#991B1B'
+              }}>
+                <strong>Reason for Cancellation:</strong> {plan.cancellationReason || (plan as any).cancellationReason || 'Cancelled by Admin Support'}
+              </div>
+            )}
 
             {/* Plan Specs Grid */}
             <div style={{
@@ -1088,6 +1386,10 @@ export default function SubscriptionsPage({
               <div>
                 <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>PACKAGE DURATION</div>
                 <div style={{ fontWeight: 800, color: '#111827', marginTop: '2px' }}>{plan.duration}</div>
+              </div>
+              <div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>SUBSCRIBED TIME</div>
+                <div style={{ fontWeight: 800, color: '#047857', marginTop: '2px', fontSize: '0.85rem' }}>{formatSubscribedTime(plan)}</div>
               </div>
               <div>
                 <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>START DATE</div>
@@ -1157,39 +1459,64 @@ export default function SubscriptionsPage({
                 </div>
               </div>
 
-              {/* Month Summary Bar */}
-              <div style={{
-                backgroundColor: '#F9FAFB',
-                borderRadius: '12px',
-                padding: '0.85rem 1.25rem',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-                gap: '1rem',
-                textAlign: 'center',
-                marginBottom: '1.25rem',
-                border: '1px solid #E5E7EB'
-              }}>
-                <div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>PLAN DURATION</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>{daysInSelectedMonth} Days</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>TOTAL DROPS</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{daysInSelectedMonth} drops</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>DELIVERED PAST</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0284C7', marginTop: '2px' }}>5 drops</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>VACATION DAYS</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#D97706', marginTop: '2px' }}>{plan.skippedDaysList?.length || 0} days</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>UPCOMING ACTIVE</div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{daysInSelectedMonth - (plan.skippedDaysList?.length || 0)} drops</div>
-                </div>
-              </div>
+              {/* Month Summary Bar (Real-Time Dynamic Metrics) */}
+              {(() => {
+                const nowObj = new Date();
+                const todayMidnight = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
+                const pausedSet = new Set((plan.pausedDates || []).map((d: any) => String(d).split('T')[0]));
+                
+                let pastDelivered = 0;
+                let vacationCount = 0;
+                let upcomingCount = 0;
+
+                for (let d = 1; d <= daysInSelectedMonth; d++) {
+                  const checkDate = new Date(calendarYear, calendarMonthIndex, d);
+                  const dateIso = `${calendarYear}-${String(calendarMonthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                  
+                  if (pausedSet.has(dateIso)) {
+                    vacationCount++;
+                  } else if (checkDate < todayMidnight) {
+                    pastDelivered++;
+                  } else {
+                    upcomingCount++;
+                  }
+                }
+
+                return (
+                  <div style={{
+                    backgroundColor: '#F9FAFB',
+                    borderRadius: '12px',
+                    padding: '0.85rem 1.25rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                    gap: '1rem',
+                    textAlign: 'center',
+                    marginBottom: '1.25rem',
+                    border: '1px solid #E5E7EB'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>PLAN DURATION</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>{daysInSelectedMonth} Days</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>TOTAL DROPS</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{daysInSelectedMonth} drops</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>DELIVERED PAST</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0284C7', marginTop: '2px' }}>{pastDelivered} drops</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>VACATION DAYS</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#D97706', marginTop: '2px' }}>{vacationCount} days</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>UPCOMING ACTIVE</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{upcomingCount} drops</div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Dynamic Live Calendar Grid */}
               <div style={{ border: '1px solid #E5E7EB', borderRadius: '14px', padding: '1.25rem', backgroundColor: '#FFFFFF' }}>
@@ -1228,6 +1555,7 @@ export default function SubscriptionsPage({
                     const dayOfWeekIdx = (monthFirstDayOfWeek + (dayNum - 1)) % 7;
                     const dayName = dayNames[dayOfWeekIdx];
 
+                    const isCancelledPlan = String(plan.status || '').toLowerCase() === 'cancelled';
                     const isOff = dayInfo.status === 'offDay';
                     const isSkip = dayInfo.status === 'skipped';
                     const isVac = dayInfo.status === 'vacation';
@@ -1253,14 +1581,18 @@ export default function SubscriptionsPage({
                         style={{
                           height: '62px',
                           borderRadius: '10px',
-                          border: isExc
+                          border: isCancelledPlan
+                            ? '1.5px solid #EF4444'
+                            : isExc
                             ? '1.5px solid #F87171'
                             : isSkip || isVac
                             ? '1.5px solid #FCA5A5'
                             : isOff
                             ? '1px solid #E5E7EB'
                             : '1px solid #A7F3D0',
-                          backgroundColor: isExc
+                          backgroundColor: isCancelledPlan
+                            ? '#FEF2F2'
+                            : isExc
                             ? '#FEF2F2'
                             : isSkip
                             ? '#FEE2E2'
@@ -1275,14 +1607,14 @@ export default function SubscriptionsPage({
                           justifyContent: 'space-between',
                           cursor: 'pointer',
                           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                          opacity: isOff ? 0.65 : 1,
+                          opacity: isOff && !isCancelledPlan ? 0.65 : 1,
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 800, fontSize: '0.8rem', color: isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.8rem', color: isCancelledPlan || isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
                             {dayNum}
                           </span>
-                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: isCancelledPlan || isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
                             {dayName}
                           </span>
                         </div>
@@ -1381,309 +1713,295 @@ export default function SubscriptionsPage({
 
             </div>
 
-          </div>
-        ))}
+            {/* Subscription Activity & Skip History Log (Placed directly inside this plan card below its calendar) */}
+            {(() => {
+              const rawHistory = plan.historyLog || [];
+              const pausedDateReasons = plan.pausedDateReasons || {};
+              const logs: any[] = [...rawHistory];
 
-        {/* Subscription Activity & Skip History Log (Web Admin) */}
-        {cust.plans?.filter(Boolean).map((plan: any, pIdx: number) => {
-          const rawHistory = plan.historyLog || [];
-          const pausedDateReasons = plan.pausedDateReasons || {};
-          const logs: any[] = [...rawHistory];
+              const normalizeDateKey = (str?: string) => {
+                if (!str) return '';
+                const clean = String(str).split('T')[0].trim();
+                const parts = clean.split('-');
+                if (parts.length === 3) {
+                  const y = parts[0];
+                  const m = parts[1].padStart(2, '0');
+                  const d = parts[2].padStart(2, '0');
+                  return `${y}-${m}-${d}`;
+                }
+                return clean;
+              };
 
-          const normalizeDateKey = (str?: string) => {
-            if (!str) return '';
-            const clean = String(str).split('T')[0].trim();
-            const parts = clean.split('-');
-            if (parts.length === 3) {
-              const y = parts[0];
-              const m = parts[1].padStart(2, '0');
-              const d = parts[2].padStart(2, '0');
-              return `${y}-${m}-${d}`;
-            }
-            return clean;
-          };
+              const hasLogForDate = (dateKey: string) => {
+                const normTarget = normalizeDateKey(dateKey);
+                return logs.some((l) => {
+                  const normLog = normalizeDateKey(l.date || l.startDate);
+                  return normLog === normTarget;
+                });
+              };
 
-          const hasLogForDate = (dateKey: string) => {
-            const normTarget = normalizeDateKey(dateKey);
-            return logs.some((l) => {
-              const normLog = normalizeDateKey(l.date || l.startDate);
-              return normLog === normTarget;
-            });
-          };
-
-          // 1. Merge pausedDateReasons
-          Object.entries(pausedDateReasons).forEach(([dateStr, val]: [string, any]) => {
-            const normDate = normalizeDateKey(dateStr);
-            const reasonMap = typeof val === 'object' ? val : { reason: String(val) };
-            if (!hasLogForDate(normDate)) {
-              logs.push({
-                type: reasonMap.actor === 'admin' ? 'admin_skip' : 'customer_skip',
-                date: normDate,
-                startDate: normDate,
-                endDate: normDate,
-                reason: reasonMap.reason || 'Skipped Delivery',
-                notes: reasonMap.notes || '',
-                actor: reasonMap.actor || 'customer',
-                actorName: reasonMap.actorName || (reasonMap.actor === 'admin' ? 'MilkyLush Support' : cust.name),
-                timestamp: reasonMap.timestamp || ''
+              // 1. Merge pausedDateReasons
+              Object.entries(pausedDateReasons).forEach(([dateStr, val]: [string, any]) => {
+                const normDate = normalizeDateKey(dateStr);
+                const reasonMap = typeof val === 'object' ? val : { reason: String(val) };
+                if (!hasLogForDate(normDate)) {
+                  logs.push({
+                    type: reasonMap.actor === 'admin' ? 'admin_skip' : 'customer_skip',
+                    date: normDate,
+                    startDate: normDate,
+                    endDate: normDate,
+                    reason: reasonMap.reason || 'Skipped Delivery',
+                    notes: reasonMap.notes || '',
+                    actor: reasonMap.actor || 'customer',
+                    actorName: reasonMap.actorName || (reasonMap.actor === 'admin' ? 'MilkyLush Support' : cust.name),
+                    timestamp: reasonMap.timestamp || ''
+                  });
+                }
               });
-            }
-          });
 
-          // 2. Merge pausedDates array
-          const pausedDatesList = plan.pausedDates || [];
-          pausedDatesList.forEach((pd: string) => {
-            const normDate = normalizeDateKey(pd);
-            if (!hasLogForDate(normDate)) {
-              logs.push({
-                type: 'customer_skip',
-                date: normDate,
-                startDate: normDate,
-                endDate: normDate,
-                reason: 'Skipped Delivery',
-                actor: 'customer',
-                actorName: cust.name,
-                timestamp: ''
+              // 2. Merge pausedDates array
+              const pausedDatesList = plan.pausedDates || [];
+              pausedDatesList.forEach((pd: string) => {
+                const normDate = normalizeDateKey(pd);
+                if (!hasLogForDate(normDate)) {
+                  logs.push({
+                    type: 'customer_skip',
+                    date: normDate,
+                    startDate: normDate,
+                    endDate: normDate,
+                    reason: 'Skipped Delivery',
+                    actor: 'customer',
+                    actorName: cust.name,
+                    timestamp: ''
+                  });
+                }
               });
-            }
-          });
 
-          // 3. Merge dateOverrides from local state if admin modified calendar dates
-          Object.entries(dateOverrides).forEach(([overrideKey, overrideInfo]: [string, any]) => {
-            if (overrideKey.startsWith(`${plan.id}_`)) {
-              const parts = overrideKey.split('_');
-              if (parts.length >= 4) {
-                const yr = parts[1];
-                const mIdx = parseInt(parts[2], 10);
-                const dy = parseInt(parts[3], 10);
-                const normDate = `${yr}-${String(mIdx + 1).padStart(2, '0')}-${String(dy).padStart(2, '0')}`;
-                if (overrideInfo.status === 'skipped' || overrideInfo.status === 'exception') {
-                  if (!hasLogForDate(normDate)) {
-                    logs.push({
-                      type: 'admin_skip',
-                      date: normDate,
-                      startDate: normDate,
-                      endDate: normDate,
-                      reason: overrideInfo.reason || (overrideInfo.status === 'exception' ? 'Unable to Deliver Exception' : 'Admin Skipped Drop'),
-                      notes: overrideInfo.notes || '',
-                      actor: 'admin',
-                      actorName: 'MilkyLush Support',
-                      timestamp: new Date().toISOString()
-                    });
+              // 3. Merge dateOverrides from local state if admin modified calendar dates
+              Object.entries(dateOverrides).forEach(([overrideKey, overrideInfo]: [string, any]) => {
+                if (overrideKey.startsWith(`${plan.id}_`)) {
+                  const parts = overrideKey.split('_');
+                  if (parts.length >= 4) {
+                    const yr = parts[1];
+                    const mIdx = parseInt(parts[2], 10);
+                    const dy = parseInt(parts[3], 10);
+                    const normDate = `${yr}-${String(mIdx + 1).padStart(2, '0')}-${String(dy).padStart(2, '0')}`;
+                    if (overrideInfo.status === 'skipped' || overrideInfo.status === 'exception') {
+                      if (!hasLogForDate(normDate)) {
+                        logs.push({
+                          type: 'admin_skip',
+                          date: normDate,
+                          startDate: normDate,
+                          endDate: normDate,
+                          reason: overrideInfo.reason || (overrideInfo.status === 'exception' ? 'Unable to Deliver Exception' : 'Admin Skipped Drop'),
+                          notes: overrideInfo.notes || '',
+                          actor: 'admin',
+                          actorName: 'MilkyLush Support',
+                          timestamp: new Date().toISOString()
+                        });
+                      }
+                    }
                   }
                 }
+              });
+
+              // 4. Merge Vacation Start
+              if (plan.vacationStart && !logs.some((l) => l.type === 'vacation_hold')) {
+                logs.push({
+                  type: 'vacation_hold',
+                  startDate: normalizeDateKey(plan.vacationStart),
+                  endDate: normalizeDateKey(plan.vacationEnd),
+                  reason: 'Vacation Hold Active',
+                  actor: 'customer',
+                  actorName: cust.name,
+                  timestamp: ''
+                });
               }
-            }
-          });
 
-          // 4. Merge Vacation Start
-          if (plan.vacationStart && !logs.some((l) => l.type === 'vacation_hold')) {
-            logs.push({
-              type: 'vacation_hold',
-              startDate: normalizeDateKey(plan.vacationStart),
-              endDate: normalizeDateKey(plan.vacationEnd),
-              reason: 'Vacation Hold Active',
-              actor: 'customer',
-              actorName: cust.name,
-              timestamp: ''
-            });
-          }
+              // Date Range Grouping Algorithm (Pre-sorted descending: newest action timestamp first at index 0)
+              const groupedLogs = groupHistoryLogsIntoRanges(logs);
 
-          // Date Range Grouping Algorithm (Pre-sorted descending: newest action timestamp first at index 0)
-          const groupedLogs = groupHistoryLogsIntoRanges(logs);
+              // Interactive History Filter
+              const filteredLogs = groupedLogs.filter((l) => {
+                if (historyFilter === 'all') return true;
+                const isResumedType = l.type === 'customer_resumed' || l.type === 'admin_resumed' || l.type === 'admin_restored' || l.type === 'vacation_resumed';
+                const isSupportAction = l.actor === 'admin' || (l.actorName && (l.actorName.includes('Support') || l.actorName.includes('Admin')));
+                const isVacation = l.type === 'vacation_hold';
+                if (historyFilter === 'customer') return !isSupportAction && !isResumedType && !isVacation;
+                if (historyFilter === 'support') return isSupportAction && !isResumedType;
+                if (historyFilter === 'resumed') return isResumedType;
+                if (historyFilter === 'vacation') return isVacation;
+                return true;
+              });
 
-          // Interactive History Filter
-          const filteredLogs = groupedLogs.filter((l) => {
-            if (historyFilter === 'all') return true;
-            const isResumedType = l.type === 'customer_resumed' || l.type === 'admin_resumed' || l.type === 'admin_restored' || l.type === 'vacation_resumed';
-            const isSupportAction = l.actor === 'admin' || (l.actorName && (l.actorName.includes('Support') || l.actorName.includes('Admin')));
-            const isVacation = l.type === 'vacation_hold';
-            if (historyFilter === 'customer') return !isSupportAction && !isResumedType && !isVacation;
-            if (historyFilter === 'support') return isSupportAction && !isResumedType;
-            if (historyFilter === 'resumed') return isResumedType;
-            if (historyFilter === 'vacation') return isVacation;
-            return true;
-          });
+              const isExpanded = !!expandedHistoryPlans[plan.id];
+              const displayedLogs = isExpanded ? filteredLogs.slice(0, 20) : filteredLogs.slice(0, 2);
 
-          const isExpanded = !!expandedHistoryPlans[plan.id];
-          const displayedLogs = isExpanded ? filteredLogs.slice(0, 20) : filteredLogs.slice(0, 2);
+              return (
+                <div style={{ marginTop: '1.25rem', borderTop: '1px solid #E5E7EB', paddingTop: '1.25rem', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 800, margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CalendarIcon size={18} style={{ color: '#047857' }} /> Subscription activity &amp; skip history ({plan.productName || 'Subscription'})
+                    </h4>
 
-          return (
-            <div key={`hist_${plan.id || pIdx}`} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid #E5E7EB', marginBottom: '1.25rem', textAlign: 'left' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 800, margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CalendarIcon size={18} style={{ color: '#047857' }} /> Subscription activity &amp; skip history ({plan.productName || 'Subscription'})
-                </h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {/* Filter Dropdown */}
+                      <select
+                        value={historyFilter}
+                        onChange={(e) => setHistoryFilter(e.target.value)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          border: '1px solid #E5E7EB',
+                          backgroundColor: '#F9FAFB',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          color: '#374151',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="all">Filter: All Activities ({groupedLogs.length})</option>
+                        <option value="customer">Customer Skips</option>
+                        <option value="support">Support Skips</option>
+                        <option value="resumed">Resumed Drops</option>
+                        <option value="vacation">Vacation Holds</option>
+                      </select>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  {/* Filter Dropdown */}
-                  <select
-                    value={historyFilter}
-                    onChange={(e) => setHistoryFilter(e.target.value)}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      border: '1px solid #E5E7EB',
-                      backgroundColor: '#F9FAFB',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      color: '#374151',
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="all">Filter: All Activities ({groupedLogs.length})</option>
-                    <option value="customer">Customer Skips</option>
-                    <option value="support">Support Skips</option>
-                    <option value="resumed">Resumed Drops</option>
-                    <option value="vacation">Vacation Holds</option>
-                  </select>
+                      {filteredLogs.length > 2 && (
+                        <button
+                          onClick={() => toggleHistoryExpand(plan.id)}
+                          style={{
+                            padding: '5px 12px',
+                            borderRadius: '16px',
+                            backgroundColor: '#F3F4F6',
+                            border: '1px solid #E5E7EB',
+                            color: '#374151',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {isExpanded ? 'Collapse' : `View all (${filteredLogs.length})`}
+                          <ChevronDown
+                            size={15}
+                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                  {filteredLogs.length > 2 && (
-                    <button
-                      onClick={() => toggleHistoryExpand(plan.id)}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '16px',
-                        backgroundColor: '#F3F4F6',
-                        border: '1px solid #E5E7EB',
-                        color: '#374151',
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      {isExpanded ? 'Collapse' : `View all (${filteredLogs.length})`}
-                      <ChevronDown
-                        size={15}
-                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                      />
-                    </button>
-                  )}
-                </div>
-              </div>
+                  {filteredLogs.length === 0 ? (
+                    <div style={{ fontSize: '0.85rem', color: '#6B7280', padding: '0.5rem 0' }}>
+                      {groupedLogs.length === 0
+                        ? 'No activity or skip history recorded yet for this plan. Deliveries scheduled as planned.'
+                        : 'No activity logs matching the selected filter criteria.'}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {displayedLogs.map((log: any, lIdx: number) => {
+                        const isResumedType = log.type === 'customer_resumed' || log.type === 'admin_resumed' || log.type === 'admin_restored' || log.type === 'vacation_resumed';
+                        const isSupportAction = log.actor === 'admin' || (log.actorName && (log.actorName.includes('Support') || log.actorName.includes('Admin')));
+                        
+                        const dateDisplay = formatDateRange(log.startDate || log.date, log.endDate || log.date);
+                        const actorLabel = isSupportAction ? 'By MilkyLush Support' : `By ${log.actorName ? String(log.actorName).replace(/\s*\(Customer\)/g, '').replace(/\s*\(Administrator\)/g, '') : cust.name}`;
+                        const formattedLogged = formatLoggedTime(log.timestamp) || (log.startDate ? `Logged ${formatSingleDate(log.startDate)}` : '');
 
-              {filteredLogs.length === 0 ? (
-                <div style={{ fontSize: '0.85rem', color: '#6B7280', padding: '0.5rem 0' }}>
-                  {groupedLogs.length === 0
-                    ? 'No activity or skip history recorded yet for this plan. Deliveries scheduled as planned.'
-                    : 'No activity logs matching the selected filter criteria.'}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {displayedLogs.map((log: any, lIdx: number) => {
-                    const isResumedType = log.type === 'customer_resumed' || log.type === 'admin_resumed' || log.type === 'admin_restored' || log.type === 'vacation_resumed';
-                    const isSupportAction = log.actor === 'admin' || (log.actorName && (log.actorName.includes('Support') || log.actorName.includes('Admin')));
-                    
-                    // Formatting Range
-                    const dateDisplay = formatDateRange(log.startDate || log.date, log.endDate || log.date);
-                    
-                    // Actor Labeling for Web Admin View
-                    const actorLabel = isSupportAction ? 'By MilkyLush Support' : `By ${log.actorName ? String(log.actorName).replace(/\s*\(Customer\)/g, '').replace(/\s*\(Administrator\)/g, '') : cust.name}`;
+                        let titleText = log.reason || 'Skipped delivery';
+                        if (isResumedType) {
+                          titleText = 'Delivery resumed';
+                        } else if (isSupportAction) {
+                          const displayReason = (log.reason && log.reason !== 'Skipped by support' && log.reason !== 'Admin Skipped Drop' && log.reason !== 'Skipped Delivery') ? log.reason : '';
+                          if (displayReason) {
+                            titleText = `Skipped by support — ${displayReason}`;
+                          } else {
+                            titleText = 'Skipped by support';
+                          }
+                        } else if (titleText === 'Skipped Delivery' || titleText === 'Quick Skip') {
+                          titleText = 'Skipped delivery';
+                        } else if (!titleText.toLowerCase().startsWith('skipped')) {
+                          titleText = `Skipped — ${titleText.toLowerCase()}`;
+                        }
 
-                    // Logged time line
-                    const formattedLogged = formatLoggedTime(log.timestamp) || (log.startDate ? `Logged ${formatSingleDate(log.startDate)}` : '');
+                        const circleBg = isResumedType ? '#ECFDF5' : '#FEF3C7';
+                        const iconColor = isResumedType ? '#047857' : '#D97706';
 
-                    // Dynamic Title & Reason
-                    let titleText = log.reason || 'Skipped delivery';
-                    if (isResumedType) {
-                      titleText = 'Delivery resumed';
-                    } else if (isSupportAction) {
-                      const displayReason = (log.reason && log.reason !== 'Skipped by support' && log.reason !== 'Admin Skipped Drop' && log.reason !== 'Skipped Delivery') ? log.reason : '';
-                      if (displayReason) {
-                        titleText = `Skipped by support — ${displayReason}`;
-                      } else {
-                        titleText = 'Skipped by support';
-                      }
-                    } else if (titleText === 'Skipped Delivery' || titleText === 'Quick Skip') {
-                      titleText = 'Skipped delivery';
-                    } else if (!titleText.toLowerCase().startsWith('skipped')) {
-                      titleText = `Skipped — ${titleText.toLowerCase()}`;
-                    }
-
-                    // Icons and Theme Colors
-                    // Amber = Paused/Skipped, Green = Resumed. No Red!
-                    const circleBg = isResumedType ? '#ECFDF5' : '#FEF3C7';
-                    const iconColor = isResumedType ? '#047857' : '#D97706';
-
-                    return (
-                      <div key={lIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '0.85rem 1rem', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #F3F4F6' }}>
-                        <div style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '50%',
-                          backgroundColor: circleBg,
-                          color: iconColor,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          marginTop: '2px'
-                        }}>
-                          {isResumedType ? (
-                            <CheckCircle size={20} />
-                          ) : isSupportAction ? (
-                            <Headphones size={18} />
-                          ) : (
-                            <PauseCircle size={20} />
-                          )}
-                        </div>
-
-                        <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#111827', textTransform: 'capitalize' }}>
-                              {titleText}
-                            </div>
-                            
-                            <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '3px', fontWeight: 600 }}>
-                              {dateDisplay}
-                              {isResumedType && ' · Skip cancelled'}
-                              {isSupportAction && log.reason && log.reason !== 'Skipped by support' && !log.reason.includes('Skipped Delivery') && !titleText.includes(log.reason) && (
-                                <span> · {log.reason}</span>
-                              )}
-                              <span> · {actorLabel}</span>
-                            </div>
-
-                            {formattedLogged && (
-                              <div style={{ fontSize: '0.73rem', color: '#9CA3AF', marginTop: '2px' }}>
-                                {formattedLogged} {isSupportAction ? '· By MilkyLush Support' : ''}
-                              </div>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => handleOpenDeleteHistoryModal(plan.id, log)}
-                            title="Delete this history entry"
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#9CA3AF',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              borderRadius: '6px',
+                        return (
+                          <div key={lIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '0.85rem 1rem', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #F3F4F6' }}>
+                            <div style={{
+                              width: '38px',
+                              height: '38px',
+                              borderRadius: '50%',
+                              backgroundColor: circleBg,
+                              color: iconColor,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              transition: 'color 0.2s',
-                              marginLeft: '8px'
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.color = '#DC2626')}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = '#9CA3AF')}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                              flexShrink: 0,
+                              marginTop: '2px'
+                            }}>
+                              {isResumedType ? (
+                                <CheckCircle size={20} />
+                              ) : isSupportAction ? (
+                                <Headphones size={18} />
+                              ) : (
+                                <PauseCircle size={20} />
+                              )}
+                            </div>
+
+                            <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>
+                                  {dateDisplay} · {titleText}
+                                </div>
+                                <div style={{ fontSize: '0.76rem', color: '#6B7280', marginTop: '2px' }}>
+                                  {actorLabel} {formattedLogged ? `· ${formattedLogged}` : ''}
+                                </div>
+                                {log.notes && (
+                                  <div style={{ fontSize: '0.74rem', color: '#4B5563', marginTop: '4px', fontStyle: 'italic', backgroundColor: '#FFFFFF', padding: '4px 8px', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
+                                    Notes: {log.notes}
+                                  </div>
+                                )}
+                              </div>
+
+                              <button
+                                title="Delete History Entry"
+                                onClick={() => handleOpenDeleteHistoryModal(plan.id, log)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#9CA3AF',
+                                  padding: '4px',
+                                  borderRadius: '6px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'color 0.2s',
+                                  marginLeft: '8px'
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.color = '#DC2626')}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = '#9CA3AF')}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })()}
+
+          </div>
+        ))}
+
 
         {/* Calendar Date Status & Delivery Exception Modal */}
         {activeDateModal && (
@@ -1869,6 +2187,254 @@ export default function SubscriptionsPage({
                 </div>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* Subscription Plan Cancellation Modal */}
+        {cancelModalSub && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem'
+          }}>
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '1.75rem',
+              maxWidth: '520px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <X size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                      Cancel Subscription Plan
+                    </h3>
+                    <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                      Customer: {cancelModalSub.customer?.name} • Plan: {cancelModalSub.plan?.productName}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCancelModalSub(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                    Select Cancellation Reason (Type):
+                  </label>
+                  <select
+                    value={cancelReasonType}
+                    onChange={(e) => setCancelReasonType(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.7rem',
+                      borderRadius: '10px',
+                      border: '1px solid #D1D5DB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: '#111827',
+                      outline: 'none'
+                    }}
+                  >
+                    {PREDEFINED_CANCEL_REASONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                    Additional Notes / Specific Reason (Optional):
+                  </label>
+                  <textarea
+                    placeholder="e.g. Address is outside delivery zone (14 km away from Hosur center)..."
+                    value={cancelCustomNotes}
+                    onChange={(e) => setCancelCustomNotes(e.target.value)}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '0.7rem',
+                      borderRadius: '10px',
+                      border: '1px solid #D1D5DB',
+                      fontSize: '0.85rem',
+                      color: '#111827',
+                      outline: 'none',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <div style={{ backgroundColor: '#FEF2F2', borderRadius: '10px', padding: '0.75rem 1rem', border: '1px solid #FEE2E2', fontSize: '0.78rem', color: '#991B1B' }}>
+                  ℹ️ Cancelling this subscription plan will update Firestore status to <strong>cancelled</strong>, stop future deliveries, and push an in-app notification to the customer with this reason.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setCancelModalSub(null)}
+                  style={{
+                    padding: '0.65rem 1.25rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#F3F4F6',
+                    color: '#374151',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Keep Active
+                </button>
+                <button
+                  disabled={isSubmittingCancel}
+                  onClick={handleConfirmCancelPlan}
+                  style={{
+                    padding: '0.65rem 1.35rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: isSubmittingCancel ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isSubmittingCancel ? 'Cancelling...' : 'Confirm Plan Cancellation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reactivate Subscription Plan Modal */}
+        {reactivateModalSub && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem'
+          }}>
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '1.75rem',
+              maxWidth: '520px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#ECFDF5', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                      Reactivate Subscription Plan
+                    </h3>
+                    <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                      Customer: {reactivateModalSub.customer?.name} • Plan: {reactivateModalSub.plan?.productName}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setReactivateModalSub(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                    Reason / Note for Reactivating:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Address verified / Customer requested resubscription..."
+                    value={reactivateNotes}
+                    onChange={(e) => setReactivateNotes(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.7rem',
+                      borderRadius: '10px',
+                      border: '1px solid #D1D5DB',
+                      fontSize: '0.88rem',
+                      color: '#111827',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ backgroundColor: '#ECFDF5', borderRadius: '10px', padding: '0.75rem 1rem', border: '1px solid #A7F3D0', fontSize: '0.78rem', color: '#047857' }}>
+                  💡 Reactivating this plan will restore status to <strong>ACTIVE</strong>, resume daily dispatches, and notify the customer in app.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setReactivateModalSub(null)}
+                  style={{
+                    padding: '0.65rem 1.25rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#F3F4F6',
+                    color: '#374151',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Keep Cancelled
+                </button>
+                <button
+                  disabled={isSubmittingReactivate}
+                  onClick={handleConfirmReactivatePlan}
+                  style={{
+                    padding: '0.65rem 1.35rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#047857',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: isSubmittingReactivate ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isSubmittingReactivate ? 'Reactivating...' : 'Confirm Reactivation'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2462,6 +3028,254 @@ export default function SubscriptionsPage({
                 }}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subscription Plan Cancellation Modal */}
+      {cancelModalSub && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            padding: '1.75rem',
+            maxWidth: '520px',
+            width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                    Cancel Subscription Plan
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                    Customer: {cancelModalSub.customer?.name} • Plan: {cancelModalSub.plan?.productName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCancelModalSub(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                  Select Cancellation Reason (Type):
+                </label>
+                <select
+                  value={cancelReasonType}
+                  onChange={(e) => setCancelReasonType(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.7rem',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    backgroundColor: '#F9FAFB',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    color: '#111827',
+                    outline: 'none'
+                  }}
+                >
+                  {PREDEFINED_CANCEL_REASONS.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                  Additional Notes / Specific Reason (Optional):
+                </label>
+                <textarea
+                  placeholder="e.g. Address is outside delivery zone (14 km away from Hosur center)..."
+                  value={cancelCustomNotes}
+                  onChange={(e) => setCancelCustomNotes(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '0.7rem',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    fontSize: '0.85rem',
+                    color: '#111827',
+                    outline: 'none',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div style={{ backgroundColor: '#FEF2F2', borderRadius: '10px', padding: '0.75rem 1rem', border: '1px solid #FEE2E2', fontSize: '0.78rem', color: '#991B1B' }}>
+                ℹ️ Cancelling this subscription plan will update Firestore status to <strong>cancelled</strong>, stop future deliveries, and push an in-app notification to the customer with this reason.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setCancelModalSub(null)}
+                style={{
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: '10px',
+                  backgroundColor: '#F3F4F6',
+                  color: '#374151',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Keep Active
+              </button>
+              <button
+                disabled={isSubmittingCancel}
+                onClick={handleConfirmCancelPlan}
+                style={{
+                  padding: '0.65rem 1.35rem',
+                  borderRadius: '10px',
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: isSubmittingCancel ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSubmittingCancel ? 'Cancelling...' : 'Confirm Plan Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reactivate Subscription Plan Modal */}
+      {reactivateModalSub && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '20px',
+            padding: '1.75rem',
+            maxWidth: '520px',
+            width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#ECFDF5', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                    Reactivate Subscription Plan
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
+                    Customer: {reactivateModalSub.customer?.name} • Plan: {reactivateModalSub.plan?.productName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReactivateModalSub(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                  Reason / Note for Reactivating:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Address verified / Customer requested resubscription..."
+                  value={reactivateNotes}
+                  onChange={(e) => setReactivateNotes(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.7rem',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    fontSize: '0.88rem',
+                    color: '#111827',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ backgroundColor: '#ECFDF5', borderRadius: '10px', padding: '0.75rem 1rem', border: '1px solid #A7F3D0', fontSize: '0.78rem', color: '#047857' }}>
+                💡 Reactivating this plan will restore status to <strong>ACTIVE</strong>, resume daily dispatches, and notify the customer in app.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setReactivateModalSub(null)}
+                style={{
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: '10px',
+                  backgroundColor: '#F3F4F6',
+                  color: '#374151',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Keep Cancelled
+              </button>
+              <button
+                disabled={isSubmittingReactivate}
+                onClick={handleConfirmReactivatePlan}
+                style={{
+                  padding: '0.65rem 1.35rem',
+                  borderRadius: '10px',
+                  backgroundColor: '#047857',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: isSubmittingReactivate ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSubmittingReactivate ? 'Reactivating...' : 'Confirm Reactivation'}
               </button>
             </div>
           </div>

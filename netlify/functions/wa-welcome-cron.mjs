@@ -18,7 +18,13 @@ const hasPhone = (u) => u.phone || u.phoneNumber || u.mobile;
 const hasEmail = (u) => (u.email || '').trim();
 // A customer is greeted on WhatsApp if they gave a phone, otherwise by email.
 const reachable = (u) => hasPhone(u) || hasEmail(u);
-const alreadyHandled = (u) => u.welcomeWhatsappStatus || u.welcomeWhatsappSent;
+// "pending" means the mobile app flagged this customer for greeting, so it is
+// the one status that still needs acting on. Anything else means done or
+// deliberately skipped. Without this, the app writing "pending" would look like
+// "already handled" and the customer would never be greeted.
+const PENDING = 'pending';
+const alreadyHandled = (u) =>
+  (u.welcomeWhatsappStatus && u.welcomeWhatsappStatus !== PENDING) || u.welcomeWhatsappSent;
 
 export default async () => {
   if (!apiKey() || !campaignId()) {
@@ -36,7 +42,8 @@ export default async () => {
   if (!settings.exists() || settings.data()?.initialized !== true) {
     let marked = 0;
     for (const snap of users.docs) {
-      if (alreadyHandled(snap.data())) continue;
+      const u = snap.data();
+      if (alreadyHandled(u) || u.welcomeWhatsappStatus === PENDING) continue;
       await setDoc(snap.ref, { welcomeWhatsappStatus: 'skipped_existing' }, { merge: true });
       marked++;
     }

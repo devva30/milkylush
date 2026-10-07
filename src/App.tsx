@@ -32,6 +32,7 @@ import UserControlPage from './pages/UserControlPage';
 import PaymentsPage from './pages/PaymentsPage';
 import MobileControlPage from './pages/MobileControlPage';
 import ReferEarnPage from './pages/ReferEarnPage';
+import FreeSamplesPage from './pages/FreeSamplesPage';
 import PrepaidSubscriptionsPage from './pages/PrepaidSubscriptionsPage';
 import ManageSubscriptionsPage from './pages/ManageSubscriptionsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
@@ -60,6 +61,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [targetCustomerId, setTargetCustomerId] = useState<string | null>(null);
   const [targetSubscriptionId, setTargetSubscriptionId] = useState<string | null>(null);
+  const [targetOrderId, setTargetOrderId] = useState<string | null>(null);
 
   const handleNavigateTab = (tab: string, targetId?: string) => {
     if (tab === 'portal-gateway') {
@@ -71,9 +73,13 @@ function AppContent() {
     if (tab === 'subscriptions' && targetId) {
       setTargetSubscriptionId(targetId);
     }
+    if (tab === 'orders' && targetId) {
+      setTargetOrderId(targetId);
+    }
     setActiveTab(tab);
   };
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isHubModalOpen, setIsHubModalOpen] = useState<boolean>(false);
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -127,20 +133,48 @@ function AppContent() {
   const handleUpdateOrderDriver = async (orderId: string, agentId: string) => {
     try {
       const agent = hubDeliveryAgents.find((a: DeliveryAgent) => a.id === agentId);
-      const isSub = orderId.startsWith('SUB_') || orderId.startsWith('DISPATCH_');
-      const targetCol = isSub ? 'subscriptions' : 'orders';
-      const realId = orderId.replace('SUB_', '').replace('DISPATCH_', '');
-
+      
       const updateData = {
-        deliveryAgentId: agentId,
-        assignedRiderId: agentId,
+        deliveryAgentId: agentId || '',
+        assignedRiderId: agentId || '',
         assignedPartner: agent ? agent.name : '',
+        assignedRider: agent ? agent.name : '',
+        assignedAgentName: agent ? agent.name : '',
         assignedRiderEmail: agent ? agent.email : '',
         updatedAt: new Date().toISOString(),
       };
 
-      await updateDoc(doc(db, targetCol, realId), updateData);
-      showToast(`Assigned ${agent ? agent.name : 'rider'} to order ${orderId}`, 'success');
+      const cleanId = orderId.replace(/^SUB[_-]/, '').replace(/^DISPATCH[_-]/, '');
+
+      // Check direct subscriptions match
+      const matchingSub = hubSubscriptions.find(s => s.id === orderId || s.id === cleanId || orderId.includes(s.id) || s.id.includes(cleanId));
+      if (matchingSub) {
+        await updateDoc(doc(db, 'subscriptions', matchingSub.id), updateData);
+        showToast(`Assigned ${agent ? agent.name : 'rider'} to subscription "${matchingSub.productName || matchingSub.id}"`, 'success');
+        return;
+      }
+
+      // Check direct orders match
+      const matchingOrder = hubOrders.find(o => o.id === orderId || o.id === cleanId || orderId.includes(o.id) || o.id.includes(cleanId));
+      if (matchingOrder) {
+        await updateDoc(doc(db, 'orders', matchingOrder.id), updateData);
+        showToast(`Assigned ${agent ? agent.name : 'rider'} to order "${matchingOrder.id}"`, 'success');
+        return;
+      }
+
+      // Fallback try doc directly in orders or subscriptions
+      try {
+        await updateDoc(doc(db, 'orders', cleanId), updateData);
+        showToast(`Assigned ${agent ? agent.name : 'rider'} to order ${cleanId}`, 'success');
+      } catch (err1) {
+        try {
+          await updateDoc(doc(db, 'subscriptions', cleanId), updateData);
+          showToast(`Assigned ${agent ? agent.name : 'rider'} to subscription ${cleanId}`, 'success');
+        } catch (err2) {
+          console.error("Failed to find order/subscription doc:", err2);
+          showToast(`Unable to update driver for ${orderId}`, 'error');
+        }
+      }
     } catch (err) {
       showToast(`Error assigning driver: ${err}`, 'error');
     }
@@ -184,16 +218,30 @@ function AppContent() {
 
   const handleSaveServiceArea = async (address: string, lat: string, lng: string, radius: string) => {
     try {
+      const parsedRadius = parseFloat(radius) || (selectedHubId.includes('hosur') ? 15.0 : 5.0);
+      const parsedLat = parseFloat(lat) || (selectedHubId.includes('hosur') ? 12.742253 : 12.867697);
+      const parsedLng = parseFloat(lng) || (selectedHubId.includes('hosur') ? 77.824213 : 77.666721);
+
       const data = {
         address,
-        hubLatitude: parseFloat(lat) || 0,
-        hubLongitude: parseFloat(lng) || 0,
-        radiusKm: parseFloat(radius) || 0,
+        hubLatitude: parsedLat,
+        hubLongitude: parsedLng,
+        radiusKm: parsedRadius,
         hubId: selectedHubId,
+        updatedAt: new Date().toISOString(),
       };
       await setDoc(doc(db, 'settings', `delivery_${selectedHubId}`), data, { merge: true });
       await setDoc(doc(db, 'settings', 'delivery'), data, { merge: true });
-      showToast(`Updated service area settings for ${selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Hub'} in Firestore.`, 'success');
+      await setDoc(doc(db, 'hubs', selectedHubId), {
+        name: selectedHubId === 'hub_hosur_main' ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub',
+        latitude: parsedLat,
+        longitude: parsedLng,
+        radiusKm: parsedRadius,
+        address,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+      showToast(`Updated service area settings & hub radius (${parsedRadius} KM) for ${selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Hub'} in Firestore!`, 'success');
     } catch (err) {
       showToast(`Error saving service area: ${err}`, 'error');
     }
@@ -296,6 +344,8 @@ function AppContent() {
         hubOrders={hubOrders}
         hubUsers={hubUsers}
         products={products}
+        deliverySettings={deliverySettings}
+        onSaveServiceArea={handleSaveServiceArea}
         onUpdateOrderStatus={handleUpdateOrderStatus}
         onUpdateOrderDriver={handleUpdateOrderDriver}
         adminUsername={adminUsername || 'Tomadmin@gmail.com'}
@@ -326,10 +376,12 @@ function AppContent() {
         onLogout={logoutAdmin}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       {/* Main Content Viewport */}
-      <div className="main-content-viewport">
+      <div className="main-content-viewport" style={{ marginLeft: isSidebarCollapsed ? '76px' : '260px', transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         <Header
           activeTab={activeTab}
           selectedHubId={selectedHubId}
@@ -411,6 +463,7 @@ function AppContent() {
               users={hubUsers}
               products={products}
               deliveryAgents={hubDeliveryAgents}
+              targetOrderId={targetOrderId}
               onOpenAddOrderModal={() => setIsAddOrderModalOpen(true)}
               onUpdateOrderStatus={handleUpdateOrderStatus}
               onUpdateOrderDriver={handleUpdateOrderDriver}
@@ -499,7 +552,20 @@ function AppContent() {
           )}
 
           {activeTab === 'refer-earn' && (
-            <ReferEarnPage users={hubUsers} showToast={showToast} />
+            <ReferEarnPage users={hubUsers} products={products} showToast={showToast} />
+          )}
+
+          {activeTab === 'free-samples' && (
+            <FreeSamplesPage
+              selectedHubId={selectedHubId}
+              users={hubUsers}
+              products={products}
+              deliveryAgents={hubDeliveryAgents}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+              onUpdateOrderDriver={handleUpdateOrderDriver}
+              onNavigateTab={handleNavigateTab}
+              showToast={showToast}
+            />
           )}
 
           {activeTab === 'prepaid-subscriptions' && (
@@ -524,6 +590,7 @@ function AppContent() {
               orders={hubOrders}
               bottleRecords={bottleRecords}
               adminUsername={adminUsername}
+              onNavigateTab={handleNavigateTab}
               showToast={showToast}
             />
           )}

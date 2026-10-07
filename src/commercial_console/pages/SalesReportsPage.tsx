@@ -77,27 +77,78 @@ export default function SalesReportsPage({
     });
 
     const list = Object.values(datesMap);
-    if (list.length === 0) {
-      const today = new Date().toISOString().slice(0, 10);
-      return [
-        { date: today, totalOrders: 42, subRevenue: 3150, oneTimeRevenue: 1200, totalRevenue: 4350 },
-        { date: '2026-09-19', totalOrders: 38, subRevenue: 2850, oneTimeRevenue: 980, totalRevenue: 3830 },
-        { date: '2026-09-18', totalOrders: 45, subRevenue: 3375, oneTimeRevenue: 1450, totalRevenue: 4825 },
-        { date: '2026-09-17', totalOrders: 40, subRevenue: 3000, oneTimeRevenue: 1100, totalRevenue: 4100 },
-      ];
-    }
     return list.sort((a, b) => b.date.localeCompare(a.date));
   }, [orders]);
-
-  // Delivery Charge Report Data Aggregation
   const deliveryChargeList = useMemo(() => {
-    return [
-      { route: 'Hosur Central Route 1', rider: 'Karthik (Rider #1)', totalDrops: 28, feeCollected: 420, riderPayout: 280, netMargin: 140 },
-      { route: 'Hosur Industrial Hub Sector B', rider: 'Suresh (Rider #2)', totalDrops: 22, feeCollected: 330, riderPayout: 220, netMargin: 110 },
-      { route: 'Electronic City Phase 1', rider: 'Venkatesh (Rider #3)', totalDrops: 34, feeCollected: 510, riderPayout: 340, netMargin: 170 },
-      { route: 'Silk Board & BTM Extension', rider: 'Ramesh (Rider #4)', totalDrops: 19, feeCollected: 285, riderPayout: 190, netMargin: 95 },
-    ];
-  }, []);
+    const routeMap: Record<string, { route: string; rider: string; totalDrops: number; feeCollected: number; riderPayout: number; netMargin: number }> = {};
+
+    orders.forEach(o => {
+      const riderName = o.assignedPartner || 'Unassigned Rider';
+      const routeName = o.zoneName || o.hubId || 'Central Delivery Route';
+      const key = `${routeName}_${riderName}`;
+
+      if (!routeMap[key]) {
+        routeMap[key] = { route: routeName, rider: riderName, totalDrops: 0, feeCollected: 0, riderPayout: 0, netMargin: 0 };
+      }
+      routeMap[key].totalDrops += 1;
+      routeMap[key].feeCollected += 15; // ₹15 delivery fee per drop
+      routeMap[key].riderPayout += 10;   // ₹10 rider commission
+      routeMap[key].netMargin += 5;      // ₹5 hub margin
+    });
+
+    const list = Object.values(routeMap);
+    if (list.length === 0) {
+      return [
+        { route: 'Hosur Central Route 1', rider: 'Karthik (Rider #1)', totalDrops: 0, feeCollected: 0, riderPayout: 0, netMargin: 0 },
+      ];
+    }
+    return list;
+  }, [orders]);
+
+  // Real-time Sold Products Data Aggregation
+  const soldProductsList = useMemo(() => {
+    const prodMap: Record<string, { name: string; price: number; unit: string; soldQty: number; revenue: number }> = {};
+
+    products.forEach(p => {
+      prodMap[p.id || p.name] = { name: p.name, price: p.price || 0, unit: p.unit || '1 L', soldQty: 0, revenue: 0 };
+    });
+
+    orders.filter(o => o.status === 'delivered').forEach(o => {
+      if (o.items && o.items.length > 0) {
+        o.items.forEach((item: any) => {
+          const key = item.productId || item.productName || item.product?.name || 'Item';
+          if (!prodMap[key]) {
+            prodMap[key] = { name: item.productName || item.product?.name || 'Milk Product', price: item.price || 50, unit: '1 L', soldQty: 0, revenue: 0 };
+          }
+          const qty = item.quantity || 1;
+          prodMap[key].soldQty += qty;
+          prodMap[key].revenue += (item.price || 50) * qty;
+        });
+      }
+    });
+
+    return Object.values(prodMap).sort((a, b) => b.revenue - a.revenue);
+  }, [orders, products]);
+
+  // Real-time Customer Ledger Aggregation
+  const customerLedgerList = useMemo(() => {
+    return users.map(u => {
+      const userOrders = orders.filter(o => o.userId === u.id || o.userName === u.name);
+      const totalSpent = userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+      return {
+        id: u.id,
+        name: u.name || 'Valued Customer',
+        phone: u.phone || 'N/A',
+        walletBalance: u.walletBalance || 0,
+        totalSpent: totalSpent > 0 ? totalSpent : (u.walletBalance || 0),
+      };
+    });
+  }, [users, orders]);
+
+  // Real-time Subscription Leaves & Holds
+  const pausedSubscriptions = useMemo(() => {
+    return subscriptions.filter(s => s.status === 'paused' || s.status === 'on_hold' || s.isPaused);
+  }, [subscriptions]);
 
   const handleExportCSV = () => {
     alert(`Exporting ${info.title} report to CSV!`);
@@ -294,18 +345,14 @@ export default function SalesReportsPage({
                 </tr>
               </thead>
               <tbody>
-                {products.map((prod, idx) => {
-                  const soldQty = 140 - idx * 15;
-                  const revenue = prod.price * soldQty;
-                  return (
-                    <tr key={prod.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{prod.name}</td>
-                      <td style={{ padding: '0.75rem 1rem' }}>₹{prod.price} / {prod.unit || '1 L'}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>{soldQty} units</td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{revenue.toLocaleString('en-IN')}</td>
-                    </tr>
-                  );
-                })}
+                {soldProductsList.map((prod, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{prod.name}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}>₹{prod.price} / {prod.unit}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>{prod.soldQty} units</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{prod.revenue.toLocaleString('en-IN')}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -324,16 +371,16 @@ export default function SalesReportsPage({
                 </tr>
               </thead>
               <tbody>
-                {users.slice(0, 15).map((user) => (
+                {customerLedgerList.slice(0, 15).map((user) => (
                   <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{user.name || 'Valued Customer'}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{user.phone || '9876543210'}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{user.name}</td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{user.phone}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
-                        ₹{user.walletBalance || 450}
+                        ₹{user.walletBalance}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{(user.walletBalance || 450) + 1200}</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{user.totalSpent.toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -403,20 +450,34 @@ export default function SalesReportsPage({
               <thead>
                 <tr style={{ backgroundColor: 'var(--bg-main)', textTransform: 'uppercase', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   <th style={{ padding: '0.75rem 1rem' }}>SUBSCRIBER</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>LEAVE PERIOD</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>REASON</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>CREDIT SAVED</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>PRODUCT PLAN</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>LEAVE / HOLD STATUS</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>PAUSE PERIOD</th>
                 </tr>
               </thead>
               <tbody>
-                {subscriptions.slice(0, 10).map((sub, idx) => (
-                  <tr key={sub.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.customerName || `Subscriber #${idx + 1}`}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 700 }}>Sep 14 - Sep 18 (4 Days)</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>Out of station / Vacation hold</td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹280 credited</td>
+                {pausedSubscriptions.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                      No active subscription vacation holds or leaves recorded.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  pausedSubscriptions.map((sub, idx) => (
+                    <tr key={sub.id || idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.customerName || `Subscriber #${idx + 1}`}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: '#047857', fontWeight: 600 }}>{sub.productName || 'Daily Fresh Milk'}</td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem' }}>
+                          ON VACATION HOLD
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>
+                        {sub.pauseStartDate || 'Active Hold'} - {sub.pauseEndDate || 'Until resumed'}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

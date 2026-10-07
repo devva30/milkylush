@@ -76,17 +76,8 @@ export default function ProfitLossPage({
       }
     });
 
-    // Convert map to array
+    // Convert map to array and sort by revenue
     const arr = Object.values(map);
-    if (arr.every(p => p.unitsSold === 0)) {
-      return [
-        { name: 'Pure Organic Cow Milk 500ml', category: 'Milk', price: 45, unitsSold: 320, totalRev: 14400 },
-        { name: 'A2 Vedic Desi Cow Milk 500ml', category: 'Milk', price: 65, unitsSold: 210, totalRev: 13650 },
-        { name: 'Fresh Buffalo Milk 1L', category: 'Milk', price: 85, unitsSold: 180, totalRev: 15300 },
-        { name: 'Pure Cow Curd 500g', category: 'Dairy Products', price: 50, unitsSold: 110, totalRev: 5500 },
-        { name: 'A2 Desi Cow Ghee 500ml', category: 'Ghee & Butter', price: 650, unitsSold: 18, totalRev: 11700 },
-      ];
-    }
     return arr.sort((a, b) => b.totalRev - a.totalRev);
   }, [deliveredOrders, products]);
 

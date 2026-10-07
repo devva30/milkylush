@@ -57,6 +57,20 @@ export default function AnalysisPage({
 
   const metrics = getMetricsForTimeRange();
 
+  // Real-Time Prepaid Package counts from live subscriptions
+  const plan15Count = subscriptions.filter(s => (s.prepaidPlanId && s.prepaidPlanId.includes('15')) || (s.prepaidDays === 15)).length;
+  const plan30Count = subscriptions.filter(s => (s.prepaidPlanId && s.prepaidPlanId.includes('30')) || (s.prepaidDays === 30) || (!s.prepaidPlanId && !s.prepaidDays)).length;
+  const plan90Count = subscriptions.filter(s => (s.prepaidPlanId && s.prepaidPlanId.includes('90')) || (s.prepaidDays === 90)).length;
+
+  const totalActiveSubs = Math.max(1, activeSubsCount);
+  const avgSubDailyValue = subscriptions.reduce((acc, s) => acc + (s.productPrice || 110) * (s.quantity || 1), 0) / Math.max(1, subscriptions.length);
+  const est7DayRenewals = Math.round(totalActiveSubs * 0.35);
+  const est7DayValue = Math.round(est7DayRenewals * avgSubDailyValue * 7);
+  const est15DayRenewals = Math.round(totalActiveSubs * 0.70);
+  const est15DayValue = Math.round(est15DayRenewals * avgSubDailyValue * 15);
+  const est30DayRenewals = totalActiveSubs;
+  const est30DayValue = Math.round(est30DayRenewals * avgSubDailyValue * 30);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
       
@@ -212,7 +226,7 @@ export default function AnalysisPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>15 Days Pack</div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Standard Short-Term Plan</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{plan15Count} Subscriptions Active · Standard Plan</div>
               </div>
               <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748B', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: '8px' }}>
                 0% OFF
@@ -222,7 +236,7 @@ export default function AnalysisPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5' }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#047857' }}>30 Days Gold Plan ⭐</div>
-                <div style={{ fontSize: '0.74rem', color: '#059669' }}>Most Popular App Selection</div>
+                <div style={{ fontSize: '0.74rem', color: '#059669' }}>{plan30Count} Subscriptions Active · Most Popular App Selection</div>
               </div>
               <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF', backgroundColor: '#047857', padding: '3px 8px', borderRadius: '8px' }}>
                 10% OFF
@@ -232,7 +246,7 @@ export default function AnalysisPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E40AF' }}>90 Days Elite Plan 🚀</div>
-                <div style={{ fontSize: '0.74rem', color: '#2563EB' }}>Maximum Savings Pack</div>
+                <div style={{ fontSize: '0.74rem', color: '#2563EB' }}>{plan90Count} Subscriptions Active · Maximum Savings Pack</div>
               </div>
               <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF', backgroundColor: '#2563EB', padding: '3px 8px', borderRadius: '8px' }}>
                 15% OFF
@@ -248,33 +262,30 @@ export default function AnalysisPage({
               📈 Subscription Renewal Projection (Real-Time)
             </h4>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-              Forecasted recurring renewals & upfront cashflow inflow
+              Forecasted recurring renewals &amp; upfront cashflow inflow
             </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next 7 Days Renewals</span>
-              <span style={{ fontWeight: 800, color: '#047857' }}>14 Plans (Est. ₹18,900)</span>
+              <span style={{ fontWeight: 800, color: '#047857' }}>{est7DayRenewals} Plans (Est. ₹{est7DayValue.toLocaleString('en-IN')})</span>
             </div>
             <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: '45%', height: '100%', backgroundColor: '#047857' }} />
+              <div style={{ width: `${Math.min(100, Math.max(15, (est7DayRenewals / Math.max(1, totalActiveSubs)) * 100))}%`, height: '100%', backgroundColor: '#047857' }} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next 15 Days Renewals</span>
-              <span style={{ fontWeight: 800, color: '#0284C7' }}>28 Plans (Est. ₹36,400)</span>
+              <span style={{ fontWeight: 800, color: '#0284C7' }}>{est15DayRenewals} Plans (Est. ₹{est15DayValue.toLocaleString('en-IN')})</span>
             </div>
             <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: '70%', height: '100%', backgroundColor: '#0284C7' }} />
+              <div style={{ width: `${Math.min(100, Math.max(30, (est15DayRenewals / Math.max(1, totalActiveSubs)) * 100))}%`, height: '100%', backgroundColor: '#0284C7' }} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next 30 Days Renewals</span>
-              <span style={{ fontWeight: 800, color: '#9333EA' }}>42 Plans (Est. ₹54,600)</span>
-            </div>
-            <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: '92%', height: '100%', backgroundColor: '#9333EA' }} />
+              <span style={{ fontWeight: 800, color: '#9333EA' }}>{est30DayRenewals} Plans (Est. ₹{est30DayValue.toLocaleString('en-IN')})</span>
             </div>
           </div>
         </div>
@@ -284,3 +295,5 @@ export default function AnalysisPage({
     </div>
   );
 }
+
+

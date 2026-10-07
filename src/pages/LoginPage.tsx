@@ -95,16 +95,16 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
         {/* Logo Badge */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
           <div style={{
-            width: '96px',
-            height: '96px',
-            borderRadius: '24px',
+            width: '200px',
+            height: '64px',
+            borderRadius: '18px',
             backgroundColor: '#ECFDF5',
-            padding: '12px',
+            padding: '8px 16px',
             border: '2px solid #A7F3D0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(4, 120, 87, 0.15)'
+            boxShadow: '0 8px 20px rgba(4, 120, 87, 0.12)'
           }}>
             <img src={logoImg} alt="MilkyLush" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>

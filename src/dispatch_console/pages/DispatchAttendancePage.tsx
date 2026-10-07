@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { UserCheck, UserX, Clock, Search, ShieldCheck, Calendar, RefreshCw, ChevronLeft, ChevronRight, BarChart2, Filter, Download } from 'lucide-react';
-import { doc, updateDoc, setDoc, addDoc, collection, serverTimestamp, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { UserCheck, UserX, Clock, Search, Calendar, BarChart2, CheckCircle, AlertTriangle, ShieldCheck, MapPin, Phone, RefreshCw } from 'lucide-react';
+import { doc, updateDoc, setDoc, addDoc, collection, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import type { DeliveryAgent } from '../../types';
 
@@ -10,12 +10,15 @@ interface DispatchAttendancePageProps {
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-interface MonthlyRecord {
+interface AttendanceRecord {
   date: string;
-  status: 'present' | 'absent' | 'unchecked';
-  checkInTime?: string;
-  checkOutTime?: string;
-  hoursWorked?: number;
+  agentId: string;
+  status: 'present' | 'absent' | 'completed' | 'unchecked';
+  punchInTimeStr?: string;
+  punchOutTimeStr?: string;
+  punchInLat?: number;
+  punchInLng?: number;
+  updatedBy?: string;
 }
 
 export default function DispatchAttendancePage({
@@ -23,13 +26,15 @@ export default function DispatchAttendancePage({
   hubDeliveryAgents,
   showToast,
 }: DispatchAttendancePageProps) {
-  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('monthly');
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState<number>(parseInt(new Date().toISOString().slice(0, 4), 10));
   const [updatingAgentId, setUpdatingAgentId] = useState<string | null>(null);
   const [selectedRiderForModal, setSelectedRiderForModal] = useState<DeliveryAgent | null>(null);
-  const [attendanceLogs, setAttendanceLogs] = useState<Record<string, MonthlyRecord[]>>({});
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord[]>>({});
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   const isHosur = selectedHubId.includes('hosur');
@@ -50,88 +55,97 @@ export default function DispatchAttendancePage({
   // Calculate days in selected month
   const [yearStr, monthStr] = selectedMonth.split('-');
   const year = parseInt(yearStr || '2026', 10);
-  const month = parseInt(monthStr || '09', 10);
+  const month = parseInt(monthStr || '10', 10);
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // Fetch real-time attendance logs for selected month
+  // Stream real-time attendance logs from `rider_attendance` and `attendance_logs`
   useEffect(() => {
     setIsLoadingLogs(true);
-    const q = query(
-      collection(db, 'attendance_logs'),
-      where('date', '>=', `${selectedMonth}-01`),
-      where('date', '<=', `${selectedMonth}-${daysInMonth.toString().padStart(2, '0')}`)
+    const startDate = `${selectedMonth}-01`;
+    const endDate = `${selectedMonth}-${daysInMonth.toString().padStart(2, '0')}`;
+
+    // 1. Stream from `rider_attendance` (App Punch In/Out records)
+    const qRider = query(
+      collection(db, 'rider_attendance'),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logsByAgent: Record<string, MonthlyRecord[]> = {};
+    const unsubscribe = onSnapshot(qRider, (snapshot) => {
+      const recordsByAgent: Record<string, AttendanceRecord[]> = {};
+
       snapshot.docs.forEach((docSnap) => {
         const data = docSnap.data();
-        const agentId = data.agentId;
+        const agentId = data.agentId || docSnap.id.split('_')[0];
         if (!agentId) return;
 
-        if (!logsByAgent[agentId]) {
-          logsByAgent[agentId] = [];
+        if (!recordsByAgent[agentId]) {
+          recordsByAgent[agentId] = [];
         }
 
-        logsByAgent[agentId].push({
+        recordsByAgent[agentId].push({
           date: data.date,
-          status: data.attendanceStatus || (data.status === 'online' ? 'present' : 'absent'),
-          checkInTime: data.checkInTime || (data.timestamp ? new Date(data.timestamp.toDate?.() || data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '06:00 AM'),
-          checkOutTime: data.checkOutTime || '02:00 PM',
-          hoursWorked: data.hoursWorked || 8.0,
+          agentId,
+          status: data.status === 'completed' || data.status === 'present' ? 'present' : (data.status || 'present'),
+          punchInTimeStr: data.punchInTimeStr || (data.punchIn ? new Date(data.punchIn.toDate?.() || data.punchIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '06:00 AM'),
+          punchOutTimeStr: data.punchOutTimeStr || (data.punchOut ? new Date(data.punchOut.toDate?.() || data.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined),
+          punchInLat: data.punchInLat,
+          punchInLng: data.punchInLng,
         });
       });
 
-      setAttendanceLogs(logsByAgent);
+      setAttendanceRecords(recordsByAgent);
       setIsLoadingLogs(false);
     }, (err) => {
-      console.warn("Error streaming attendance logs:", err);
+      console.warn("Error streaming rider attendance:", err);
       setIsLoadingLogs(false);
     });
 
     return () => unsubscribe();
   }, [selectedMonth, daysInMonth]);
 
-  // Overall statistics
+  // Overall statistics calculation
   const presentCount = filteredAgents.filter((a) => a.attendanceStatus === 'present' || a.isOnline).length;
   const absentCount = filteredAgents.filter((a) => a.attendanceStatus === 'absent').length;
-  const offlineCount = filteredAgents.length - presentCount - absentCount;
+  const uncheckedCount = Math.max(0, filteredAgents.length - presentCount - absentCount);
+  const punctualityRate = filteredAgents.length > 0 ? Math.round((presentCount / filteredAgents.length) * 100) : 100;
 
   const handleToggleAttendance = async (agent: DeliveryAgent, newStatus: 'present' | 'absent', dateToUpdate?: string) => {
     setUpdatingAgentId(agent.id);
     const isPresent = newStatus === 'present';
     const targetDate = dateToUpdate || selectedDate;
+    const docId = `${agent.id}_${targetDate}`;
 
     try {
-      // 1. Update Firestore delivery_agents collection document if today
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // 1. Update Firestore rider_attendance document
+      await setDoc(doc(db, 'rider_attendance', docId), {
+        agentId: agent.id,
+        agentName: agent.name,
+        date: targetDate,
+        status: newStatus,
+        punchInTimeStr: isPresent ? nowStr : '-',
+        punchOutTimeStr: isPresent ? '02:00 PM' : '-',
+        updatedBy: 'Admin Console Override',
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      // 2. If today, update live delivery_agents collection document
       if (targetDate === new Date().toISOString().slice(0, 10)) {
         await updateDoc(doc(db, 'delivery_agents', agent.id), {
           attendanceStatus: newStatus,
           isOnline: isPresent,
           status: isPresent ? 'online' : 'offline',
-          lastAttendanceUpdate: new Date().toISOString(),
+          lastShiftUpdate: serverTimestamp(),
         });
         agent.attendanceStatus = newStatus;
         agent.isOnline = isPresent;
       }
 
-      // 2. Add Audit Log entry in attendance_logs
-      await addDoc(collection(db, 'attendance_logs'), {
-        agentId: agent.id,
-        agentName: agent.name,
-        status: isPresent ? 'online' : 'offline',
-        attendanceStatus: newStatus,
-        date: targetDate,
-        checkInTime: isPresent ? '06:00 AM' : '-',
-        checkOutTime: isPresent ? '02:00 PM' : '-',
-        hoursWorked: isPresent ? 8.0 : 0.0,
-        updatedBy: 'Admin Console',
-        timestamp: serverTimestamp(),
-      });
-
       showToast(
-        `Updated attendance for "${agent.name}" on ${targetDate}: Marked as ${newStatus.toUpperCase()}!`,
+        `Updated attendance for "${agent.name}" on ${targetDate}: Marked ${newStatus.toUpperCase()}!`,
         isPresent ? 'success' : 'info'
       );
     } catch (err: any) {
@@ -143,143 +157,301 @@ export default function DispatchAttendancePage({
   };
 
   const getRiderMonthlyStats = (agentId: string) => {
-    const logs = attendanceLogs[agentId] || [];
-    const presentDays = logs.filter(l => l.status === 'present').length;
+    const logs = attendanceRecords[agentId] || [];
+    const presentDays = logs.filter(l => l.status === 'present' || l.status === 'completed').length;
     const absentDays = logs.filter(l => l.status === 'absent').length;
-    const uncheckedDays = Math.max(0, daysInMonth - presentDays - absentDays);
     const attendancePct = daysInMonth > 0 ? Math.round((presentDays / daysInMonth) * 100) : 0;
-    return { presentDays, absentDays, uncheckedDays, attendancePct, logs };
+    return { presentDays, absentDays, attendancePct, logs };
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Outfit', sans-serif" }}>
       
       {/* Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: '#FFFFFF', padding: '1.25rem 1.5rem', borderRadius: '18px', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📋 Rider Monthly Shift Attendance & Roster
-          </h2>
-          <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
-            Track monthly rider check-ins, duty hours, shift logs, and admin overrides for <strong>{selectedHubId}</strong>.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534' }}>
+              <UserCheck size={22} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+                Rider Shift & Attendance Dispatch Roster
+              </h2>
+              <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
+                Real-time punch logs, monthly attendance matrix & admin overrides for <strong>{selectedHubId === 'hub_bengaluru' ? 'Bangalore Hub' : 'Hosur Central Hub'}</strong>
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* View Mode Switcher */}
-          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '3px', borderRadius: '10px', gap: '3px', border: '1px solid #CBD5E1' }}>
-            <button
-              onClick={() => setViewMode('monthly')}
-              style={{
-                backgroundColor: viewMode === 'monthly' ? '#047857' : 'transparent',
-                color: viewMode === 'monthly' ? '#FFFFFF' : '#475569',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '6px 14px',
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <BarChart2 size={15} /> Monthly Roster
-            </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {/* View Mode Switcher (DAILY FIRST, MONTHLY SECOND) */}
+          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '12px', gap: '4px', border: '1px solid #CBD5E1' }}>
             <button
               onClick={() => setViewMode('daily')}
               style={{
-                backgroundColor: viewMode === 'daily' ? '#047857' : 'transparent',
+                backgroundColor: viewMode === 'daily' ? '#166534' : 'transparent',
                 color: viewMode === 'daily' ? '#FFFFFF' : '#475569',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '6px 14px',
-                fontSize: '0.8rem',
+                padding: '7px 16px',
+                fontSize: '0.82rem',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '6px',
+                transition: 'all 0.2s ease'
               }}
             >
-              <Calendar size={15} /> Daily Override
+              <Calendar size={16} /> Daily Shift Log
+            </button>
+            <button
+              onClick={() => setViewMode('monthly')}
+              style={{
+                backgroundColor: viewMode === 'monthly' ? '#166534' : 'transparent',
+                color: viewMode === 'monthly' ? '#FFFFFF' : '#475569',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '7px 16px',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <BarChart2 size={16} /> Monthly Matrix
             </button>
           </div>
 
-          {/* Month Selector */}
+          {/* Month / Date Selector Popup */}
           {viewMode === 'monthly' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#FFFFFF', padding: '0.45rem 0.85rem', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
-              <Calendar size={16} style={{ color: '#047857' }} />
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', cursor: 'pointer' }}
-              />
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: '#FFFFFF',
+                  padding: '0.5rem 0.9rem',
+                  borderRadius: '12px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  color: '#1E293B',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Calendar size={17} style={{ color: '#166534' }} />
+                <span>
+                  {new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <Calendar size={15} style={{ color: '#64748B', marginLeft: '4px' }} />
+              </button>
+
+              {/* POPUP MONTH PICKER OVERLAY (Matches user uploaded image 1!) */}
+              {isMonthPickerOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '110%',
+                  right: 0,
+                  width: '280px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '14px',
+                  border: '1px solid #CBD5E1',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                  zIndex: 999,
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  {/* Year Selection Bar */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: '#E2E8F0',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    fontWeight: 800,
+                    color: '#1E293B'
+                  }}>
+                    <button
+                      onClick={() => setPickerYear(y => y - 1)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 800, color: '#334155' }}
+                    >
+                      ‹
+                    </button>
+                    <span>{pickerYear}</span>
+                    <button
+                      onClick={() => setPickerYear(y => y + 1)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 800, color: '#334155' }}
+                    >
+                      ›
+                    </button>
+                  </div>
+
+                  {/* 3x4 Month Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '8px',
+                    padding: '4px 0'
+                  }}>
+                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((mName, idx) => {
+                      const mNum = (idx + 1).toString().padStart(2, '0');
+                      const monthKey = `${pickerYear}-${mNum}`;
+                      const isSelected = selectedMonth === monthKey;
+
+                      return (
+                        <button
+                          key={mName}
+                          onClick={() => {
+                            setSelectedMonth(monthKey);
+                            setIsMonthPickerOpen(false);
+                          }}
+                          style={{
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: isSelected ? '2px solid #000000' : '1px solid transparent',
+                            backgroundColor: isSelected ? '#4B5563' : 'transparent',
+                            color: isSelected ? '#FFFFFF' : '#1E293B',
+                            fontWeight: isSelected ? 800 : 600,
+                            fontSize: '0.82rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {mName}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Action Footer */}
+                  <div style={{
+                    display: 'flex',
+                    justify: 'space-between',
+                    alignItems: 'center',
+                    borderTop: '1px solid #F1F5F9',
+                    paddingTop: '8px'
+                  }}>
+                    <button
+                      onClick={() => {
+                        setSelectedMonth(new Date().toISOString().slice(0, 7));
+                        setIsMonthPickerOpen(false);
+                      }}
+                      style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Clear
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const nowKey = new Date().toISOString().slice(0, 7);
+                        setSelectedMonth(nowKey);
+                        setPickerYear(parseInt(nowKey.slice(0, 4), 10));
+                        setIsMonthPickerOpen(false);
+                      }}
+                      style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      This month
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#FFFFFF', padding: '0.45rem 0.85rem', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
-              <Calendar size={16} style={{ color: '#047857' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F8FAFC', padding: '0.5rem 0.9rem', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '0.85rem', fontWeight: 700 }}>
+              <Calendar size={17} style={{ color: '#166534' }} />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', cursor: 'pointer' }}
+                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.85rem', fontWeight: 800, color: '#1E293B', cursor: 'pointer' }}
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* Top Roster Summary Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem' }}>
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>TOTAL RIDERS</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1E293B', marginTop: '4px' }}>{filteredAgents.length} Partners</div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>Registered in hub</div>
+      {/* Top Metric KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL FLEET</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#334155' }}>
+              <UserCheck size={16} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E293B', marginTop: '6px' }}>{filteredAgents.length} Riders</div>
+          <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>Assigned to {selectedHubId === 'hub_bengaluru' ? 'Bangalore' : 'Hosur'} Hub</div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>PRESENT (ON DUTY)</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>{presentCount} Riders</div>
-          <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '2px' }}>Active check-in</div>
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #86EFAC', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ON SHIFT NOW</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534' }}>
+              <CheckCircle size={16} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#166534', marginTop: '6px' }}>{presentCount} Active</div>
+          <div style={{ fontSize: '0.78rem', color: '#166534', marginTop: '2px' }}>Punched in & on duty</div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>MARKED ABSENT</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>{absentCount} Riders</div>
-          <div style={{ fontSize: '0.75rem', color: '#DC2626', marginTop: '2px' }}>Off-duty / Shift substitute</div>
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #FCA5A5', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MARKED ABSENT</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626' }}>
+              <UserX size={16} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#DC2626', marginTop: '6px' }}>{absentCount} Absent</div>
+          <div style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: '2px' }}>Off-duty or leave today</div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#D97706', textTransform: 'uppercase' }}>OFFLINE / UNCHECKED</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#D97706', marginTop: '4px' }}>{offlineCount} Riders</div>
-          <div style={{ fontSize: '0.75rem', color: '#D97706', marginTop: '2px' }}>Awaiting check-in</div>
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #93C5FD', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PUNCTUALITY RATE</span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF' }}>
+              <Clock size={16} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E40AF', marginTop: '6px' }}>{punctualityRate}%</div>
+          <div style={{ fontSize: '0.78rem', color: '#1E40AF', marginTop: '2px' }}>On-time morning shift check-ins</div>
         </div>
       </div>
 
-      {/* VIEW 1: MONTHLY ATTENDANCE ROSTER MATRIX */}
+      {/* VIEW 1: MONTHLY ATTENDANCE MATRIX */}
       {viewMode === 'monthly' ? (
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-          {/* Table Header */}
-          <div style={{ padding: '1.15rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
+          {/* Table Toolbar */}
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: '#F8FAFC' }}>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
-                Monthly Shift Attendance Roster ({selectedMonth})
+                Monthly Rider Attendance Roster ({selectedMonth})
               </h3>
               <p style={{ fontSize: '0.78rem', color: '#64748B', margin: '2px 0 0 0' }}>
-                Daily status matrix for {daysInMonth} days in {selectedMonth}
+                Interactive daily punch status matrix for all {daysInMonth} days in {selectedMonth}
               </p>
             </div>
 
-            <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
-              <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
               <input
                 type="text"
-                placeholder="Search rider name, phone..."
+                placeholder="Search rider name or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 36px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.82rem', outline: 'none' }}
+                style={{ width: '100%', padding: '0.55rem 0.75rem 0.55rem 38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '0.85rem', outline: 'none' }}
               />
             </div>
           </div>
@@ -287,20 +459,20 @@ export default function DispatchAttendancePage({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', textTransform: 'uppercase', fontSize: '0.7rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left', minWidth: '180px' }}>Rider Name</th>
-                  <th style={{ padding: '0.85rem 0.75rem', textAlign: 'center' }}>Present</th>
-                  <th style={{ padding: '0.85rem 0.75rem', textAlign: 'center' }}>Absent</th>
-                  <th style={{ padding: '0.85rem 0.75rem', textAlign: 'center' }}>Duty %</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left', minWidth: '320px' }}>Monthly Shift Matrix (Days 1-{daysInMonth})</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>Actions</th>
+                <tr style={{ backgroundColor: '#F1F5F9', textTransform: 'uppercase', fontSize: '0.72rem', color: '#475569', borderBottom: '1px solid #E2E8F0' }}>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left', minWidth: '190px' }}>Rider Name & Phone</th>
+                  <th style={{ padding: '0.9rem 0.75rem', textAlign: 'center' }}>Present</th>
+                  <th style={{ padding: '0.9rem 0.75rem', textAlign: 'center' }}>Absent</th>
+                  <th style={{ padding: '0.9rem 0.75rem', textAlign: 'center' }}>Shift %</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left', minWidth: '340px' }}>Daily Attendance Matrix (Days 1-{daysInMonth})</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAgents.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8' }}>
-                      No delivery riders found matching search criteria.
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '3.5rem', color: '#94A3B8' }}>
+                      No delivery riders found matching your search query.
                     </td>
                   </tr>
                 ) : (
@@ -309,57 +481,58 @@ export default function DispatchAttendancePage({
 
                     return (
                       <tr key={agent.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>
-                          <div style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.88rem' }}>🚴 {agent.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>📞 {agent.phone || 'N/A'}</div>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
+                          <div style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.9rem' }}>🚴 {agent.name}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>📞 {agent.phone || 'N/A'}</div>
                         </td>
 
-                        <td style={{ padding: '0.85rem 0.75rem', textAlign: 'center', fontWeight: 800, color: '#047857' }}>
+                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center', fontWeight: 800, color: '#166534' }}>
                           {stats.presentDays} d
                         </td>
 
-                        <td style={{ padding: '0.85rem 0.75rem', textAlign: 'center', fontWeight: 800, color: '#DC2626' }}>
+                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center', fontWeight: 800, color: '#DC2626' }}>
                           {stats.absentDays} d
                         </td>
 
-                        <td style={{ padding: '0.85rem 0.75rem', textAlign: 'center' }}>
+                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center' }}>
                           <span style={{
                             padding: '4px 10px',
                             borderRadius: '12px',
                             fontWeight: 800,
-                            fontSize: '0.78rem',
+                            fontSize: '0.8rem',
                             backgroundColor: stats.attendancePct >= 85 ? '#DCFCE7' : stats.attendancePct >= 70 ? '#FEF3C7' : '#FEE2E2',
-                            color: stats.attendancePct >= 85 ? '#047857' : stats.attendancePct >= 70 ? '#B45309' : '#DC2626',
+                            color: stats.attendancePct >= 85 ? '#166534' : stats.attendancePct >= 70 ? '#B45309' : '#DC2626',
                           }}>
                             {stats.attendancePct}%
                           </span>
                         </td>
 
-                        {/* Daily Dot Matrix */}
-                        <td style={{ padding: '0.85rem 1.25rem' }}>
+                        {/* Interactive Dot Matrix */}
+                        <td style={{ padding: '0.9rem 1.25rem' }}>
                           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
                             {daysArray.map((dayNum) => {
                               const dayStr = `${selectedMonth}-${dayNum.toString().padStart(2, '0')}`;
                               const logEntry = stats.logs.find(l => l.date === dayStr);
-                              const isPresent = logEntry?.status === 'present';
+                              const isPresent = logEntry?.status === 'present' || logEntry?.status === 'completed';
                               const isAbsent = logEntry?.status === 'absent';
 
                               return (
                                 <span
                                   key={dayNum}
-                                  title={`Day ${dayNum}: ${isPresent ? 'Present (On Duty)' : isAbsent ? 'Absent' : 'Unchecked'}`}
+                                  title={`Day ${dayNum}: ${isPresent ? 'Present' : isAbsent ? 'Absent' : 'Not Punched'}`}
                                   style={{
-                                    width: '18px',
-                                    height: '18px',
-                                    borderRadius: '4px',
-                                    fontSize: '0.65rem',
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '5px',
+                                    fontSize: '0.68rem',
                                     fontWeight: 800,
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    backgroundColor: isPresent ? '#047857' : isAbsent ? '#DC2626' : '#E2E8F0',
+                                    backgroundColor: isPresent ? '#166534' : isAbsent ? '#DC2626' : '#E2E8F0',
                                     color: isPresent || isAbsent ? '#FFFFFF' : '#64748B',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.15s ease'
                                   }}
                                   onClick={() => handleToggleAttendance(agent, isPresent ? 'absent' : 'present', dayStr)}
                                 >
@@ -370,24 +543,24 @@ export default function DispatchAttendancePage({
                           </div>
                         </td>
 
-                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>
                           <button
                             onClick={() => setSelectedRiderForModal(agent)}
                             style={{
-                              backgroundColor: '#ECFDF5',
-                              color: '#047857',
-                              border: '1px solid #A7F3D0',
-                              borderRadius: '8px',
-                              padding: '0.45rem 0.85rem',
-                              fontSize: '0.78rem',
+                              backgroundColor: '#DCFCE7',
+                              color: '#166534',
+                              border: '1px solid #86EFAC',
+                              borderRadius: '10px',
+                              padding: '0.5rem 0.9rem',
+                              fontSize: '0.8rem',
                               fontWeight: 800,
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '6px'
                             }}
                           >
-                            <BarChart2 size={14} /> Monthly Log
+                            <BarChart2 size={15} /> Rider Log
                           </button>
                         </td>
                       </tr>
@@ -399,21 +572,21 @@ export default function DispatchAttendancePage({
           </div>
         </div>
       ) : (
-        /* VIEW 2: DAILY OVERRIDE ROSTER TABLE */
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-          <div style={{ padding: '1.15rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        /* VIEW 2: DAILY OVERRIDE LOG TABLE */
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: '#F8FAFC' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
-              Daily Attendance Roster & Admin Override ({selectedDate})
+              Daily Shift Attendance Override ({selectedDate})
             </h3>
 
-            <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
-              <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
               <input
                 type="text"
-                placeholder="Search rider name, phone, zone..."
+                placeholder="Search rider name or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 36px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.82rem', outline: 'none' }}
+                style={{ width: '100%', padding: '0.55rem 0.75rem 0.55rem 38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '0.85rem', outline: 'none' }}
               />
             </div>
           </div>
@@ -421,20 +594,20 @@ export default function DispatchAttendancePage({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', textTransform: 'uppercase', fontSize: '0.72rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>RIDER NAME</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>CONTACT PHONE</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>ASSIGNED ZONE</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>ONLINE STATUS</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>ATTENDANCE TODAY</th>
-                  <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>ADMIN OVERRIDE ACTION</th>
+                <tr style={{ backgroundColor: '#F1F5F9', textTransform: 'uppercase', fontSize: '0.72rem', color: '#475569', borderBottom: '1px solid #E2E8F0' }}>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>RIDER NAME</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>PHONE</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>ASSIGNED HUB</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>ONLINE TELEMETRY</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>ATTENDANCE STATUS</th>
+                  <th style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>ADMIN OVERRIDE ACTION</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAgents.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8' }}>
-                      No delivery riders found matching search criteria.
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '3.5rem', color: '#94A3B8' }}>
+                      No delivery riders found matching your search query.
                     </td>
                   </tr>
                 ) : (
@@ -445,57 +618,57 @@ export default function DispatchAttendancePage({
 
                     return (
                       <tr key={agent.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '0.85rem 1.25rem', fontWeight: 800, color: '#1E293B', fontSize: '0.88rem', textAlign: 'left' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', fontWeight: 800, color: '#1E293B', fontSize: '0.9rem', textAlign: 'left' }}>
                           🚴 {agent.name}
                         </td>
 
-                        <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.82rem', color: '#475569', textAlign: 'left' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', fontSize: '0.85rem', color: '#475569', textAlign: 'left' }}>
                           📞 {agent.phone || 'N/A'}
                         </td>
 
-                        <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.82rem', color: '#334155', fontWeight: 600, textAlign: 'left' }}>
-                          {agent.assignedZone || agent.hubId || 'General Route'}
+                        <td style={{ padding: '0.9rem 1.25rem', fontSize: '0.85rem', color: '#334155', fontWeight: 600, textAlign: 'left' }}>
+                          {selectedHubId === 'hub_bengaluru' ? 'Bangalore Hub' : 'Hosur Central Hub'}
                         </td>
 
-                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
                           <span style={{
-                            fontSize: '0.72rem',
+                            fontSize: '0.76rem',
                             fontWeight: 800,
-                            padding: '3px 10px',
-                            borderRadius: '12px',
+                            padding: '4px 12px',
+                            borderRadius: '14px',
                             backgroundColor: agent.isOnline ? '#DCFCE7' : '#F1F5F9',
-                            color: agent.isOnline ? '#047857' : '#64748B'
+                            color: agent.isOnline ? '#166534' : '#64748B'
                           }}>
-                            {agent.isOnline ? '🟢 Online (On Duty)' : '⚪ Offline'}
+                            {agent.isOnline ? '🟢 Online (Active Duty)' : '⚪ Offline'}
                           </span>
                         </td>
 
-                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'left' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
                           <span style={{
-                            fontSize: '0.74rem',
+                            fontSize: '0.78rem',
                             fontWeight: 800,
                             padding: '4px 12px',
                             borderRadius: '14px',
                             backgroundColor: isPresent ? '#DCFCE7' : isAbsent ? '#FEF2F2' : '#FFFBEB',
-                            color: isPresent ? '#047857' : isAbsent ? '#DC2626' : '#D97706',
+                            color: isPresent ? '#166534' : isAbsent ? '#DC2626' : '#D97706',
                             border: `1px solid ${isPresent ? '#86EFAC' : isAbsent ? '#FCA5A5' : '#FDE68A'}`
                           }}>
                             {isPresent ? '✓ Present Today' : isAbsent ? '✕ Marked Absent' : '⏱ Unchecked'}
                           </span>
                         </td>
 
-                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '8px' }}>
                             <button
                               disabled={isUpdating || isPresent}
                               onClick={() => handleToggleAttendance(agent, 'present')}
                               style={{
-                                backgroundColor: isPresent ? '#ECFDF5' : '#FFFFFF',
-                                color: '#047857',
-                                border: '1px solid #A7F3D0',
-                                borderRadius: '8px',
-                                padding: '0.4rem 0.75rem',
-                                fontSize: '0.75rem',
+                                backgroundColor: isPresent ? '#DCFCE7' : '#FFFFFF',
+                                color: '#166534',
+                                border: '1px solid #86EFAC',
+                                borderRadius: '10px',
+                                padding: '0.45rem 0.85rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 800,
                                 cursor: isUpdating || isPresent ? 'not-allowed' : 'pointer',
                                 display: 'inline-flex',
@@ -513,9 +686,9 @@ export default function DispatchAttendancePage({
                                 backgroundColor: isAbsent ? '#FEF2F2' : '#FFFFFF',
                                 color: '#DC2626',
                                 border: '1px solid #FCA5A5',
-                                borderRadius: '8px',
-                                padding: '0.4rem 0.75rem',
-                                fontSize: '0.75rem',
+                                borderRadius: '10px',
+                                padding: '0.45rem 0.85rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 800,
                                 cursor: isUpdating || isAbsent ? 'not-allowed' : 'pointer',
                                 display: 'inline-flex',
@@ -552,9 +725,9 @@ export default function DispatchAttendancePage({
         }}>
           <div style={{
             backgroundColor: '#FFFFFF',
-            borderRadius: '20px',
+            borderRadius: '24px',
             width: '100%',
-            maxWidth: '650px',
+            maxWidth: '680px',
             maxHeight: '85vh',
             overflow: 'hidden',
             display: 'flex',
@@ -564,11 +737,11 @@ export default function DispatchAttendancePage({
             {/* Modal Header */}
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
               <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                  📊 Monthly Shift Breakdown — {selectedRiderForModal.name}
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                  📊 Shift Attendance Audit — {selectedRiderForModal.name}
                 </h3>
-                <p style={{ fontSize: '0.78rem', color: '#64748B', margin: '2px 0 0 0' }}>
-                  Month: {selectedMonth} · Zone: {selectedRiderForModal.assignedZone || 'General'}
+                <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
+                  Month: {selectedMonth} · Phone: {selectedRiderForModal.phone || 'N/A'}
                 </p>
               </div>
 
@@ -578,8 +751,8 @@ export default function DispatchAttendancePage({
                   backgroundColor: '#F1F5F9',
                   border: 'none',
                   borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   fontWeight: 800,
                   cursor: 'pointer',
                   color: '#475569'
@@ -590,40 +763,40 @@ export default function DispatchAttendancePage({
             </div>
 
             {/* Modal Content */}
-            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Monthly Stats Summary */}
               {(() => {
                 const stats = getRiderMonthlyStats(selectedRiderForModal.id);
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                    <div style={{ backgroundColor: '#ECFDF5', borderRadius: '12px', padding: '0.85rem', textAlign: 'center', border: '1px solid #A7F3D0' }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#047857' }}>PRESENT SHIFTS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#047857' }}>{stats.presentDays} Days</div>
+                    <div style={{ backgroundColor: '#DCFCE7', borderRadius: '14px', padding: '1rem', textAlign: 'center', border: '1px solid #86EFAC' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>PRESENT DAYS</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534', marginTop: '2px' }}>{stats.presentDays} Days</div>
                     </div>
-                    <div style={{ backgroundColor: '#FEE2E2', borderRadius: '12px', padding: '0.85rem', textAlign: 'center', border: '1px solid #FCA5A5' }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#DC2626' }}>ABSENT SHIFTS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#DC2626' }}>{stats.absentDays} Days</div>
+                    <div style={{ backgroundColor: '#FEF2F2', borderRadius: '14px', padding: '1rem', textAlign: 'center', border: '1px solid #FCA5A5' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>ABSENT DAYS</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#DC2626', marginTop: '2px' }}>{stats.absentDays} Days</div>
                     </div>
-                    <div style={{ backgroundColor: '#F1F5F9', borderRadius: '12px', padding: '0.85rem', textAlign: 'center', border: '1px solid #CBD5E1' }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569' }}>ATTENDANCE RATE</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B' }}>{stats.attendancePct}%</div>
+                    <div style={{ backgroundColor: '#DBEAFE', borderRadius: '14px', padding: '1rem', textAlign: 'center', border: '1px solid #93C5FD' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase' }}>ATTENDANCE RATE</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E40AF', marginTop: '2px' }}>{stats.attendancePct}%</div>
                     </div>
                   </div>
                 );
               })()}
 
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1E293B', margin: '0.5rem 0 0 0' }}>
-                Daily Shift Audit Logs:
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: '0.25rem 0 0 0' }}>
+                Daily Punch In / Punch Out Timestamps:
               </h4>
 
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: '14px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#F8FAFC', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Date</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Check In</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Check Out</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>Status</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Date</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Punch In</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Punch Out</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -631,28 +804,28 @@ export default function DispatchAttendancePage({
                       const dayStr = `${selectedMonth}-${dayNum.toString().padStart(2, '0')}`;
                       const logs = getRiderMonthlyStats(selectedRiderForModal.id).logs;
                       const log = logs.find(l => l.date === dayStr);
-                      const isPresent = log?.status === 'present';
+                      const isPresent = log?.status === 'present' || log?.status === 'completed';
                       const isAbsent = log?.status === 'absent';
 
                       return (
                         <tr key={dayStr} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ padding: '0.6rem 1rem', fontWeight: 700, color: '#1E293B' }}>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#1E293B' }}>
                             {dayStr}
                           </td>
-                          <td style={{ padding: '0.6rem 1rem', color: '#475569' }}>
-                            {isPresent ? (log?.checkInTime || '06:00 AM') : '-'}
+                          <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
+                            {isPresent ? (log?.punchInTimeStr || '06:30 AM') : '-'}
                           </td>
-                          <td style={{ padding: '0.6rem 1rem', color: '#475569' }}>
-                            {isPresent ? (log?.checkOutTime || '02:00 PM') : '-'}
+                          <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
+                            {isPresent ? (log?.punchOutTimeStr || '02:00 PM') : '-'}
                           </td>
-                          <td style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                             <span style={{
-                              padding: '2px 8px',
-                              borderRadius: '8px',
-                              fontSize: '0.72rem',
+                              padding: '3px 10px',
+                              borderRadius: '10px',
+                              fontSize: '0.75rem',
                               fontWeight: 800,
-                              backgroundColor: isPresent ? '#DCFCE7' : isAbsent ? '#FEE2E2' : '#F1F5F9',
-                              color: isPresent ? '#047857' : isAbsent ? '#DC2626' : '#64748B',
+                              backgroundColor: isPresent ? '#DCFCE7' : isAbsent ? '#FEF2F2' : '#F1F5F9',
+                              color: isPresent ? '#166534' : isAbsent ? '#DC2626' : '#64748B',
                             }}>
                               {isPresent ? 'Present' : isAbsent ? 'Absent' : 'Unchecked'}
                             </span>

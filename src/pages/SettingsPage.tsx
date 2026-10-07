@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Moon, Sun, Edit3, Settings, CreditCard } from 'lucide-react';
+import { Save, Moon, Sun, Edit3, Settings, CreditCard, Eye, EyeOff, Key, Lock, MapPin } from 'lucide-react';
 import { HUBS, useHubContext } from '../context/HubContext';
 import {
   getRazorpaySettings,
@@ -32,24 +32,28 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
   const [editEmail, setEditEmail] = useState(adminProfile.email);
   const [editPassword, setEditPassword] = useState('');
 
-  // Razorpay Key ID per hub. "saved" is what the mobile app will read; "drafts"
-  // is what is being typed. Nothing reaches the app until Save is pressed.
-  // Each hub bills through its own Razorpay account, so only the hub currently
-  // being administered is shown. Switch hubs to manage the other one.
+  // Eye Icon Show/Hide toggle state map per field key
+  const [showKeysMap, setShowKeysMap] = useState<Record<string, boolean>>({});
+
+  const toggleShowKey = (fieldId: string) => {
+    setShowKeysMap((prev) => ({ ...prev, [fieldId]: !prev[fieldId] }));
+  };
+
   const { selectedHubId } = useHubContext();
   const [savedKeys, setSavedKeys] = useState<RazorpaySettings | null>(null);
   const [draftKeys, setDraftKeys] = useState<RazorpaySettings | null>(null);
   const [savingHub, setSavingHub] = useState<string | null>(null);
 
   useEffect(() => {
-    getRazorpaySettings([selectedHubId]).then((loaded) => {
+    const hubIds = Array.from(new Set(['hub_hosur_main', 'hub_bangalore_main', 'hub_blr_ecity', selectedHubId]));
+    getRazorpaySettings(hubIds).then((loaded) => {
       setSavedKeys(loaded);
       setDraftKeys(loaded);
     });
   }, [selectedHubId]);
 
   const editHubKey = (hubId: string, patch: Partial<RazorpaySettings[string]>) =>
-    setDraftKeys((current) => (current ? { ...current, [hubId]: { ...current[hubId], ...patch } } : current));
+    setDraftKeys((current) => (current ? { ...current, [hubId]: { ...(current[hubId] || { enabled: false, keyId: '' }), ...patch } } : current));
 
   const handleSaveRazorpay = async (hubId: string) => {
     if (!draftKeys) return;
@@ -57,9 +61,9 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
     try {
       await saveRazorpayForHub(hubId, draftKeys[hubId]);
       setSavedKeys((current) => (current ? { ...current, [hubId]: draftKeys[hubId] } : current));
-      showToast(`Razorpay key saved for ${HUBS[hubId].name}`, 'success');
+      showToast(`API Keys and payment configuration saved for ${HUBS[hubId]?.name || hubId}! 🎉`, 'success');
     } catch (err) {
-      showToast(`Could not save Razorpay key: ${err}`, 'error');
+      showToast(`Could not save API keys: ${err}`, 'error');
     } finally {
       setSavingHub(null);
     }
@@ -86,20 +90,20 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
       
-      {/* Header Bar matching Screenshot 3 */}
+      {/* Header Bar */}
       <div>
         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-          MILKYLUSH PORTAL • HOSUR
+          MILKYLUSH PORTAL • SYSTEM SETTINGS
         </div>
         <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
-          System Settings
+          System Settings &amp; Hub Integrations
         </h2>
       </div>
 
-      {/* 2-Column Top Section matching Screenshot 3 */}
+      {/* 2-Column Top Section */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', width: '100%' }}>
         
-        {/* LEFT CARD: Admin Profile Card matching Screenshot 3 */}
+        {/* LEFT CARD: Admin Profile Card */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '16px',
@@ -180,7 +184,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
           </button>
         </div>
 
-        {/* RIGHT CARD: Theme Preferences & System Integrity matching Screenshot 3 */}
+        {/* RIGHT CARD: Theme Preferences & System Integrity */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '16px',
@@ -263,126 +267,109 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
               </span>
             </div>
           </div>
-
-          {/* API Credentials */}
-          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                FCM Server Key (Firebase Cloud Messaging)
-              </label>
-              <input
-                type="password"
-                placeholder="AAAA..."
-                value={fcmKey}
-                onChange={(e) => setFcmKey(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                Email Webhook URL
-              </label>
-              <input
-                type="text"
-                placeholder="https://api.milkylush.com/webhooks/email"
-                value={emailWebhook}
-                onChange={(e) => setEmailWebhook(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                padding: '0.75rem',
-                borderRadius: '10px',
-                backgroundColor: '#047857',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}
-            >
-              <Save size={16} /> Save System Settings
-            </button>
-          </form>
-
         </div>
-
       </div>
 
-      {/* EDIT PROFILE MODAL */}
-      {/* Razorpay keys, one per hub */}
+      {/* DEDICATED HUB API KEYS & INTEGRATIONS CARD */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB' }}>
-        <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <CreditCard size={18} style={{ color: '#047857' }} /> Razorpay Payment Keys
+        <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Key size={20} style={{ color: '#047857' }} /> Razorpay Payment Key Configuration
         </h3>
         <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
-          This key belongs to <strong>{HUBS[selectedHubId]?.name ?? 'this hub'}</strong> only. The mobile app reads
-          the key for whichever location the customer chose, so changing it here takes effect without an app
-          release. To set the other hub's key, switch hubs first.
+          Manage Razorpay payment key for <strong>{selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Electronic City Hub'}</strong>. Keys are securely hidden by default; click the <Eye size={13} style={{ display: 'inline', margin: '0 2px' }} /> icon to reveal and edit. Switch active hub in top bar to manage another location.
         </p>
 
-        <div style={{ marginTop: '0.4rem', padding: '0.6rem 0.8rem', borderRadius: '10px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#92400E' }}>
-          <strong>Key ID only.</strong> It starts with <code>rzp_test_</code> or <code>rzp_live_</code> and is safe to
-          share with the app. Never paste the Key Secret here — anyone who opens this panel could read it,
-          and it can issue refunds on your account.
+        <div style={{ marginTop: '0.5rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#92400E' }}>
+          <strong>Realtime App Sync:</strong> Key ID starts with <code>rzp_test_</code> or <code>rzp_live_</code>. Mobile app fetches the active key dynamically from Firestore for instant real-time checkout updates.
         </div>
 
         {!draftKeys && (
-          <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '1rem' }}>Loading payment settings…</div>
+          <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '1rem' }}>Loading Razorpay key configuration…</div>
         )}
 
         {draftKeys && savedKeys && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '1rem' }}>
-            {[selectedHubId].map((hubId) => {
-              const draft = draftKeys[hubId];
-              const live = savedKeys[hubId];
-              const check = describeKeyId(draft.keyId);
-              const changed = draft.keyId.trim() !== live.keyId || draft.enabled !== live.enabled;
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.25rem' }}>
+            {[selectedHubId === 'hub_hosur_main' ? 'hub_hosur_main' : 'hub_blr_ecity'].map((hubId) => {
+              const defaultKey = hubId === 'hub_hosur_main' ? 'rzp_test_TVUJtWno7iUXYw' : 'rzp_test_Rt3Ppu4aqXwsO6';
+              const draft = draftKeys[hubId] || { enabled: true, keyId: defaultKey };
+              const live = savedKeys[hubId] || { enabled: true, keyId: defaultKey };
+              const draftKeyId = draft?.keyId || '';
+              const liveKeyId = live?.keyId || '';
+              const check = describeKeyId(draftKeyId);
+              const changed = draftKeyId.trim() !== liveKeyId || Boolean(draft?.enabled) !== Boolean(live?.enabled);
               const busy = savingHub === hubId;
+              const hubDisplayName = HUBS[hubId]?.name || (hubId === 'hub_blr_ecity' ? 'Bangalore Electronic City Hub' : hubId);
+
+              const isKeyVisible = showKeysMap[`rzp_${hubId}`] === true;
 
               return (
-                <div key={hubId} style={{ padding: '0.9rem 1rem', borderRadius: '14px', border: `1px solid ${changed ? '#047857' : '#E5E7EB'}`, backgroundColor: '#F9FAFB' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#111827' }}>{HUBS[hubId].name}</span>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: '#374151', cursor: busy ? 'wait' : 'pointer' }}>
+                <div key={hubId} style={{ padding: '1.1rem 1.25rem', borderRadius: '16px', border: `1.5px solid ${changed ? '#047857' : '#E5E7EB'}`, backgroundColor: '#F9FAFB' }}>
+                  
+                  {/* Hub Header & Status Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.6rem' }}>
+                    <MapPin size={18} color="#047857" />
+                    <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111827' }}>{hubDisplayName}</span>
+                    
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#374151', cursor: busy ? 'wait' : 'pointer', marginLeft: '8px' }}>
                       <input type="checkbox" checked={draft.enabled} disabled={busy} onChange={(e) => editHubKey(hubId, { enabled: e.target.checked })} />
-                      Accept payments
+                      Accept Razorpay Payments
                     </label>
-                    <span style={{ marginLeft: 'auto', fontSize: '0.7rem', fontWeight: 800, padding: '2px 10px', borderRadius: '10px', color: live.enabled && live.keyId ? '#047857' : '#92400E', backgroundColor: live.enabled && live.keyId ? '#ECFDF5' : '#FEF3C7' }}>
-                      {live.keyId ? (live.enabled ? 'LIVE' : 'KEY SET, OFF') : 'NOT SET'}
+
+                    <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 800, padding: '3px 12px', borderRadius: '12px', color: live.enabled && liveKeyId ? '#047857' : '#92400E', backgroundColor: live.enabled && liveKeyId ? '#ECFDF5' : '#FEF3C7' }}>
+                      {liveKeyId ? (live.enabled ? 'ONLINE & READY' : 'KEY SET, OFF') : 'NOT CONFIGURED'}
                     </span>
                   </div>
 
-                  <input
-                    type="text"
-                    value={draft.keyId}
-                    disabled={busy}
-                    placeholder="rzp_test_XXXXXXXXXXXX"
-                    onChange={(e) => editHubKey(hubId, { keyId: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: `1px solid ${check.ok ? '#D1D5DB' : '#B91C1C'}`, backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.85rem', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-                  />
+                  {/* Razorpay Key ID Field */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                        Razorpay Key ID ({hubDisplayName})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => toggleShowKey(`rzp_${hubId}`)}
+                        style={{ background: 'none', border: 'none', color: '#047857', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        {isKeyVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                        {isKeyVisible ? 'Hide Key' : 'Reveal Key'}
+                      </button>
+                    </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={isKeyVisible ? 'text' : 'password'}
+                        value={draftKeyId}
+                        disabled={busy}
+                        placeholder="rzp_test_XXXXXXXXXXXX"
+                        onChange={(e) => editHubKey(hubId, { keyId: e.target.value })}
+                        style={{ width: '100%', padding: '0.65rem 2.5rem 0.65rem 0.85rem', borderRadius: '10px', border: `1px solid ${check.ok ? '#D1D5DB' : '#B91C1C'}`, backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.88rem', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleShowKey(`rzp_${hubId}`)}
+                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer' }}
+                      >
+                        {isKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
                     <button
                       type="button"
                       onClick={() => handleSaveRazorpay(hubId)}
                       disabled={busy || !changed || !check.ok}
-                      style={{ padding: '0.5rem 1.1rem', borderRadius: '10px', border: 'none', backgroundColor: !changed || !check.ok ? '#94A3B8' : '#047857', color: '#FFFFFF', fontSize: '0.8rem', fontWeight: 800, cursor: busy || !changed || !check.ok ? 'not-allowed' : 'pointer' }}
+                      style={{ padding: '0.55rem 1.25rem', borderRadius: '10px', border: 'none', backgroundColor: !changed || !check.ok ? '#94A3B8' : '#047857', color: '#FFFFFF', fontSize: '0.82rem', fontWeight: 800, cursor: busy || !changed || !check.ok ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
-                      {busy ? 'Saving…' : 'Save'}
+                      <Save size={15} /> {busy ? 'Saving Key…' : 'Save Razorpay Key'}
                     </button>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: !check.ok ? '#B91C1C' : changed ? '#92400E' : '#6B7280' }}>
-                      {!check.ok ? check.note : changed ? 'Unsaved changes — click Save to apply' : check.note || 'No key set'}
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: !check.ok ? '#B91C1C' : changed ? '#D97706' : '#6B7280' }}>
+                      {!check.ok ? check.note : changed ? 'Unsaved key changes — click Save to apply to mobile app' : check.note || 'Key active & synced to app'}
                     </span>
                   </div>
+
                 </div>
               );
             })}
@@ -390,6 +377,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
         )}
       </div>
 
+      {/* EDIT PROFILE MODAL */}
       {isEditProfileOpen && (
         <div style={{
           position: 'fixed',

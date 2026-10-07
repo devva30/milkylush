@@ -4,6 +4,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Order, DeliveryAgent, User, Product } from '../types';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
+import { formatAddressDetails } from '../utils/addressFormatter';
 
 interface TodaysDeliveriesPageProps {
   selectedHubId: string;
@@ -153,15 +154,17 @@ export default function TodaysDeliveriesPage({
       }
 
       items.push({
-        id: `SUB-${sub.id.slice(0, 8)}`,
+        id: sub.id,
         userId: sub.userId || sub.customerId || 'user_01',
         orderDate: localDateStr,
-        status: 'confirmed',
+        status: sub.status || 'confirmed',
+        deliveryAgentId: sub.deliveryAgentId || sub.assignedRiderId || sub.assignedDeliveryAgentId || '',
+        assignedPartner: sub.assignedPartner || sub.lastDeliveryPartner || sub.assignedRider || '',
         totalAmount: (sub.product?.price || 95) * (sub.quantity || 1),
         isSubscriptionDelivery: true,
         orderType: 'subscription',
         subscriptionId: sub.id,
-        address: sub.address || '',
+        address: sub.address || sub.deliveryAddress || '',
         items: [
           {
             product: sub.product || {
@@ -495,6 +498,7 @@ export default function TodaysDeliveriesPage({
                 }
 
                 const hasGpsInText = fullAddressText.includes('[GPS:');
+                const { cleanAddress, hubId: addrHubId } = formatAddressDetails(fullAddressText);
 
                 return (
                   <tr
@@ -514,7 +518,7 @@ export default function TodaysDeliveriesPage({
 
                     {/* Delivery Address */}
                     <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '320px', verticalAlign: 'middle', padding: '0.85rem 0.85rem', lineHeight: 1.4 }}>
-                      {fullAddressText}
+                      {cleanAddress}
                       {!hasGpsInText && (
                         <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                           Hub: {hubCodeName}

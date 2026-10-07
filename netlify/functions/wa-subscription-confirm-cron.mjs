@@ -12,7 +12,11 @@ const MAX_PER_RUN = 10;
 
 const SETTINGS_PATH = ['settings', 'subscription_confirmation'];
 
-const alreadyHandled = (s) => Boolean(s.confirmationWhatsappStatus);
+// "pending" means the mobile app flagged this subscription for confirmation, so
+// it still needs acting on. Anything else means done or deliberately skipped.
+const PENDING = 'pending';
+const alreadyHandled = (s) =>
+  Boolean(s.confirmationWhatsappStatus) && s.confirmationWhatsappStatus !== PENDING;
 
 /** The template shows a readable date, not the ISO value stored in Firestore. */
 const formatDate = (value) => {
@@ -47,7 +51,8 @@ export default async () => {
   if (!settings.exists() || settings.data()?.initialized !== true) {
     let marked = 0;
     for (const snap of subs.docs) {
-      if (alreadyHandled(snap.data())) continue;
+      const sub = snap.data();
+      if (alreadyHandled(sub) || sub.confirmationWhatsappStatus === PENDING) continue;
       await setDoc(snap.ref, { confirmationWhatsappStatus: 'skipped_existing' }, { merge: true });
       marked++;
     }

@@ -60,18 +60,18 @@ export default function PortalGatewayPage({
         {/* Top Centered Logo Badge */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
           <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '24px',
+            width: '200px',
+            height: '64px',
+            borderRadius: '18px',
             backgroundColor: '#FFFFFF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '8px',
-            boxShadow: '0 12px 30px rgba(4, 120, 87, 0.15)',
+            padding: '8px 16px',
+            boxShadow: '0 12px 30px rgba(4, 120, 87, 0.12)',
             border: '2px solid #A7F3D0'
           }}>
-            <img src={logoImg} alt="MilkyLush Logo" style={{ width: '100%', height: '100%', borderRadius: '16px', objectFit: 'contain' }} />
+            <img src={logoImg} alt="MilkyLush Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>
 

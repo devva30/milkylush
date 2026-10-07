@@ -18,11 +18,20 @@ export interface RazorpayHubConfig {
   keyId: string;
   /** Lets a hub be switched off without deleting its key. */
   enabled: boolean;
+  googleMapsKey?: string;
+  fcmServerKey?: string;
+  smsWebhookUrl?: string;
 }
 
 export type RazorpaySettings = Record<string, RazorpayHubConfig>;
 
-const emptyConfig = (): RazorpayHubConfig => ({ keyId: '', enabled: false });
+const defaultHubConfig = (hubId: string): RazorpayHubConfig => ({
+  keyId: hubId === 'hub_hosur_main' ? 'rzp_test_TVUJtWno7iUXYw' : 'rzp_test_Rt3Ppu4aqXwsO6',
+  enabled: true,
+  googleMapsKey: '',
+  fcmServerKey: '',
+  smsWebhookUrl: '',
+});
 
 export const getRazorpaySettings = async (hubIds: string[]): Promise<RazorpaySettings> => {
   let stored: Record<string, Partial<RazorpayHubConfig>> = {};
@@ -33,7 +42,7 @@ export const getRazorpaySettings = async (hubIds: string[]): Promise<RazorpaySet
   }
 
   return Object.fromEntries(
-    hubIds.map((hubId) => [hubId, { ...emptyConfig(), ...(stored[hubId] ?? {}) }])
+    hubIds.map((hubId) => [hubId, { ...defaultHubConfig(hubId), ...(stored[hubId] ?? {}) }])
   );
 };
 
@@ -41,9 +50,19 @@ export const saveRazorpayForHub = async (
   hubId: string,
   config: RazorpayHubConfig
 ): Promise<void> => {
+  const payload = {
+    ...config,
+    updatedAt: new Date().toISOString(),
+  };
   await setDoc(
     doc(db, ...RAZORPAY_DOC),
-    { [hubId]: { ...config, updatedAt: new Date().toISOString() } },
+    { [hubId]: payload },
+    { merge: true }
+  );
+  // Also sync to hub-specific doc for direct Flutter app subscriptions
+  await setDoc(
+    doc(db, 'settings', `hub_keys_${hubId}`),
+    payload,
     { merge: true }
   );
 };

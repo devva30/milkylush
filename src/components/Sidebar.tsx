@@ -17,7 +17,8 @@ import {
   Lock,
   Settings,
   Grid,
-  Wine
+  Wine,
+  MapPin
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
@@ -27,6 +28,8 @@ interface SidebarProps {
   onLogout: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface MenuGroup {
@@ -44,10 +47,21 @@ export default function Sidebar({
   onSelectTab,
   onLogout,
   isMobileOpen = false,
-  onCloseMobile
+  onCloseMobile,
+  isCollapsed: controlledIsCollapsed,
+  onToggleCollapse,
 }: SidebarProps) {
   const [menuSearch, setMenuSearch] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
+
+  const isCollapsed = controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalIsCollapsed;
+  const handleToggleCollapse = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    } else {
+      setInternalIsCollapsed(!internalIsCollapsed);
+    }
+  };
 
   const menuStructure: MenuGroup[] = [
     {
@@ -81,7 +95,7 @@ export default function Sidebar({
         { id: 'quality-reports', label: 'Quality & Lab Reports', icon: FileText },
         { id: 'bottle-management', label: 'Bottle Management', icon: Wine },
         { id: 'delivery', label: 'Delivery Fleet', icon: Truck },
-        { id: 'service-area', label: 'Service Areas', icon: FileText }
+        { id: 'service-area', label: 'Service Areas & Hub Map', icon: MapPin }
       ]
     },
     {
@@ -98,6 +112,7 @@ export default function Sidebar({
         { id: 'payments', label: 'Payments Ledger', icon: CreditCard },
         { id: 'mobile-control', label: 'Mobile Control', icon: Smartphone },
         { id: 'refer-earn', label: 'Refer & Earn', icon: Gift },
+        { id: 'free-samples', label: 'Free Samples', icon: Gift },
         { id: 'audit-logs', label: 'Audit Logs', icon: Clock },
         { id: 'settings', label: 'Settings', icon: Settings },
         { id: 'portal-gateway', label: 'Portal Gateway', icon: Grid }
@@ -141,24 +156,23 @@ export default function Sidebar({
       >
         {/* Brand Header */}
         <div style={{
-          padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem',
+          padding: isCollapsed ? '1rem 0.5rem' : '1.1rem 1rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: isCollapsed ? 'center' : 'flex-start',
-          borderBottom: '1px solid var(--border-color)'
+          borderBottom: '1px solid var(--border-color)',
+          backgroundColor: '#FFFFFF',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src={logoImg} alt="MilkyLush Logo" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'contain' }} />
-            {!isCollapsed && (
-              <div>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.1 }}>
-                  MilkyLush
-                </div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--primary-light)', fontWeight: 600, letterSpacing: '0.05em' }}>
-                  DAIRY ADMIN
-                </div>
-              </div>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            <img
+              src={logoImg}
+              alt="MilkyLush Logo"
+              style={{
+                height: isCollapsed ? '28px' : '42px',
+                maxWidth: isCollapsed ? '48px' : '185px',
+                objectFit: 'contain',
+              }}
+            />
           </div>
         </div>
 
@@ -281,7 +295,7 @@ export default function Sidebar({
         }}>
           {/* Bottom Collapse Toggle */}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={handleToggleCollapse}
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             style={{
               display: 'flex',

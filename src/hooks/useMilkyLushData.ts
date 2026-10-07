@@ -4,148 +4,198 @@ import { db } from '../firebase';
 import { sendWelcomeToNewCustomer, NOTHING_TO_DO } from '../services/whatsappService';
 import type { Product, User, Order, Subscription, DeliveryAgent, Banner, OnboardingSlide, PrepaidPackage, AdminAuditLogItem, BottleRecordItem } from '../types';
 
-export const DEFAULT_CATALOG_PRODUCTS: Product[] = [
-  {
-    id: 'prod_1',
-    name: 'Fresh Organic Buffalo Milk',
-    description: 'Creamy, rich, and high-fat organic buffalo milk sourced daily from eco-dairy farms.',
+export const DEFAULT_CATALOG_PRODUCTS: Product[] = [];
+/*
+const OLD_PRODUCTS = [
+
+    name: 'Raw Cow Milk (1L)',
+    description: 'Raw, Organic farm-fresh unpasteurized cow milk delivered in eco glass bottles.',
     category: 'Milk',
-    price: 110,
-    unit: '750ml Glass Bottle',
+    price: 76,
+    unit: '1L Glass Bottle',
     imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80&w=600&auto=format&fit=crop',
     images: ['https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80&w=600&auto=format&fit=crop'],
     isSubscriptionEnabled: true,
-    fatPercentage: '6.5%',
+    isGlassBottle: true,
+    fatPercentage: '3.8%',
     shelfLife: '48 Hours',
-    farmSource: 'Green Valley Eco-Farms',
-    nutrients: { Calcium: '135 mg / 100ml', Energy: '98 Kcal / 100ml', 'Fat Content': '6.5%', Phosphorus: '90 mg', Protein: '3.8 g / 100ml' },
+    farmSource: 'MilkyLush Eco Farm',
+    nutrients: { Calcium: '125 mg / 100ml', Protein: '3.4 g / 100ml', Fat: '3.8%' },
     rating: 4.9,
     displayOrder: 1,
-    offerTag: '10% OFF',
     isFeatured: true,
     inStock: true,
   },
   {
-    id: 'prod_2',
-    name: 'Pure Desi Cow A2 Milk',
-    description: 'Farm-fresh A2 Desi Cow milk, 100% natural and unadulterated in glass bottle.',
+    id: 'prod_raw_milk_500ml',
+    name: 'Raw Cow Milk (500ml)',
+    description: 'Raw, Organic farm-fresh unpasteurized cow milk delivered in eco glass bottles.',
     category: 'Milk',
-    price: 95,
-    unit: '1000ml Glass Bottle',
+    price: 38,
+    unit: '500ml Glass Bottle',
     imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=600&auto=format&fit=crop',
     images: ['https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=600&auto=format&fit=crop'],
     isSubscriptionEnabled: true,
-    fatPercentage: '4.2%',
+    isGlassBottle: true,
+    fatPercentage: '3.8%',
     shelfLife: '48 Hours',
-    farmSource: 'Gir Cow Sanctuary',
-    nutrients: { Calcium: '120 mg / 100ml', Energy: '68 Kcal / 100ml', 'Fat Content': '4.2%', Protein: '3.4 g / 100ml' },
-    rating: 4.8,
-    displayOrder: 2,
-    offerTag: 'POPULAR',
-    isFeatured: true,
-    inStock: true,
-  },
-  {
-    id: 'prod_3',
-    name: 'Fresh Artisanal Paneer',
-    description: 'Soft, fresh, hand-churned cottage cheese made daily from pure whole milk.',
-    category: 'Paneer',
-    price: 140,
-    unit: '200g Eco Pack',
-    imageUrl: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?q=80&w=600&auto=format&fit=crop',
-    images: ['https://images.unsplash.com/photo-1631452180519-c014fe946bc7?q=80&w=600&auto=format&fit=crop'],
-    isSubscriptionEnabled: false,
-    fatPercentage: 'Protein Rich',
-    shelfLife: '5 Days',
-    farmSource: 'MilkyLush Dairy Kitchen',
-    nutrients: { Protein: '18 g / 100g', Calcium: '208 mg / 100g' },
+    farmSource: 'MilkyLush Eco Farm',
+    nutrients: { Calcium: '125 mg / 100ml', Protein: '3.4 g / 100ml', Fat: '3.8%' },
     rating: 4.9,
-    displayOrder: 3,
-    offerTag: 'FRESH DAILY',
+    displayOrder: 2,
     isFeatured: true,
     inStock: true,
   },
   {
-    id: 'prod_4',
-    name: 'Pure Organic Cow Ghee',
-    description: 'Traditional Bilona method golden cow ghee with rich aroma and granular texture.',
+    id: 'prod_desi_ghee_500ml',
+    name: 'Desi Ghee (500ml)',
+    description: 'Pure Ghee made from traditional bilona churned fresh cream.',
     category: 'Ghee',
-    price: 650,
+    price: 599,
+    originalPrice: 649,
     unit: '500ml Glass Jar',
     imageUrl: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?q=80&w=600&auto=format&fit=crop',
     images: ['https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?q=80&w=600&auto=format&fit=crop'],
     isSubscriptionEnabled: false,
+    isGlassBottle: false,
     fatPercentage: '99.8%',
     shelfLife: '12 Months',
     farmSource: 'Vedic Bilona Haven',
-    nutrients: { Energy: '899 Kcal / 100g', 'Fat Content': '99.8%' },
     rating: 5.0,
-    displayOrder: 4,
-    offerTag: 'BILONA METHOD',
+    displayOrder: 3,
+    offerTag: 'SPECIAL OFFER • 8% OFF',
     isFeatured: true,
     inStock: true,
   },
   {
-    id: 'prod_5',
-    name: 'Thick Malai Curd',
-    description: 'Traditional thick set curd with natural cream top made in clay pots.',
-    category: 'Curd',
-    price: 60,
-    unit: '500g Eco Pot',
-    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600&auto=format&fit=crop',
-    images: ['https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600&auto=format&fit=crop'],
-    isSubscriptionEnabled: true,
-    fatPercentage: '4.5%',
-    shelfLife: '7 Days',
-    farmSource: 'MilkyLush Dairy Kitchen',
-    nutrients: { Calcium: '150 mg / 100g', Protein: '4.2 g / 100g' },
-    rating: 4.7,
-    displayOrder: 5,
-    offerTag: 'PROBIOTIC',
-    isFeatured: false,
-    inStock: true,
-  },
-  {
-    id: 'prod_6',
-    name: 'Royal Badam Flavored Milk',
-    description: 'Chilled whole milk infused with real California almonds, saffron, and cardamom.',
-    category: 'Flavored Milk',
-    price: 50,
-    unit: '200ml Glass Bottle',
-    imageUrl: 'https://images.unsplash.com/photo-1577805947697-89e18249d767?q=80&w=600&auto=format&fit=crop',
-    images: ['https://images.unsplash.com/photo-1577805947697-89e18249d767?q=80&w=600&auto=format&fit=crop'],
-    isSubscriptionEnabled: true,
-    fatPercentage: '3.5%',
-    shelfLife: '7 Days',
-    farmSource: 'MilkyLush Specialty',
-    nutrients: { Energy: '110 Kcal / 100ml', Protein: '3.5 g / 100ml' },
-    rating: 4.9,
-    displayOrder: 6,
-    offerTag: 'REAL ALMONDS',
-    isFeatured: false,
-    inStock: true,
-  },
-  {
-    id: 'prod_7',
-    name: 'Fresh Farm Table Butter',
-    description: 'Unsalted, pure yellow farm butter churned from fresh cream.',
-    category: 'Butter',
-    price: 160,
-    unit: '250g Eco Pack',
+    id: 'prod_desi_ghee_250ml',
+    name: 'Desi Ghee (250ml)',
+    description: 'Pure Ghee made from traditional bilona churned fresh cream.',
+    category: 'Ghee',
+    price: 299,
+    originalPrice: 325,
+    unit: '250ml Glass Jar',
     imageUrl: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?q=80&w=600&auto=format&fit=crop',
     images: ['https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?q=80&w=600&auto=format&fit=crop'],
     isSubscriptionEnabled: false,
-    fatPercentage: '80%',
-    shelfLife: '30 Days',
-    farmSource: 'Green Valley Eco-Farms',
-    nutrients: { Energy: '717 Kcal / 100g', 'Fat Content': '80%' },
-    rating: 4.8,
-    displayOrder: 7,
-    offerTag: 'FRESH CHURNED',
-    isFeatured: false,
+    isGlassBottle: false,
+    fatPercentage: '99.8%',
+    shelfLife: '12 Months',
+    farmSource: 'Vedic Bilona Haven',
+    rating: 5.0,
+    displayOrder: 4,
+    offerTag: 'SPECIAL OFFER • 8% OFF',
+    isFeatured: true,
     inStock: true,
+  },
+  {
+    id: 'prod_curd_500ml',
+    name: 'Curd',
+    description: 'Set Curd naturally prepared in clay pots.',
+    category: 'Curd',
+    price: 49,
+    unit: '500ml',
+    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600&auto=format&fit=crop',
+    images: ['https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600&auto=format&fit=crop'],
+    isSubscriptionEnabled: true,
+    isGlassBottle: false,
+    shelfLife: '5 Days',
+    farmSource: 'MilkyLush Dairy Kitchen',
+    rating: 4.8,
+    displayOrder: 5,
+    offerTag: 'Coming Soon',
+    inStock: false,
+  },
+  {
+    id: 'prod_fresh_paneer_200g',
+    name: 'Fresh Paneer (200g)',
+    description: 'Soft Malai Paneer made fresh daily.',
+    category: 'Paneer',
+    price: 159,
+    originalPrice: 179,
+    unit: '200g Eco Pack',
+    imageUrl: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?q=80&w=600&auto=format&fit=crop',
+    images: ['https://images.unsplash.com/photo-1631452180519-c014fe946bc7?q=80&w=600&auto=format&fit=crop'],
+    isSubscriptionEnabled: false,
+    isGlassBottle: false,
+    shelfLife: '5 Days',
+    farmSource: 'MilkyLush Dairy Kitchen',
+    rating: 4.9,
+    displayOrder: 6,
+    offerTag: 'SPECIAL OFFER • 11% OFF',
+    isFeatured: true,
+    inStock: true,
+  },
+  {
+    id: 'prod_coconut_oil_1l',
+    name: 'Wood Pressed Coconut Oil (1L)',
+    description: 'Pure & Natural cold-pressed unrefined virgin coconut oil.',
+    category: 'Oils',
+    price: 599,
+    originalPrice: 699,
+    unit: '1L Glass Bottle',
+    imageUrl: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?q=80&w=600&auto=format&fit=crop',
+    images: ['https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?q=80&w=600&auto=format&fit=crop'],
+    isSubscriptionEnabled: false,
+    isGlassBottle: false,
+    rating: 4.9,
+    displayOrder: 7,
+    offerTag: 'SPECIAL OFFER • 14% OFF',
+    isFeatured: true,
+    inStock: true,
+  },
+  {
+    id: 'prod_groundnut_oil_1l',
+    name: 'Wood Pressed Groundnut Oil (1L)',
+    description: 'Pure & Natural cold-pressed groundnut oil.',
+    category: 'Oils',
+    price: 399,
+    originalPrice: 499,
+    unit: '1L Glass Bottle',
+    imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?q=80&w=600&auto=format&fit=crop',
+    images: ['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?q=80&w=600&auto=format&fit=crop'],
+    isSubscriptionEnabled: false,
+    isGlassBottle: false,
+    rating: 4.8,
+    displayOrder: 8,
+    offerTag: 'SPECIAL OFFER • 20% OFF',
+    isFeatured: true,
+    inStock: true,
+  },
+  {
+    id: 'prod_mustard_oil_1l',
+    name: 'Wood Pressed Mustard Oil',
+    description: 'Pure & Natural cold-pressed authentic mustard oil.',
+    category: 'Oils',
+    price: 199,
+    unit: '1L Bottle',
+    imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?q=80&w=600&auto=format&fit=crop',
+    images: ['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?q=80&w=600&auto=format&fit=crop'],
+    isSubscriptionEnabled: false,
+    isGlassBottle: false,
+    rating: 4.7,
+    displayOrder: 9,
+    offerTag: 'Coming Soon',
+    inStock: false,
+  },
+  {
+    id: 'prod_scrubber_pack',
+    name: 'Eco-friendly Scrubber',
+    description: 'Sustainable Choice natural coconut coir kitchen scrubber.',
+    category: 'Eco Essentials',
+    price: 29,
+    unit: 'Pack of 5',
+    imageUrl: 'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?q=80&w=600&auto=format&fit=crop',
+    images: ['https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?q=80&w=600&auto=format&fit=crop'],
+    isSubscriptionEnabled: false,
+    isGlassBottle: false,
+    rating: 4.9,
+    displayOrder: 10,
+    offerTag: 'Coming Soon',
+    inStock: false,
   }
 ];
+*/
 
 export const DEFAULT_PREPAID_PACKAGES: PrepaidPackage[] = [
   {
@@ -241,16 +291,12 @@ export function useMilkyLushData(selectedHubId: string) {
       snapshot.forEach((docSnap) => {
         items.push({ id: docSnap.id, ...docSnap.data() } as Product);
       });
-      if (items.length === 0) {
-        setProducts(DEFAULT_CATALOG_PRODUCTS);
-      } else {
-        items.sort((a, b) => {
-          const diff = (Number(a.displayOrder) || 999) - (Number(b.displayOrder) || 999);
-          if (diff !== 0) return diff;
-          return a.name.localeCompare(b.name);
-        });
-        setProducts(items);
-      }
+      items.sort((a, b) => {
+        const diff = (Number(a.displayOrder) || 999) - (Number(b.displayOrder) || 999);
+        if (diff !== 0) return diff;
+        return a.name.localeCompare(b.name);
+      });
+      setProducts(items);
     });
 
     // Customers already registered when this panel opened, and customers whose
@@ -415,14 +461,21 @@ export function useMilkyLushData(selectedHubId: string) {
       setBottleRecords(items);
     });
 
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'delivery'), (snapshot) => {
+    const unsubSettings = onSnapshot(doc(db, 'settings', `delivery_${selectedHubId}`), (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         setDeliverySettings({
-          address: data.address || '',
-          hubLatitude: data.hubLatitude !== undefined ? String(data.hubLatitude) : '12.8676977',
-          hubLongitude: data.hubLongitude !== undefined ? String(data.hubLongitude) : '77.6667214',
-          radiusKm: data.radiusKm !== undefined ? String(data.radiusKm) : '5.0',
+          address: data.address || (isCurrentHosur ? 'Plot 45, Sipcot Industrial Complex Phase 1, Hosur - 635126' : 'Building 12, Electronics City Phase 1, Bengaluru, Karnataka 560100'),
+          hubLatitude: data.hubLatitude !== undefined ? String(data.hubLatitude) : (isCurrentHosur ? '12.742253' : '12.8676977'),
+          hubLongitude: data.hubLongitude !== undefined ? String(data.hubLongitude) : (isCurrentHosur ? '77.824213' : '77.6667214'),
+          radiusKm: data.radiusKm !== undefined ? String(data.radiusKm) : (isCurrentHosur ? '15.0' : '5.0'),
+        });
+      } else {
+        setDeliverySettings({
+          address: isCurrentHosur ? 'Plot 45, Sipcot Industrial Complex Phase 1, Hosur - 635126' : 'Building 12, Electronics City Phase 1, Bengaluru, Karnataka 560100',
+          hubLatitude: isCurrentHosur ? '12.742253' : '12.8676977',
+          hubLongitude: isCurrentHosur ? '77.824213' : '77.6667214',
+          radiusKm: isCurrentHosur ? '15.0' : '5.0',
         });
       }
       setLoading(false);
@@ -443,7 +496,7 @@ export function useMilkyLushData(selectedHubId: string) {
       unsubBottleRecords();
       unsubSettings();
     };
-  }, []);
+  }, [selectedHubId, isCurrentHosur]);
 
   // Hub Scoped Collections
   const hubOrders = useMemo(() => {
@@ -505,8 +558,7 @@ export function useMilkyLushData(selectedHubId: string) {
   }, [banners, selectedHubId]);
 
   const hubProducts = useMemo(() => {
-    const sourceProducts = products.length > 0 ? products : DEFAULT_CATALOG_PRODUCTS;
-    return sourceProducts.filter((p) => {
+    return products.filter((p) => {
       const outOfStock = (p as any).outOfStockHubs || [];
       if (outOfStock.includes(selectedHubId)) return false;
       const hIds = (p as any).hubIds || [];
