@@ -4,6 +4,9 @@
 // calendar day, not to the minute, and sending it at a civil hour matters more
 // than sending it promptly. 03:30 UTC is 09:00 IST.
 
+// Subscriptions live under each hub (hubs/{hubId}/subscriptions), not in one
+// top-level collection, so this reads the collection group: every subscription
+// in every hub, without needing to know which hubs exist.
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 
@@ -35,7 +38,7 @@ export default async () => {
   const daysBefore = Number(rule.daysBefore) || 1;
 
   const [subs, users] = await Promise.all([
-    db.collection('subscriptions').get(),
+    db.collectionGroup('subscriptions').get(),
     db.collection('users').get(),
   ]);
 

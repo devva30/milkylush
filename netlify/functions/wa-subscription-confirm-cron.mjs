@@ -3,6 +3,9 @@
 // Runs often rather than daily: a confirmation is only reassuring if it arrives
 // while the customer still remembers subscribing.
 
+// Subscriptions live under each hub (hubs/{hubId}/subscriptions), not in one
+// top-level collection, so this reads the collection group: every subscription
+// in every hub, without needing to know which hubs exist.
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 
@@ -42,7 +45,7 @@ export default async () => {
   const db = await connect();
   const settingsRef = db.collection(SETTINGS_PATH[0]).doc(SETTINGS_PATH[1]);
   const settings = await settingsRef.get();
-  const subs = await db.collection('subscriptions').get();
+  const subs = await db.collectionGroup('subscriptions').get();
 
   // First ever run: every subscription that already exists predates this
   // feature and must not be confirmed retrospectively. Marking them is what
