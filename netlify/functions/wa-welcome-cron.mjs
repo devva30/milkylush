@@ -4,7 +4,6 @@
 // 2am is greeted whether or not anyone has the admin panel open. That is the
 // whole point of it existing: the browser version only ran while a tab was open.
 
-import { collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 import { sendWelcomeEmail } from '../lib/email.mjs';
@@ -33,21 +32,21 @@ export default async () => {
   }
 
   const db = await connect();
-  const settingsRef = doc(db, ...SETTINGS_PATH);
-  const settings = await getDoc(settingsRef);
-  const users = await getDocs(collection(db, 'users'));
+  const settingsRef = db.collection(SETTINGS_PATH[0]).doc(SETTINGS_PATH[1]);
+  const settings = await settingsRef.get();
+  const users = await db.collection('users').get();
 
   // First ever run: everyone already registered counts as an existing customer
   // and must not be greeted. Marking them is what stops a mass send later.
-  if (!settings.exists() || settings.data()?.initialized !== true) {
+  if (!settings.exists || settings.data()?.initialized !== true) {
     let marked = 0;
     for (const snap of users.docs) {
       const u = snap.data();
       if (alreadyHandled(u) || u.welcomeWhatsappStatus === PENDING) continue;
-      await setDoc(snap.ref, { welcomeWhatsappStatus: 'skipped_existing' }, { merge: true });
+      await snap.ref.set( { welcomeWhatsappStatus: 'skipped_existing' }, { merge: true });
       marked++;
     }
-    await setDoc(settingsRef, { initialized: true, initializedAt: new Date().toISOString(), markedExisting: marked }, { merge: true });
+    await settingsRef.set( { initialized: true, initializedAt: new Date().toISOString(), markedExisting: marked }, { merge: true });
     console.log(`first run: marked ${marked} existing customer(s) as skipped, greeted nobody`);
     return;
   }
@@ -81,9 +80,9 @@ export default async () => {
   for (const snap of pending) {
     // Claiming in a transaction keeps overlapping runs, or a run overlapping an
     // open admin panel, from greeting the same customer twice.
-    const claim = await runTransaction(db, async (tx) => {
+    const claim = await db.runTransaction(async (tx) => {
       const fresh = await tx.get(snap.ref);
-      if (!fresh.exists()) return null;
+      if (!fresh.exists) return null;
       const u = fresh.data();
       if (alreadyHandled(u)) return null;
 
@@ -102,8 +101,7 @@ export default async () => {
       ? await sendTemplate(spec, claim.phone, claim.name)
       : await sendWelcomeEmail(claim.email, claim.name);
 
-    await setDoc(
-      snap.ref,
+    await snap.ref.set(
       {
         welcomeWhatsappStatus: result.success ? 'sent' : 'failed',
         welcomeWhatsappChannel: channel,

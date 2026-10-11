@@ -4,7 +4,6 @@
 // calendar day, not to the minute, and sending it at a civil hour matters more
 // than sending it promptly. 03:30 UTC is 09:00 IST.
 
-import { collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 
@@ -36,8 +35,8 @@ export default async () => {
   const daysBefore = Number(rule.daysBefore) || 1;
 
   const [subs, users] = await Promise.all([
-    getDocs(collection(db, 'subscriptions')),
-    getDocs(collection(db, 'users')),
+    db.collection('subscriptions').get(),
+    db.collection('users').get(),
   ]);
 
   const phoneOf = new Map();
@@ -85,9 +84,9 @@ export default async () => {
     }
 
     // Claiming in a transaction stops a retried run from warning twice.
-    const claimed = await runTransaction(db, async (tx) => {
+    const claimed = await db.runTransaction(async (tx) => {
       const fresh = await tx.get(snap.ref);
-      if (!fresh.exists()) return false;
+      if (!fresh.exists) return false;
       if (fresh.data().expiryAlertForEndDate === sub.endDate) return false;
       tx.update(snap.ref, { expiryAlertForEndDate: sub.endDate });
       return true;
@@ -107,8 +106,7 @@ export default async () => {
 
     const result = await sendTemplate(withDays, phone, name);
 
-    await setDoc(
-      snap.ref,
+    await snap.ref.set(
       {
         expiryAlertStatus: result.success ? 'sent' : 'failed',
         expiryAlertSentAt: new Date().toISOString(),

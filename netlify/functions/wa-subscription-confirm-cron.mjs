@@ -3,7 +3,6 @@
 // Runs often rather than daily: a confirmation is only reassuring if it arrives
 // while the customer still remembers subscribing.
 
-import { collection, getDocs, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 
@@ -41,23 +40,22 @@ export default async () => {
   }
 
   const db = await connect();
-  const settingsRef = doc(db, ...SETTINGS_PATH);
-  const settings = await getDoc(settingsRef);
-  const subs = await getDocs(collection(db, 'subscriptions'));
+  const settingsRef = db.collection(SETTINGS_PATH[0]).doc(SETTINGS_PATH[1]);
+  const settings = await settingsRef.get();
+  const subs = await db.collection('subscriptions').get();
 
   // First ever run: every subscription that already exists predates this
   // feature and must not be confirmed retrospectively. Marking them is what
   // stops one run messaging the entire customer base.
-  if (!settings.exists() || settings.data()?.initialized !== true) {
+  if (!settings.exists || settings.data()?.initialized !== true) {
     let marked = 0;
     for (const snap of subs.docs) {
       const sub = snap.data();
       if (alreadyHandled(sub) || sub.confirmationWhatsappStatus === PENDING) continue;
-      await setDoc(snap.ref, { confirmationWhatsappStatus: 'skipped_existing' }, { merge: true });
+      await snap.ref.set( { confirmationWhatsappStatus: 'skipped_existing' }, { merge: true });
       marked++;
     }
-    await setDoc(
-      settingsRef,
+    await settingsRef.set(
       { initialized: true, initializedAt: new Date().toISOString(), markedExisting: marked },
       { merge: true }
     );
@@ -77,7 +75,7 @@ export default async () => {
     return;
   }
 
-  const users = await getDocs(collection(db, 'users'));
+  const users = await db.collection('users').get();
   const userById = new Map();
   users.forEach((u) => userById.set(u.id, u.data()));
 
@@ -97,15 +95,15 @@ export default async () => {
 
     if (!phone) {
       // Some subscriptions point at a userId with no matching customer record.
-      await setDoc(snap.ref, { confirmationWhatsappStatus: 'no_phone' }, { merge: true });
+      await snap.ref.set( { confirmationWhatsappStatus: 'no_phone' }, { merge: true });
       console.warn(`skipping ${snap.id}: no phone for user ${sub.userId}`);
       continue;
     }
 
     // Claiming in a transaction stops a retried run confirming twice.
-    const claimed = await runTransaction(db, async (tx) => {
+    const claimed = await db.runTransaction(async (tx) => {
       const fresh = await tx.get(snap.ref);
-      if (!fresh.exists() || alreadyHandled(fresh.data())) return false;
+      if (!fresh.exists || alreadyHandled(fresh.data())) return false;
       tx.update(snap.ref, { confirmationWhatsappStatus: 'sending' });
       return true;
     });
@@ -124,8 +122,7 @@ export default async () => {
 
     const result = await sendTemplate(filled, phone, name);
 
-    await setDoc(
-      snap.ref,
+    await snap.ref.set(
       {
         confirmationWhatsappStatus: result.success ? 'sent' : 'failed',
         confirmationWhatsappSentAt: new Date().toISOString(),
