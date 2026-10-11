@@ -65,6 +65,15 @@ export default function AnalysisPage({
   const est30DayRenewals = r30.count;
   const est30DayValue = Math.round(r30.value);
 
+  // Dynamic Live Category Distribution & Catalog Metrics
+  const totalProducts = products.length;
+  const categoryStats = products.reduce((acc, p) => {
+    const cat = p.category?.trim() || 'General';
+    acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const categoryList = Object.entries(categoryStats).sort((a, b) => b[1] - a[1]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
       
@@ -181,22 +190,89 @@ export default function AnalysisPage({
           </div>
         </div>
 
-        {/* Product Catalog Share */}
-        <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>Product Catalog Distribution</h4>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Breakdown of products by category</p>
+        {/* Dynamic Product Catalog Distribution */}
+        <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
+                Product Catalog Distribution
+              </h4>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                Live products &amp; category breakdown for {isHosur ? 'Hosur' : 'Bangalore'}
+              </p>
+            </div>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 10px', borderRadius: '12px' }}>
+              {totalProducts} {totalProducts === 1 ? 'Product' : 'Products'} Live
+            </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {products.slice(0, 4).map((p) => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', backgroundColor: 'var(--bg-main)', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{p.name}</span>
-                </div>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>₹{p.price} / {p.unit || 'unit'}</span>
+
+          {/* Dynamic Category Badges */}
+          {categoryList.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {categoryList.map(([cat, count]) => (
+                <span
+                  key={cat}
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-main)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-main)',
+                  }}
+                >
+                  {cat}: <strong style={{ color: '#047857' }}>{count}</strong> ({Math.round((count / Math.max(1, totalProducts)) * 100)}%)
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Full Dynamic Live Products List (Scrollable if multiple) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+            {products.length === 0 ? (
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+                No products found in this hub's catalog.
               </div>
-            ))}
+            ) : (
+              products.map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-main)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: p.inStock ? '#10B981' : '#EF4444',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {p.category || 'General'} · {p.stockStatus === 'limited_stock' ? 'Limited' : p.inStock ? 'In Stock' : 'Out of Stock'}
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#047857', whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                    ₹{p.price} / {p.unit || 'unit'}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

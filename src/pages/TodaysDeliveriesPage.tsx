@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { closeDay } from '../data/stats';
 import { Download, Search, ArrowLeft, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Order, DeliveryAgent, User, Product } from '../types';
@@ -58,6 +58,25 @@ export default function TodaysDeliveriesPage({
   const dayLabel = isToday ? 'today' : formatDay(date);
   const deliveriesQuery = useDeliveries(hubId, date);
   const [generating, setGenerating] = useState(false);
+
+  // Auto-sync drops for today when page is opened so active subscriptions show immediately
+  useEffect(() => {
+    let active = true;
+    if (isToday && !deliveriesQuery.loading) {
+      const syncKey = `synced_${hubId}_${date}`;
+      if (!sessionStorage.getItem(syncKey)) {
+        sessionStorage.setItem(syncKey, 'true');
+        generateDeliveries(hubId, date)
+          .then((r) => {
+            if (active && r.created > 0) {
+              showToast(`Synced ${r.created} scheduled drop(s) for active subscriptions`, 'info');
+            }
+          })
+          .catch(() => {});
+      }
+    }
+    return () => { active = false; };
+  }, [hubId, date, isToday, deliveriesQuery.loading]);
 
   // One row per drop, grouped by rider then stop order
   const todayOnlyOrders = useMemo(() => deliveriesQuery.data

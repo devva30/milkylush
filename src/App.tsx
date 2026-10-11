@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import type { HubId } from './data/hubs';
 import { useHubProducts } from './data/products';
 import { useRecentActivity } from './data/activity';
+import { useHubSubscriptions } from './data/subscriptions';
 
 import { HubContextProvider, useHubContext } from './context/HubContext';
 import { useMilkyLushData } from './hooks/useMilkyLushData';
@@ -113,6 +114,7 @@ function AppContent() {
   // Header bell + portal counters: latest orders / subscriptions and the hub's products
   const activity = useRecentActivity(selectedHubId as HubId);
   const hubProductsCount = useHubProducts(selectedHubId as HubId).data.length;
+  const hubActiveSubs = useHubSubscriptions(selectedHubId as HubId, 'active');
 
   // 0. Waiting for Firebase to restore (or not) the previous session
   if (!isAuthReady) {
@@ -283,12 +285,12 @@ function AppContent() {
               )}
 
               {activeTab === 'all-deliveries' && (
-                <DeliveriesRangeShell hubId={selectedHubId} deliveryAgents={hubDeliveryAgents} showToast={showToast} defaultDays={60}>
+                <DeliveriesRangeShell hubId={selectedHubId} deliveryAgents={hubDeliveryAgents} showToast={showToast} defaultDays={30}>
                   {(d) => (
                     <AllDeliveriesPage
                       selectedHubId={selectedHubId}
                       orders={d.orders}
-                      subscriptions={[]}
+                      subscriptions={hubActiveSubs.ui}
                       users={d.users}
                       deliveryAgents={hubDeliveryAgents}
                       onUpdateOrderStatus={d.onUpdateOrderStatus}

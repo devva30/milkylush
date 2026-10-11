@@ -9,7 +9,7 @@ export interface DateRange {
   to: string;   // inclusive 'yyyy-MM-dd'
 }
 
-type Preset = 'yesterday' | 'today' | 'tomorrow' | 'last7' | 'last30' | 'last60' | 'next30' | 'all';
+type Preset = 'yesterday' | 'today' | 'tomorrow' | 'last7' | 'last30' | 'next30' | 'all';
 
 function presetRange(p: Preset): DateRange {
   const t = todayKey();
@@ -19,14 +19,13 @@ function presetRange(p: Preset): DateRange {
     case 'tomorrow': return { from: addDays(t, 1), to: addDays(t, 1) };
     case 'last7': return { from: addDays(t, -6), to: addDays(t, 30) }; // Include upcoming week drops
     case 'last30': return { from: addDays(t, -29), to: addDays(t, 30) };
-    case 'last60': return { from: addDays(t, -59), to: addDays(t, 30) };
     case 'next30': return { from: t, to: addDays(t, 30) };
     case 'all': return { from: addDays(t, -60), to: addDays(t, 60) };
   }
 }
 
 const LABELS: Record<Preset, string> = {
-  yesterday: 'Yesterday', today: 'Today', tomorrow: 'Tomorrow', last7: 'Last 7 days', last30: 'Last 30 days', last60: 'Last 60 days', next30: 'Next 30 days', all: 'All Dates',
+  yesterday: 'Yesterday', today: 'Today', tomorrow: 'Tomorrow', last7: 'Last 7 days', last30: 'Last 30 days', next30: 'Next 30 days', all: 'All Dates',
 };
 
 const pill = (active: boolean): React.CSSProperties => ({
@@ -111,5 +110,4 @@ export function DateFilter({
 }
 
 export const todayRange = (): DateRange => presetRange('today');
-export const lastDaysRange = (days: 7 | 30 | 60): DateRange =>
-  presetRange(days === 7 ? 'last7' : days === 60 ? 'last60' : 'last30');
+export const lastDaysRange = (days: 7 | 30): DateRange => presetRange(days === 7 ? 'last7' : 'last30');

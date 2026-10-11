@@ -15,7 +15,7 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({ theme, onToggleTheme, showToast }: SettingsPageProps) {
-  const { selectedHubId, allowedHubIds, staff } = useHubContext();
+  const { selectedHubId, allowedHubIds, staff, switchHub } = useHubContext();
   const [adminProfile, setAdminProfile] = useState({
     name: staff?.name || '',
     email: staff?.email || '',
@@ -45,12 +45,12 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
   const [savingHub, setSavingHub] = useState<string | null>(null);
 
   useEffect(() => {
-    const hubIds = allowedHubIds;
+    const hubIds = [selectedHubId];
     getRazorpaySettings(hubIds).then((loaded) => {
-      setSavedKeys(loaded);
-      setDraftKeys(loaded);
+      setSavedKeys((prev) => ({ ...prev, ...loaded }));
+      setDraftKeys((prev) => ({ ...prev, ...loaded }));
     });
-  }, [allowedHubIds.join(',')]);
+  }, [selectedHubId]);
 
   const editHubKey = (hubId: string, patch: Partial<RazorpaySettings[string]>) =>
     setDraftKeys((current) => (current ? { ...current, [hubId]: { ...(current[hubId] || { enabled: false, keyId: '' }), ...patch } } : current));
@@ -272,19 +272,51 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
 
       {/* DEDICATED HUB API KEYS & INTEGRATIONS CARD */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB' }}>
-        <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Key size={20} style={{ color: '#047857' }} /> Razorpay Payment Key Configuration
-        </h3>
-        <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
-          Manage Razorpay payment key for <strong>{selectedHubId === 'hosur' ? 'Hosur Hub' : 'Bangalore Electronic City Hub'}</strong>. Keys are securely hidden by default; click the <Eye size={13} style={{ display: 'inline', margin: '0 2px' }} /> icon to reveal and edit. Switch active hub in top bar to manage another location.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Key size={20} style={{ color: '#047857' }} /> Razorpay Payment Key Configuration
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
+              Configure independent Razorpay credentials for <strong>{HUBS[selectedHubId]?.name || selectedHubId}</strong>. Keys are securely hidden by default; click the <Eye size={13} style={{ display: 'inline', margin: '0 2px' }} /> icon to reveal and edit.
+            </p>
+          </div>
 
-        <div style={{ marginTop: '0.5rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#92400E' }}>
-          <strong>Realtime App Sync:</strong> Key ID starts with <code>rzp_test_</code> or <code>rzp_live_</code>. Mobile app fetches the active key dynamically from Firestore for instant real-time checkout updates.
+          {/* Quick Hub Switcher Tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F3F4F6', padding: '4px', borderRadius: '12px' }}>
+            {(allowedHubIds.length > 0 ? allowedHubIds : Object.keys(HUBS)).map((hubId) => {
+              const active = selectedHubId === hubId;
+              return (
+                <button
+                  key={hubId}
+                  type="button"
+                  onClick={() => switchHub(hubId)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: active ? '#047857' : 'transparent',
+                    color: active ? '#FFFFFF' : '#4B5563',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: active ? '0 2px 6px rgba(4,120,87,0.2)' : 'none',
+                  }}
+                >
+                  {HUBS[hubId]?.name || hubId}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#92400E' }}>
+          <strong>Realtime App Sync:</strong> Mobile app dynamically reads the active key from <code>hubs/{selectedHubId}/settings/payment</code> for customer checkout routing in {HUBS[selectedHubId]?.name || selectedHubId}.
         </div>
 
         {!draftKeys && (
-          <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '1rem' }}>Loading Razorpay key configuration…</div>
+          <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '1rem' }}>Loading Razorpay key configurations…</div>
         )}
 
         {draftKeys && savedKeys && (
@@ -299,16 +331,22 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
               const changed = draftKeyId.trim() !== liveKeyId || Boolean(draft?.enabled) !== Boolean(live?.enabled);
               const busy = savingHub === hubId;
               const hubDisplayName = HUBS[hubId]?.name || (hubId === 'bengaluru' ? 'Bangalore Electronic City Hub' : hubId);
+              const isSelected = selectedHubId === hubId;
 
               const isKeyVisible = showKeysMap[`rzp_${hubId}`] === true;
 
               return (
-                <div key={hubId} style={{ padding: '1.1rem 1.25rem', borderRadius: '16px', border: `1.5px solid ${changed ? '#047857' : '#E5E7EB'}`, backgroundColor: '#F9FAFB' }}>
+                <div key={hubId} style={{ padding: '1.1rem 1.25rem', borderRadius: '16px', border: `1.5px solid ${changed ? '#047857' : isSelected ? '#A7F3D0' : '#E5E7EB'}`, backgroundColor: isSelected ? '#FAFCFA' : '#F9FAFB' }}>
                   
                   {/* Hub Header & Status Badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.6rem' }}>
                     <MapPin size={18} color="#047857" />
                     <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111827' }}>{hubDisplayName}</span>
+                    {isSelected && (
+                      <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '8px', color: '#047857', backgroundColor: '#D1FAE5' }}>
+                        ACTIVE SELECTION
+                      </span>
+                    )}
                     
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#374151', cursor: busy ? 'wait' : 'pointer', marginLeft: '8px' }}>
                       <input type="checkbox" checked={draft.enabled} disabled={busy} onChange={(e) => editHubKey(hubId, { enabled: e.target.checked })} />

@@ -26,7 +26,7 @@ interface Props {
   hubId: HubId;
   deliveryAgents: DeliveryAgent[];
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
-  defaultDays?: 7 | 30 | 60;
+  defaultDays?: 7 | 30;
   status?: DeliveryStatus;
   children: (data: DeliveriesShellData) => ReactNode;
 }
