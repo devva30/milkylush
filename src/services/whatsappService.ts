@@ -35,7 +35,11 @@ export const DEFAULT_WELCOME_TEMPLATE: string =
 // Which template each automatic message uses. Kept in Firestore rather than in
 // code or localStorage because the scheduled senders on the server read the same
 // values, and so a choice survives a browser change or a redeploy.
-const AUTOMATIONS_DOC = ['settings', 'whatsapp_automations'] as const;
+// Lives under config/, not settings/: the security rules expose config to the
+// admin panel but deny top-level settings, so a doc kept there is invisible to
+// the browser. The panel then silently fell back to built-in defaults and
+// displayed automations as off while they were running.
+const AUTOMATIONS_DOC = ['config', 'whatsapp_automations'] as const;
 
 export type AutomationKey = 'welcome' | 'subscriptionExpiry' | 'subscriptionConfirmation';
 

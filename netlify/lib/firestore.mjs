@@ -47,7 +47,7 @@ const DEFAULTS = {
 /** Reads the automation rules the admin chose in the panel. */
 export async function getAutomations(db) {
   try {
-    const stored = (await db.collection('settings').doc('whatsapp_automations').get()).data() ?? {};
+    const stored = (await db.collection('config').doc('whatsapp_automations').get()).data() ?? {};
     return {
       welcome: { ...DEFAULTS.welcome, ...(stored.welcome ?? {}) },
       subscriptionExpiry: { ...DEFAULTS.subscriptionExpiry, ...(stored.subscriptionExpiry ?? {}) },
