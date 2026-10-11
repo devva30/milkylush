@@ -13,6 +13,7 @@ import {
   CreditCard,
   Smartphone,
   Gift,
+  Ticket,
   Clock,
   Lock,
   Settings,
@@ -111,7 +112,8 @@ export default function Sidebar({
       items: [
         { id: 'payments', label: 'Payments Ledger', icon: CreditCard },
         { id: 'mobile-control', label: 'Mobile Control', icon: Smartphone },
-        { id: 'refer-earn', label: 'Refer & Earn', icon: Gift },
+        { id: 'refer-earn', label: 'Refer & Earn Program', icon: Gift },
+        { id: 'promo-codes', label: 'Promo Codes & Coupons', icon: Ticket },
         { id: 'free-samples', label: 'Free Samples', icon: Gift },
         { id: 'audit-logs', label: 'Audit Logs', icon: Clock },
         { id: 'settings', label: 'Settings', icon: Settings },

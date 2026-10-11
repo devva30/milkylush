@@ -3,16 +3,29 @@ import { Search, Download, ShieldCheck, UserCheck, Key, Settings, FileText, Chev
 import { useToast } from '../context/ToastContext';
 
 import type { AdminAuditLogItem } from '../types';
+import type { HubId } from '../data/hubs';
+import { useHubAuditLogs, auditToUi } from '../data/audit';
+import { DateFilter, lastDaysRange, type DateRange } from '../components/common/DateFilter';
+import { DataState, LoadMore } from '../components/common/DataState';
 
 export type AdminAuditLog = AdminAuditLogItem;
 
 interface AuditLogsPageProps {
   selectedHubId: string;
+  /** Unused: the page loads hubs/{hub}/auditLogs itself. */
   auditLogs?: AdminAuditLogItem[];
 }
 
-export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLogsPageProps) {
+export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
   const { showToast } = useToast();
+  const [range, setRange] = useState<DateRange>(lastDaysRange(7));
+  const logsQuery = useHubAuditLogs(selectedHubId as HubId, range.from, range.to);
+  const auditLogs = useMemo(() => logsQuery.data.map(auditToUi), [logsQuery.data]);
+  const adminOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    auditLogs.forEach((l) => m.set(l.adminEmail, `${l.adminName} (${l.adminRole})`));
+    return Array.from(m.entries());
+  }, [auditLogs]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
   const [activeAdminFilter, setActiveAdminFilter] = useState<string>('all');
@@ -22,7 +35,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const hubLabel = selectedHubId === 'hub_bangalore_main' ? 'BANGALORE HUB' : 'HOSUR HUB';
+  const hubLabel = selectedHubId === 'bengaluru' ? 'BANGALORE HUB' : 'HOSUR HUB';
 
   // Filter logs by search, category, admin user, and date
   const filteredLogs = useMemo(() => {
@@ -87,7 +100,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
             <ShieldCheck size={18} style={{ color: '#059669' }} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            {auditLogs.length || 86}
+            {auditLogs.length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Recorded administrative operations
@@ -103,7 +116,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
             <Key size={18} style={{ color: '#2563EB' }} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            {auditLogs.filter(l => l.category === 'Security & Login').length || 24}
+            {auditLogs.filter(l => l.category === 'Security & Login').length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Admin logins &amp; permission grants
@@ -119,7 +132,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
             <Settings size={18} style={{ color: '#D97706' }} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            {auditLogs.filter(l => l.category === 'Catalog & Pricing').length || 18}
+            {auditLogs.filter(l => l.category === 'Catalog & Pricing').length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Product price &amp; plan overrides
@@ -135,7 +148,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
             <FileText size={18} style={{ color: '#7C3AED' }} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
-            {auditLogs.filter(l => l.category === 'Financials & Refunds').length || 14}
+            {auditLogs.filter(l => l.category === 'Financials & Refunds').length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Wallet refunds &amp; report exports
@@ -144,6 +157,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
 
       </div>
 
+      <DataState loading={logsQuery.loading} error={logsQuery.error} onRetry={logsQuery.retry} loadingLabel="Loading audit logs…">
       {/* Filter and Date Bar Toolbar */}
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         
@@ -169,11 +183,11 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
               }}
             >
               <option value="all">All Admin Users</option>
-              <option value="tomadmin@gmail.com">Tom SuperAdmin (Super Admin)</option>
-              <option value="rajesh.admin@milkylush.com">Rajesh Ops (Hub Manager)</option>
-              <option value="priya.ops@milkylush.com">Priya Finance (Finance Admin)</option>
-              <option value="suresh.inventory@milkylush.com">Suresh Stock (Inventory Lead)</option>
+              {adminOptions.map(([email, label]) => (
+                <option key={email} value={email}>{label}</option>
+              ))}
             </select>
+            <DateFilter value={range} onChange={(r) => { setRange(r); setCurrentPage(1); }} presets={['today', 'yesterday', 'last7', 'last30']} allowRange />
           </div>
 
           {/* Search Box & Export CSV */}
@@ -182,7 +196,7 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
               <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input 
                 type="text"
-                placeholder="Search admin, action, or IP..."
+                placeholder="Search admin, action, or record..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -430,6 +444,9 @@ export default function AuditLogsPage({ selectedHubId, auditLogs = [] }: AuditLo
         </div>
 
       </div>
+
+      <LoadMore hasMore={logsQuery.hasMore} loading={logsQuery.loadingMore} onClick={logsQuery.loadMore} />
+      </DataState>
 
       {/* JSON Payload Inspection Modal */}
       {selectedPayloadLog && (

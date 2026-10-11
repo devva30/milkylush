@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -11,93 +11,121 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import type { Order, Product } from '../../types';
+import type { HubId } from '../../data/hubs';
+import { useHubProducts } from '../../data/products';
+import {
+  usePeriodTotals, procurementTotals, loadExpenses, saveExpense, periodRange, NO_EXPENSES,
+  type Period, type ExpenseMonth,
+} from '../../data/commercial';
+import { PageLoader, ErrorState } from '../../components/common/DataState';
 
 interface ProfitLossPageProps {
   selectedHubId: string;
-  orders: Order[];
+  /** Unused: the page loads closed-day totals, purchases and expenses itself. */
+  orders?: Order[];
   products?: Product[];
-  totalRevenue: number;
+  totalRevenue?: number;
   viewMode?: 'profit-loss' | 'products-analytics' | 'expenses';
 }
 
 export default function ProfitLossPage({
   selectedHubId,
-  orders = [],
-  products = [],
-  totalRevenue,
   viewMode = 'profit-loss'
 }: ProfitLossPageProps) {
-  const [dateRange, setDateRange] = useState<'today' | 'this_week' | 'this_month' | 'all_time'>('this_month');
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const [dateRange, setDateRange] = useState<'today' | 'this_week' | 'this_month' | 'this_year'>('this_month');
+  const isHosur = selectedHubId === 'hosur';
   const hubName = isHosur ? 'Hosur Hub' : 'Bangalore Hub';
 
-  // Real-time calculations derived from live orders & catalog products
-  const deliveredOrders = useMemo(() => orders.filter((o) => o.status === 'delivered' || o.status === 'packed' || o.status === 'outForDelivery'), [orders]);
+  const hubId = selectedHubId as HubId;
+  const products = useHubProducts(hubId).data;
+  const period: Period = dateRange === 'today' ? 'today' : dateRange === 'this_week' ? 'week' : dateRange === 'this_year' ? 'year' : 'month';
+  const totalsQuery = usePeriodTotals(hubId, period);
+  const [costs, setCosts] = useState<{ procurement: number; expenses: ExpenseMonth } | null>(null);
+  const [costTick, setCostTick] = useState(0);
 
-  const realTotalRevenue = useMemo(() => {
-    const sumOrders = deliveredOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-    return sumOrders > 0 ? sumOrders : (totalRevenue || 48500);
-  }, [deliveredOrders, totalRevenue]);
+  // Milk bought in the period + expenses (monthly amounts; part of the month for today / this week)
+  useEffect(() => {
+    let alive = true;
+    setCosts(null);
+    const { from, to } = periodRange(period);
+    const thisMonth = to.slice(0, 7);
+    const months = period === 'year'
+      ? Array.from({ length: Number(thisMonth.slice(5, 7)) }, (_, i) => `${thisMonth.slice(0, 4)}-${String(i + 1).padStart(2, '0')}`)
+      : [thisMonth];
+    const daysInMonth = new Date(Number(thisMonth.slice(0, 4)), Number(thisMonth.slice(5, 7)), 0).getDate();
+    const share = period === 'today' ? 1 / daysInMonth : period === 'week' ? 7 / daysInMonth : 1;
+    Promise.all([procurementTotals(hubId, from, to), loadExpenses(hubId, months)]).then(([p, e]) => {
+      if (!alive) return;
+      const scaled = Object.fromEntries(Object.entries(e).map(([k, v]) => [k, Math.round(v * share)])) as unknown as ExpenseMonth;
+      setCosts({ procurement: p.amount, expenses: scaled });
+    }).catch(() => alive && setCosts({ procurement: 0, expenses: { ...NO_EXPENSES } }));
+    return () => { alive = false; };
+  }, [hubId, period, costTick]);
 
-  // Product sales breakdown derived in real-time
-  const productAnalyticsList = useMemo(() => {
-    const map: Record<string, { name: string; category: string; price: number; unitsSold: number; totalRev: number }> = {};
+  const t = totalsQuery.data?.sum;
+  // Sales = delivered drops + counter sales (closed days), in ₹
+  const realTotalRevenue = t ? ((t.deliveredValue ?? 0) + (t.counterSales ?? 0)) / 100 : 0;
+  const deliveredOrders = { length: t?.deliveriesDone ?? 0 };
 
-    // Seed from catalog products
-    products.forEach(p => {
-      map[p.id || p.name] = {
-        name: p.name,
-        category: p.category || 'Fresh Milk',
-        price: p.price || 85,
-        unitsSold: 0,
-        totalRev: 0
-      };
-    });
+  const productAnalyticsList = useMemo(() => (totalsQuery.data?.products ?? []).map((p) => {
+    const catalog = products.find((c) => c.id === p.id);
+    return {
+      name: p.name,
+      category: catalog?.category || '—',
+      price: p.qty ? Math.round(p.value / p.qty) / 100 : 0,
+      unitsSold: p.qty,
+      totalRev: p.value / 100,
+    };
+  }), [totalsQuery.data, products]);
 
-    // Populate from actual orders
-    deliveredOrders.forEach(o => {
-      if (o.items && o.items.length > 0) {
-        o.items.forEach(item => {
-          const key = item.productId || item.productName || item.product?.name || 'A2 Cow Milk';
-          if (!map[key]) {
-            map[key] = {
-              name: item.productName || item.product?.name || 'Fresh Dairy Product',
-              category: 'Fresh Dairy',
-              price: item.price || item.product?.price || 90,
-              unitsSold: 0,
-              totalRev: 0
-            };
-          }
-          const qty = item.quantity || 1;
-          const rev = (item.price || item.product?.price || 90) * qty;
-          map[key].unitsSold += qty;
-          map[key].totalRev += rev;
-        });
-      }
-    });
-
-    // Convert map to array and sort by revenue
-    const arr = Object.values(map);
-    return arr.sort((a, b) => b.totalRev - a.totalRev);
-  }, [deliveredOrders, products]);
-
-  // Real-time Cost Breakdown
-  const cogsProcurement = realTotalRevenue * 0.45; // 45% Raw milk procurement from farmers
-  const cogsPackaging = realTotalRevenue * 0.08;   // 8% Glass bottle packaging
-  const cogsLogistics = deliveredOrders.length * 18 || realTotalRevenue * 0.12; // Driver route drop fee
+  const e = costs?.expenses ?? NO_EXPENSES;
+  const cogsProcurement = (costs?.procurement ?? 0) / 100;
+  const cogsPackaging = e.packaging / 100;
+  const cogsLogistics = e.logistics / 100;
   const totalCogs = cogsProcurement + cogsPackaging + cogsLogistics;
   const grossProfit = realTotalRevenue - totalCogs;
-
-  const opexSalaries = 18500;
-  const opexElectricity = 6500;
-  const opexMarketing = 3200;
+  const opexSalaries = e.payroll / 100;
+  const opexElectricity = e.utilities / 100;
+  const opexMarketing = e.marketing / 100;
   const totalOpex = opexSalaries + opexElectricity + opexMarketing;
   const netProfit = grossProfit - totalOpex;
-  const netMargin = realTotalRevenue > 0 ? ((netProfit / realTotalRevenue) * 100).toFixed(1) : '24.2';
+  const netMargin = realTotalRevenue > 0 ? ((netProfit / (realTotalRevenue || 1)) * 100).toFixed(1) : '0.0';
+
+  // Expenses are entered per month on the Expenses view (click an amount)
+  const editExpense = async (field: keyof ExpenseMonth, label: string) => {
+    const month = periodRange('month').to.slice(0, 7);
+    const raw = window.prompt(`${label} for ${month} (₹, whole month)`);
+    if (raw === null) return;
+    const rupees = Number(raw.replace(/[^\d.]/g, ''));
+    if (!Number.isFinite(rupees) || rupees < 0) { alert('Enter a valid amount.'); return; }
+    await saveExpense(hubId, month, field, Math.round(rupees * 100));
+    setCostTick((x) => x + 1);
+  };
+
+  const csv = (name: string, rows: (string | number)[][]) => {
+    const body = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(body));
+    link.setAttribute('download', `${name}_${hubId}_${periodRange(period).from}_to_${periodRange(period).to}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleExportReport = () => {
-    alert(`Exported ${viewMode === 'products-analytics' ? 'Products Analytics' : viewMode === 'expenses' ? 'Expenses Ledger' : 'P&L Statement'} Report as CSV!`);
+    if (viewMode === 'products-analytics') {
+      csv('Products', [['Product', 'Category', 'Unit price', 'Units delivered', 'Revenue'],
+        ...productAnalyticsList.map((p) => [p.name, p.category, p.price, p.unitsSold, p.totalRev])]);
+    } else {
+      csv(viewMode === 'expenses' ? 'Expenses' : 'ProfitLoss', [['Line', 'Amount (₹)'],
+        ['Sales (delivered + counter)', realTotalRevenue], ['Milk purchases', cogsProcurement], ['Packaging', cogsPackaging],
+        ['Logistics', cogsLogistics], ['Payroll', opexSalaries], ['Utilities', opexElectricity], ['Marketing', opexMarketing],
+        ['Net profit', netProfit]]);
+    }
   };
+
+  if (totalsQuery.error) return <ErrorState message={`Could not load totals: ${totalsQuery.error}`} onRetry={totalsQuery.retry} />;
+  if (!totalsQuery.data || !costs) return <PageLoader label="Loading profit & loss…" />;
 
   // RENDER VIEW 1: PRODUCTS ANALYTICS
   if (viewMode === 'products-analytics') {
@@ -172,7 +200,7 @@ export default function ProfitLossPage({
               </thead>
               <tbody>
                 {productAnalyticsList.map((p, idx) => {
-                  const share = realTotalRevenue > 0 ? ((p.totalRev / realTotalRevenue) * 100).toFixed(1) : '0.0';
+                  const share = realTotalRevenue > 0 ? ((p.totalRev / (realTotalRevenue || 1)) * 100).toFixed(1) : '0.0';
                   return (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>
@@ -204,12 +232,12 @@ export default function ProfitLossPage({
   // RENDER VIEW 2: EXPENSES & CATEGORIES
   if (viewMode === 'expenses') {
     const expenseCategories = [
-      { category: 'Farmer Raw Milk Procurement', vendor: 'Local Dairy Farmers (Hosur & BLR)', monthlyCost: cogsProcurement, type: 'Direct COGS', status: 'PAID' },
-      { category: 'Glass Bottles & Foil Seals', vendor: 'EcoPack Glass Solutions', monthlyCost: cogsPackaging, type: 'Packaging', status: 'PAID' },
-      { category: 'Delivery Rider Fleet Payouts', vendor: 'Logistics Fleet Drivers', monthlyCost: cogsLogistics, type: 'Logistics', status: 'SCHEDULED' },
-      { category: 'Hub Operations & Staff Payroll', vendor: 'Dairy Operations Team', monthlyCost: opexSalaries, type: 'Payroll', status: 'PAID' },
-      { category: 'Cold Storage Refrigeration & Utilities', vendor: 'State Electricity Board', monthlyCost: opexElectricity, type: 'Utilities', status: 'PAID' },
-      { category: 'WhatsApp Marketing & Broadcasts', vendor: 'Meta WhatsApp Business API', monthlyCost: opexMarketing, type: 'Marketing', status: 'PAID' },
+      { category: 'Farmer Raw Milk Procurement', vendor: 'Milk purchases (Farmers page)', monthlyCost: cogsProcurement, type: 'Direct COGS', status: cogsProcurement > 0 ? 'FROM PURCHASES' : 'NONE', field: null },
+      { category: 'Glass Bottles & Foil Seals', vendor: 'Click amount to enter', monthlyCost: cogsPackaging, type: 'Packaging', status: cogsPackaging > 0 ? 'ENTERED' : 'NOT SET', field: 'packaging' as const },
+      { category: 'Delivery Rider Fleet Payouts', vendor: 'Click amount to enter', monthlyCost: cogsLogistics, type: 'Logistics', status: cogsLogistics > 0 ? 'ENTERED' : 'NOT SET', field: 'logistics' as const },
+      { category: 'Hub Operations & Staff Payroll', vendor: 'Click amount to enter', monthlyCost: opexSalaries, type: 'Payroll', status: opexSalaries > 0 ? 'ENTERED' : 'NOT SET', field: 'payroll' as const },
+      { category: 'Cold Storage Refrigeration & Utilities', vendor: 'Click amount to enter', monthlyCost: opexElectricity, type: 'Utilities', status: opexElectricity > 0 ? 'ENTERED' : 'NOT SET', field: 'utilities' as const },
+      { category: 'WhatsApp Marketing & Broadcasts', vendor: 'Click amount to enter', monthlyCost: opexMarketing, type: 'Marketing', status: opexMarketing > 0 ? 'ENTERED' : 'NOT SET', field: 'marketing' as const },
     ];
 
     const totalExpenseSum = expenseCategories.reduce((acc, c) => acc + c.monthlyCost, 0);
@@ -295,7 +323,8 @@ export default function ProfitLossPage({
                     </td>
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{exp.vendor}</td>
                     <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#D97706', fontSize: '0.8rem' }}>{exp.type}</td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#DC2626', fontSize: '0.9rem' }}>₹{exp.monthlyCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                    <td onClick={() => exp.field && editExpense(exp.field, exp.category)} title={exp.field ? 'Click to set this month\'s amount' : 'From milk purchases'}
+                      style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#DC2626', fontSize: '0.9rem', cursor: exp.field ? 'pointer' : 'default', textDecoration: exp.field ? 'underline dotted' : 'none' }}>₹{exp.monthlyCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '10px' }}>
                         {exp.status}
@@ -327,7 +356,7 @@ export default function ProfitLossPage({
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <div style={{ display: 'flex', backgroundColor: 'var(--bg-main)', padding: '4px', borderRadius: '12px', gap: '4px', border: '1px solid var(--border-color)' }}>
-            {(['today', 'this_week', 'this_month', 'all_time'] as const).map((r) => (
+            {(['today', 'this_week', 'this_month', 'this_year'] as const).map((r) => (
               <button
                 key={r}
                 type="button"
@@ -440,19 +469,19 @@ export default function ProfitLossPage({
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Farmer Milk Procurement Payouts (Raw Milk)</td>
               <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 700 }}>Direct Cost</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>- ₹{cogsProcurement.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>45.0%</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsProcurement / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Glass Bottles &amp; Packaging</td>
               <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 700 }}>Direct Cost</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>- ₹{cogsPackaging.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>8.0%</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsPackaging / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Delivery Fleet Rider Drop Fee</td>
               <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 700 }}>Direct Cost</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>- ₹{cogsLogistics.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsLogistics / realTotalRevenue) * 100).toFixed(1)}%</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsLogistics / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
 
             <tr style={{ backgroundColor: 'rgba(217, 119, 6, 0.1)', fontWeight: 800, color: '#D97706' }}>
@@ -462,13 +491,13 @@ export default function ProfitLossPage({
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Hub Operations Staff Salaries</td>
               <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 700 }}>Expense</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>- ₹{opexSalaries.toLocaleString()}</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((opexSalaries / realTotalRevenue) * 100).toFixed(1)}%</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((opexSalaries / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Hub Cold Storage Refrigeration</td>
               <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 700 }}>Expense</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>- ₹{opexElectricity.toLocaleString()}</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((opexElectricity / realTotalRevenue) * 100).toFixed(1)}%</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((opexElectricity / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
 
             <tr style={{ backgroundColor: '#ECFDF5', fontSize: '1rem', fontWeight: 800, color: '#047857' }}>

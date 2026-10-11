@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { auth } from '../firebase';
+import type { HubId } from '../data/hubs';
+import { useHubAdmins, createAdmin, updateAdmin, type AdminDoc, type AdminRole } from '../data/staff';
+import { DataState } from '../components/common/DataState';
 import { Plus } from 'lucide-react';
 
 interface AdminAccount {
@@ -17,36 +21,35 @@ interface AdminAccessPageProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
-  const [adminList, setAdminList] = useState<AdminAccount[]>([
-    {
-      id: 'adm_1',
-      name: 'Tom Admin',
-      email: 'tomadmin@gmail.com',
-      role: 'Super Admin / Owner',
-      hubAccess: 'All Hubs (Hosur + Bangalore)',
-      status: 'Active',
-      permissions: ['orders', 'subscriptions', 'customers', 'billing', 'broadcast']
-    },
-    {
-      id: 'adm_2',
-      name: 'Hosur Hub Manager',
-      email: 'hosur_manager@milkylush.com',
-      role: 'Hosur Hub Manager',
-      hubAccess: 'Hosur Central Hub (TN)',
-      status: 'Active',
-      permissions: ['orders', 'subscriptions', 'customers']
-    },
-    {
-      id: 'adm_3',
-      name: 'Bangalore Hub Manager',
-      email: 'bangalore_manager@milkylush.com',
-      role: 'Bangalore Hub Manager',
-      hubAccess: 'Bangalore Electronic City Hub (KA)',
-      status: 'Active',
-      permissions: ['orders', 'subscriptions', 'customers']
-    }
-  ]);
+// Role / hub labels the screen uses  ⇄  staff doc fields
+const ALL_HUBS = 'All Hubs (Hosur + Bangalore)';
+const HOSUR = 'Hosur Central Hub (TN)';
+const BLR = 'Bangalore Electronic City Hub (KA)';
+const hubIdsFromLabel = (label: string): HubId[] =>
+  label === HOSUR ? ['hosur'] : label === BLR ? ['bengaluru'] : ['hosur', 'bengaluru'];
+const hubLabel = (ids: HubId[] = []): string =>
+  ids.length > 1 ? ALL_HUBS : ids[0] === 'hosur' ? HOSUR : ids[0] === 'bengaluru' ? BLR : '—';
+function roleFromLabel(label: string, hubAccess: string): { role: AdminRole; title: string; hubIds: HubId[] } {
+  if (label === 'Super Admin / Owner') return { role: 'super_admin', title: label, hubIds: ['hosur', 'bengaluru'] };
+  if (label === 'Hosur Hub Manager') return { role: 'hub_admin', title: label, hubIds: ['hosur'] };
+  if (label === 'Bangalore Hub Manager') return { role: 'hub_admin', title: label, hubIds: ['bengaluru'] };
+  return { role: 'hub_admin', title: label, hubIds: hubIdsFromLabel(hubAccess) };
+}
+const toAccount = (d: AdminDoc & { id: string }): AdminAccount => ({
+  id: d.id,
+  name: d.name,
+  email: d.email,
+  role: d.title || (d.role === 'super_admin' ? 'Super Admin / Owner' : 'Hub Manager'),
+  hubAccess: hubLabel(d.hubIds),
+  status: d.active ? 'Active' : 'Disabled',
+  permissions: d.permissions ?? ['orders', 'subscriptions', 'customers'],
+});
+
+export default function AdminAccessPage({ showToast, selectedHubId }: AdminAccessPageProps) {
+  const hubId = (selectedHubId ?? 'hosur') as HubId;
+  const admins = useHubAdmins(hubId);
+  const adminList = useMemo(() => admins.data.map(toAccount).sort((a, b) => a.role.localeCompare(b.role)), [admins.data]);
+  const [saving, setSaving] = useState(false);
 
   // Modal State - Add Admin
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -74,26 +77,28 @@ export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
     setIsAddModalOpen(true);
   };
 
-  const handleCreateAdmin = (e: React.FormEvent) => {
+  const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdmin.email.trim() || !newAdmin.name.trim()) {
       showToast('Please enter both name and email for the new administrator.', 'error');
       return;
     }
-
-    const created: AdminAccount = {
-      id: `adm_${Date.now()}`,
-      name: newAdmin.name.trim(),
-      email: newAdmin.email.trim(),
-      role: newAdmin.role,
-      hubAccess: newAdmin.hubAccess,
-      status: 'Active',
-      permissions: ['orders', 'subscriptions', 'customers']
-    };
-
-    setAdminList([...adminList, created]);
-    showToast(`Created new admin account for ${created.name} (${created.email})! 🔐`, 'success');
-    setIsAddModalOpen(false);
+    const r = roleFromLabel(newAdmin.role, newAdmin.hubAccess);
+    setSaving(true);
+    try {
+      await createAdmin({
+        name: newAdmin.name, email: newAdmin.email, password: newAdmin.password,
+        role: r.role, title: r.title, hubIds: r.hubIds,
+        permissions: r.role === 'super_admin' ? ['orders', 'subscriptions', 'customers', 'billing', 'broadcast'] : ['orders', 'subscriptions', 'customers'],
+      });
+      showToast(`Created admin login for ${newAdmin.name.trim()} (${newAdmin.email.trim()}). Share the password with them privately.`, 'success');
+      setIsAddModalOpen(false);
+    } catch (err) {
+      const msg = (err as Error).message;
+      showToast(/permission/i.test(msg) ? 'Only a super admin can add admins.' : msg, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleOpenEditPermissions = (adm: AdminAccount) => {
@@ -101,16 +106,39 @@ export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
     setIsEditModalOpen(true);
   };
 
-  const handleSavePermissions = () => {
+  const handleSavePermissions = async () => {
     if (!editingAdmin) return;
-    setAdminList(adminList.map(a => a.id === editingAdmin.id ? editingAdmin : a));
-    showToast(`Updated security roles and permissions for ${editingAdmin.name}!`, 'success');
-    setIsEditModalOpen(false);
+    if (editingAdmin.id === auth.currentUser?.uid && editingAdmin.status === 'Disabled') {
+      showToast('You cannot disable your own account.', 'error');
+      return;
+    }
+    const r = roleFromLabel(editingAdmin.role, editingAdmin.hubAccess);
+    setSaving(true);
+    try {
+      await updateAdmin(editingAdmin.id, {
+        role: r.role, title: r.title, hubIds: r.hubIds, permissions: editingAdmin.permissions, active: editingAdmin.status === 'Active',
+      });
+      showToast(`Updated role and permissions for ${editingAdmin.name}.`, 'success');
+      setIsEditModalOpen(false);
+    } catch (err) {
+      const msg = (err as Error).message;
+      showToast(/permission/i.test(msg) ? 'Only a super admin can change admin accounts.' : `Could not save: ${msg}`, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteAdmin = (id: string, name: string) => {
-    setAdminList(adminList.filter(a => a.id !== id));
-    showToast(`Revoked admin access for ${name}.`, 'info');
+  // Access is revoked by disabling the account (the login stays, but every rule check fails).
+  const handleDeleteAdmin = async (id: string, name: string) => {
+    if (id === auth.currentUser?.uid) { showToast('You cannot revoke your own access.', 'error'); return; }
+    if (!window.confirm(`Revoke admin access for ${name}? They will be signed out of all data immediately.`)) return;
+    try {
+      await updateAdmin(id, { active: false });
+      showToast(`Revoked admin access for ${name}.`, 'info');
+    } catch (err) {
+      const msg = (err as Error).message;
+      showToast(/permission/i.test(msg) ? 'Only a super admin can revoke admins.' : `Could not revoke: ${msg}`, 'error');
+    }
   };
 
   const togglePermission = (perm: string) => {
@@ -156,6 +184,7 @@ export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
         </button>
       </div>
 
+      <DataState loading={admins.loading} error={admins.error} onRetry={admins.retry} loadingLabel="Loading admin accounts…">
       {/* Admin Accounts Table Panel */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -249,6 +278,8 @@ export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
           </table>
         </div>
       </div>
+
+      </DataState>
 
       {/* MODAL 1: ADD ADMIN USER MODAL */}
       {isAddModalOpen && (
@@ -359,7 +390,7 @@ export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  type="submit" disabled={saving}
                   style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Save Admin
@@ -478,7 +509,7 @@ export default function AdminAccessPage({ showToast }: AdminAccessPageProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={handleSavePermissions}
+                  onClick={handleSavePermissions} disabled={saving}
                   style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Save Security Changes

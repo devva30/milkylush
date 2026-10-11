@@ -26,7 +26,7 @@ export default function PortalGatewayPage({
   const [btnHover, setBtnHover] = useState(false);
   const [logoutHover, setLogoutHover] = useState(false);
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
   const hubTitle = isHosur ? 'Hosur Management Portal' : 'Bangalore Management Portal';
   const hubSubtitle = isHosur ? 'Dedicated Hub Management System (Hosur Operations Only)' : 'Dedicated Hub Management System (Bangalore Operations Only)';
   const stateBadge = isHosur ? 'Tamil Nadu' : 'Karnataka';

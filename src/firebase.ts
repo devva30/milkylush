@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
@@ -18,10 +18,16 @@ const app = initializeApp(firebaseConfig);
 
 // Export Auth
 export const auth = getAuth(app);
-export const secondaryAuth = auth;
 
-// Initialize Cloud Firestore and export it
-export const db = getFirestore(app);
+// Secondary Auth instance for creating user/driver accounts without signing out active admin session
+const secondaryApp = initializeApp(firebaseConfig, 'SecondaryAuthApp');
+export const secondaryAuth = getAuth(secondaryApp);
+
+// Cloud Firestore with an on-disk cache shared by all open tabs: pages revisited
+// render instantly from cache and only changed documents are re-downloaded.
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 
 // Initialize Storage and export it
 export const storage = getStorage(app);

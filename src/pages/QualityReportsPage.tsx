@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Search, Trash2, Edit3, ShieldCheck, CheckCircle2, FileText, ExternalLink } from 'lucide-react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
+import { hubCol, hubDoc, type HubId } from '../data/hubs';
+import { todayKey } from '../data/dates';
+import { useLiveQuery } from '../data/useFirestore';
+import { logAudit } from '../utils/auditLogger';
+import { DataState } from '../components/common/DataState';
 
 interface QualityReport {
   id: string;
@@ -21,15 +25,19 @@ interface QualityReportsPageProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export default function QualityReportsPage({ showToast }: QualityReportsPageProps) {
-  const [reports, setReports] = useState<QualityReport[]>([]);
+export default function QualityReportsPage({ selectedHubId, showToast }: QualityReportsPageProps) {
+  const hubId = selectedHubId as HubId;
+  // This hub's lab reports (shown in its customer app), newest first
+  const reportsQuery = useLiveQuery<Omit<QualityReport, 'id'>>(
+    query(hubCol(hubId, 'qualityReports'), orderBy('date', 'desc'), limit(100)), [hubId]);
+  const reports: QualityReport[] = reportsQuery.data;
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingReport, setEditingReport] = useState<QualityReport | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayKey());
   const [fat, setFat] = useState('4.5%');
   const [snf, setSnf] = useState('8.6%');
   const [purity, setPurity] = useState('100%');
@@ -38,21 +46,10 @@ export default function QualityReportsPage({ showToast }: QualityReportsPageProp
   const [certificateUrl, setCertificateUrl] = useState('');
   const [active, setActive] = useState(true);
 
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'quality_reports'), (snapshot) => {
-      const list: QualityReport[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<QualityReport, 'id'>),
-      }));
-      setReports(list);
-    });
-    return () => unsub();
-  }, []);
-
   const handleOpenAddModal = () => {
     setEditingReport(null);
     setTitle('A2 Pure Cow Milk Lab Purity Test');
-    setDate(new Date().toISOString().slice(0, 10));
+    setDate(todayKey());
     setFat('4.5%');
     setSnf('8.6%');
     setPurity('100%');
@@ -93,16 +90,18 @@ export default function QualityReportsPage({ showToast }: QualityReportsPageProp
         imageUrl: imageUrl.trim(),
         certificateUrl: certificateUrl.trim(),
         active,
-        updatedAt: new Date().toISOString(),
+        hubId,
+        updatedAt: serverTimestamp(),
       };
 
       if (editingReport) {
-        await updateDoc(doc(db, 'quality_reports', editingReport.id), payload);
+        await updateDoc(hubDoc(hubId, 'qualityReports', editingReport.id), payload);
         showToast(`Updated lab report "${title}"`, 'success');
       } else {
-        await addDoc(collection(db, 'quality_reports'), payload);
+        await addDoc(hubCol(hubId, 'qualityReports'), { ...payload, createdAt: serverTimestamp() });
         showToast(`Added new quality report "${title}"`, 'success');
       }
+      await logAudit({ hubId, category: 'Catalog & Pricing', action: `${editingReport ? 'Updated' : 'Added'} quality report "${title.trim()}"`, target: `hubs/${hubId}/qualityReports` });
       setShowModal(false);
     } catch (err) {
       showToast(`Error saving quality report: ${err}`, 'error');
@@ -112,7 +111,8 @@ export default function QualityReportsPage({ showToast }: QualityReportsPageProp
   const handleDeleteReport = async (id: string, reportTitle: string) => {
     if (window.confirm(`Are you sure you want to delete lab report "${reportTitle}"?`)) {
       try {
-        await deleteDoc(doc(db, 'quality_reports', id));
+        await deleteDoc(hubDoc(hubId, 'qualityReports', id));
+        await logAudit({ hubId, category: 'Catalog & Pricing', action: `Deleted quality report "${reportTitle}"`, target: `hubs/${hubId}/qualityReports/${id}` });
         showToast(`Deleted quality report "${reportTitle}"`, 'info');
       } catch (err) {
         showToast(`Error deleting report: ${err}`, 'error');
@@ -124,6 +124,10 @@ export default function QualityReportsPage({ showToast }: QualityReportsPageProp
     r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.labName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (reportsQuery.loading || reportsQuery.error) {
+    return <DataState loading={reportsQuery.loading} error={reportsQuery.error} onRetry={reportsQuery.retry} loadingLabel="Loading quality reports…">{null}</DataState>;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>

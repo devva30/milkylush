@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { UserCheck, UserX, Clock, Search, Calendar, BarChart2, CheckCircle, AlertTriangle, ShieldCheck, MapPin, Phone, RefreshCw } from 'lucide-react';
-import { doc, updateDoc, setDoc, addDoc, collection, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { setDoc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
+import { auth } from '../../firebase';
+import { hubCol, hubDoc } from '../../data/hubs';
+import { todayKey, toDate } from '../../data/dates';
+import { PageLoader } from '../../components/common/DataState';
 import type { DeliveryAgent } from '../../types';
 
 interface DispatchAttendancePageProps {
@@ -28,10 +31,10 @@ export default function DispatchAttendancePage({
 }: DispatchAttendancePageProps) {
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey());
+  const [selectedMonth, setSelectedMonth] = useState<string>(todayKey().slice(0, 7)); // YYYY-MM
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
-  const [pickerYear, setPickerYear] = useState<number>(parseInt(new Date().toISOString().slice(0, 4), 10));
+  const [pickerYear, setPickerYear] = useState<number>(parseInt(todayKey().slice(0, 4), 10));
   const [updatingAgentId, setUpdatingAgentId] = useState<string | null>(null);
   const [selectedRiderForModal, setSelectedRiderForModal] = useState<DeliveryAgent | null>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord[]>>({});
@@ -39,18 +42,19 @@ export default function DispatchAttendancePage({
 
   const isHosur = selectedHubId.includes('hosur');
 
-  // Filter agents for selected hub
-  const filteredAgents = (hubDeliveryAgents || []).filter((agent) => {
-    const isHubMatch = (agent.hubId || agent.assignedHubId) === selectedHubId ||
-      (isHosur ? (agent.assignedZone || '').toLowerCase().includes('hosur') : !(agent.assignedZone || '').toLowerCase().includes('hosur'));
-    if (!isHubMatch) return false;
-
-    return (
+  // Riders are already this hub's (staff with hubIds containing it). The chosen day's
+  // attendance doc decides present/absent; no doc yet = unchecked.
+  const dayStatus = (agentId: string) =>
+    (attendanceRecords[agentId] || []).find((l) => l.date === selectedDate)?.status;
+  const filteredAgents = (hubDeliveryAgents || [])
+    .map((agent) => {
+      const st = dayStatus(agent.id);
+      return { ...agent, attendanceStatus: st === 'present' || st === 'completed' ? 'present' : st === 'absent' ? 'absent' : undefined } as DeliveryAgent;
+    })
+    .filter((agent) =>
       (agent.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (agent.phone || '').includes(searchQuery) ||
-      (agent.assignedZone || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+      (agent.assignedZone || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
   // Calculate days in selected month
   const [yearStr, monthStr] = selectedMonth.split('-');
@@ -59,54 +63,46 @@ export default function DispatchAttendancePage({
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // Stream real-time attendance logs from `rider_attendance` and `attendance_logs`
+  // Live attendance for one month of this hub: the month being viewed, or the chosen day's month.
+  const queryMonth = viewMode === 'daily' ? selectedDate.slice(0, 7) : selectedMonth;
   useEffect(() => {
     setIsLoadingLogs(true);
-    const startDate = `${selectedMonth}-01`;
-    const endDate = `${selectedMonth}-${daysInMonth.toString().padStart(2, '0')}`;
-
-    // 1. Stream from `rider_attendance` (App Punch In/Out records)
-    const qRider = query(
-      collection(db, 'rider_attendance'),
-      where('date', '>=', startDate),
-      where('date', '<=', endDate)
-    );
-
-    const unsubscribe = onSnapshot(qRider, (snapshot) => {
+    const [qy, qm] = queryMonth.split('-').map(Number);
+    const startDate = `${queryMonth}-01`;
+    const endDate = `${queryMonth}-${String(new Date(qy, qm, 0).getDate()).padStart(2, '0')}`;
+    const timeOf = (v: unknown) => {
+      const d = toDate(v);
+      return d ? d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : undefined;
+    };
+    const q = query(hubCol(selectedHubId, 'attendance'), where('date', '>=', startDate), where('date', '<=', endDate));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const recordsByAgent: Record<string, AttendanceRecord[]> = {};
-
       snapshot.docs.forEach((docSnap) => {
         const data = docSnap.data();
-        const agentId = data.agentId || docSnap.id.split('_')[0];
+        const agentId = data.riderUid as string;
         if (!agentId) return;
-
-        if (!recordsByAgent[agentId]) {
-          recordsByAgent[agentId] = [];
-        }
-
-        recordsByAgent[agentId].push({
+        (recordsByAgent[agentId] ||= []).push({
           date: data.date,
           agentId,
-          status: data.status === 'completed' || data.status === 'present' ? 'present' : (data.status || 'present'),
-          punchInTimeStr: data.punchInTimeStr || (data.punchIn ? new Date(data.punchIn.toDate?.() || data.punchIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '06:00 AM'),
-          punchOutTimeStr: data.punchOutTimeStr || (data.punchOut ? new Date(data.punchOut.toDate?.() || data.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined),
-          punchInLat: data.punchInLat,
-          punchInLng: data.punchInLng,
+          status: data.status === 'leave' ? 'absent' : data.status,
+          punchInTimeStr: timeOf(data.checkInAt),
+          punchOutTimeStr: timeOf(data.checkOutAt),
+          punchInLat: data.checkInLat,
+          punchInLng: data.checkInLng,
         });
       });
-
       setAttendanceRecords(recordsByAgent);
       setIsLoadingLogs(false);
     }, (err) => {
-      console.warn("Error streaming rider attendance:", err);
+      console.warn('Attendance listener:', err);
+      showToast(`Could not load attendance: ${err.message}`, 'error');
       setIsLoadingLogs(false);
     });
-
     return () => unsubscribe();
-  }, [selectedMonth, daysInMonth]);
+  }, [selectedHubId, queryMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Overall statistics calculation
-  const presentCount = filteredAgents.filter((a) => a.attendanceStatus === 'present' || a.isOnline).length;
+  const presentCount = filteredAgents.filter((a) => a.attendanceStatus === 'present').length;
   const absentCount = filteredAgents.filter((a) => a.attendanceStatus === 'absent').length;
   const uncheckedCount = Math.max(0, filteredAgents.length - presentCount - absentCount);
   const punctualityRate = filteredAgents.length > 0 ? Math.round((presentCount / filteredAgents.length) * 100) : 100;
@@ -115,34 +111,17 @@ export default function DispatchAttendancePage({
     setUpdatingAgentId(agent.id);
     const isPresent = newStatus === 'present';
     const targetDate = dateToUpdate || selectedDate;
-    const docId = `${agent.id}_${targetDate}`;
 
     try {
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      // 1. Update Firestore rider_attendance document
-      await setDoc(doc(db, 'rider_attendance', docId), {
-        agentId: agent.id,
-        agentName: agent.name,
+      // Admin override: only the status is set; real check-in/out times come from the rider app.
+      await setDoc(hubDoc(selectedHubId, 'attendance', `${targetDate}_${agent.id}`), {
+        riderUid: agent.id,
+        riderName: agent.name,
         date: targetDate,
         status: newStatus,
-        punchInTimeStr: isPresent ? nowStr : '-',
-        punchOutTimeStr: isPresent ? '02:00 PM' : '-',
-        updatedBy: 'Admin Console Override',
+        markedBy: auth.currentUser?.uid ?? null,
         updatedAt: serverTimestamp(),
       }, { merge: true });
-
-      // 2. If today, update live delivery_agents collection document
-      if (targetDate === new Date().toISOString().slice(0, 10)) {
-        await updateDoc(doc(db, 'delivery_agents', agent.id), {
-          attendanceStatus: newStatus,
-          isOnline: isPresent,
-          status: isPresent ? 'online' : 'offline',
-          lastShiftUpdate: serverTimestamp(),
-        });
-        agent.attendanceStatus = newStatus;
-        agent.isOnline = isPresent;
-      }
 
       showToast(
         `Updated attendance for "${agent.name}" on ${targetDate}: Marked ${newStatus.toUpperCase()}!`,
@@ -179,7 +158,7 @@ export default function DispatchAttendancePage({
                 Rider Shift & Attendance Dispatch Roster
               </h2>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
-                Real-time punch logs, monthly attendance matrix & admin overrides for <strong>{selectedHubId === 'hub_bengaluru' ? 'Bangalore Hub' : 'Hosur Central Hub'}</strong>
+                Real-time punch logs, monthly attendance matrix & admin overrides for <strong>{selectedHubId === 'bengaluru' ? 'Bangalore Hub' : 'Hosur Central Hub'}</strong>
               </p>
             </div>
           </div>
@@ -339,14 +318,13 @@ export default function DispatchAttendancePage({
                   {/* Bottom Action Footer */}
                   <div style={{
                     display: 'flex',
-                    justify: 'space-between',
                     alignItems: 'center',
                     borderTop: '1px solid #F1F5F9',
                     paddingTop: '8px'
                   }}>
                     <button
                       onClick={() => {
-                        setSelectedMonth(new Date().toISOString().slice(0, 7));
+                        setSelectedMonth(todayKey().slice(0, 7));
                         setIsMonthPickerOpen(false);
                       }}
                       style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
@@ -356,7 +334,7 @@ export default function DispatchAttendancePage({
 
                     <button
                       onClick={() => {
-                        const nowKey = new Date().toISOString().slice(0, 7);
+                        const nowKey = todayKey().slice(0, 7);
                         setSelectedMonth(nowKey);
                         setPickerYear(parseInt(nowKey.slice(0, 4), 10));
                         setIsMonthPickerOpen(false);
@@ -383,6 +361,8 @@ export default function DispatchAttendancePage({
         </div>
       </div>
 
+      {isLoadingLogs && <PageLoader label="Loading attendance…" />}
+
       {/* Top Metric KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -393,7 +373,7 @@ export default function DispatchAttendancePage({
             </div>
           </div>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E293B', marginTop: '6px' }}>{filteredAgents.length} Riders</div>
-          <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>Assigned to {selectedHubId === 'hub_bengaluru' ? 'Bangalore' : 'Hosur'} Hub</div>
+          <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>Assigned to {selectedHubId === 'bengaluru' ? 'Bangalore' : 'Hosur'} Hub</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #86EFAC', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -612,7 +592,7 @@ export default function DispatchAttendancePage({
                   </tr>
                 ) : (
                   filteredAgents.map((agent) => {
-                    const isPresent = agent.attendanceStatus === 'present' || agent.isOnline;
+                    const isPresent = agent.attendanceStatus === 'present';
                     const isAbsent = agent.attendanceStatus === 'absent';
                     const isUpdating = updatingAgentId === agent.id;
 
@@ -627,7 +607,7 @@ export default function DispatchAttendancePage({
                         </td>
 
                         <td style={{ padding: '0.9rem 1.25rem', fontSize: '0.85rem', color: '#334155', fontWeight: 600, textAlign: 'left' }}>
-                          {selectedHubId === 'hub_bengaluru' ? 'Bangalore Hub' : 'Hosur Central Hub'}
+                          {selectedHubId === 'bengaluru' ? 'Bangalore Hub' : 'Hosur Central Hub'}
                         </td>
 
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
@@ -813,10 +793,10 @@ export default function DispatchAttendancePage({
                             {dayStr}
                           </td>
                           <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
-                            {isPresent ? (log?.punchInTimeStr || '06:30 AM') : '-'}
+                            {isPresent ? (log?.punchInTimeStr || 'Marked by admin') : '-'}
                           </td>
                           <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
-                            {isPresent ? (log?.punchOutTimeStr || '02:00 PM') : '-'}
+                            {isPresent ? (log?.punchOutTimeStr || '-') : '-'}
                           </td>
                           <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                             <span style={{

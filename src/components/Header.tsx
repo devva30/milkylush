@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Sun, Moon, Bell, Menu, Search, LogOut } from 'lucide-react';
+import { MapPin, Sun, Moon, Bell, Menu, Search, LogOut, RefreshCw } from 'lucide-react';
 import { HUBS } from '../context/HubContext';
 import NotificationCenter from './NotificationCenter';
 import type { Order, Subscription } from '../types';
@@ -38,7 +38,7 @@ export default function Header({
   onNavigateTab
 }: HeaderProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const activeHub = HUBS[selectedHubId] || HUBS.hub_bangalore_main;
+  const activeHub = HUBS[selectedHubId] || HUBS.hosur;
 
   const getTabTitle = (tab: string) => {
     switch (tab) {
@@ -136,6 +136,26 @@ export default function Header({
       {/* Right: Theme Toggle, Notifications, Admin Profile Pill & Logout */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 
+        {/* Refresh Portal Data Button */}
+        <button 
+          onClick={() => window.location.reload()}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'var(--bg-main)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            color: '#047857',
+            cursor: 'pointer'
+          }}
+          title="Refresh Portal Data"
+        >
+          <RefreshCw size={16} />
+        </button>
+
         {/* Theme Toggle Button */}
         <button 
           onClick={onToggleTheme}
@@ -188,7 +208,7 @@ export default function Header({
               borderRadius: '10px',
               border: '2px solid var(--bg-card)'
             }}>
-              {Math.max(1, orders.filter(o => o.status === 'packed' || o.status === 'outForDelivery').length)}
+              {orders.filter(o => o.status === 'pending' || o.status === 'packed' || o.status === 'outForDelivery').length}
             </span>
           </button>
 

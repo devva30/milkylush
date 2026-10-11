@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { todayKey } from '../../data/dates';
 import { Download, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import type { Order, DeliveryAgent, User, Product } from '../../types';
 import FulfillmentSheetView from '../../components/common/FulfillmentSheetView';
@@ -32,34 +33,15 @@ export default function DispatchTodaysDeliveriesPage({
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const isHosur = selectedHubId === 'hub_hosur_main' || selectedHubId === 'hub_hosur';
-  const hubCodeName = isHosur ? 'hub_hosur_main' : 'hub_blr_ecity';
+  const isHosur = selectedHubId === 'hosur' || selectedHubId === 'hub_hosur';
+  const hubCodeName = isHosur ? 'hosur' : 'bengaluru';
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayKey();
 
-  // Dynamic today filtering: Exclude delivered/cancelled orders, include active today orders & subscriptions
-  const todayOnlyOrders = useMemo(() => {
-    const rawList = hubOrders || [];
-    const now = new Date();
-    const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-    return rawList.filter((o) => {
-      if (o.status === 'delivered' || o.status === 'cancelled') return false;
-
-      if (!o.orderDate) return true;
-      if (o.orderDate.startsWith(todayStr) || o.orderDate.startsWith(localDateStr)) return true;
-      
-      const parsed = new Date(o.orderDate);
-      if (!isNaN(parsed.getTime())) {
-        const pStr = parsed.toISOString().slice(0, 10);
-        if (pStr === todayStr || pStr === localDateStr) return true;
-      }
-      if (o.isSubscriptionDelivery || o.orderType === 'subscription') {
-        return true;
-      }
-      return true;
-    });
-  }, [hubOrders, todayStr]);
+  // The chosen day's drops (the page shell loads exactly that IST day); cancelled and skipped drops are not work.
+  const todayOnlyOrders = useMemo(
+    () => (hubOrders || []).filter((o) => o.status !== 'cancelled' && (o.status as string) !== 'skipped'),
+    [hubOrders]);
 
   const activeOrdersList = todayOnlyOrders;
 
@@ -118,7 +100,7 @@ export default function DispatchTodaysDeliveriesPage({
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `Today_Deliveries_${isHosur ? 'Hosur' : 'Bangalore'}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Today_Deliveries_${isHosur ? 'Hosur' : 'Bangalore'}_${todayStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

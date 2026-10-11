@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Download, Search, ChevronLeft, ChevronRight, ArrowLeft, ExternalLink, FileText, ClipboardList, Trash2, Save, Truck } from 'lucide-react';
+import type { HubId } from '../data/hubs';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Order, Subscription, DeliveryAgent, User, Product } from '../types';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
+import { matchesDatePreset, matchesCustomDateRange } from '../utils/dateFilterUtils';
 
 interface AllDeliveriesPageProps {
   selectedHubId: string;
@@ -97,7 +99,7 @@ export default function AllDeliveriesPage({
   const [pageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
   const hubCodeName = isHosur ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub';
 
   // Combine real-time active (non-delivered) orders & subscriptions
@@ -129,7 +131,7 @@ export default function AllDeliveriesPage({
         rawDate: isNaN(parsedDate.getTime()) ? todayStart : parsedDate,
         status: (o.status as any) || 'packed',
         deliveryAgentId: o.deliveryAgentId,
-        totalAmount: o.totalAmount || 110,
+        totalAmount: o.totalAmount ?? 0,
         isSub: isSubOrder,
         deliveryInstructions: o.deliveryInstructions || '',
         rawObject: o,
@@ -175,32 +177,12 @@ export default function AllDeliveriesPage({
 
   // Filter combined entries by Date Range, Type, Status & Search
   const filteredEntries = useMemo(() => {
-    const now = new Date();
-    const todayStr = getTodayFormatted();
-
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
-    const monthAgo = new Date(now);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-
     return combinedEntries.filter((item) => {
       // 1. Date Range Filter
-      if (dateFilter === 'today') {
-        if (item.dateStr !== todayStr) return false;
-      } else if (dateFilter === 'yesterday') {
-        if (item.dateStr !== yesterdayStr) return false;
-      } else if (dateFilter === 'week') {
-        if (item.rawDate < weekAgo) return false;
-      } else if (dateFilter === 'month') {
-        if (item.rawDate < monthAgo) return false;
-      } else if (dateFilter === 'custom') {
-        if (customStartDate && item.dateStr < customStartDate) return false;
-        if (customEndDate && item.dateStr > customEndDate) return false;
+      if (dateFilter === 'custom') {
+        if (!matchesCustomDateRange(item.rawDate || item.dateStr, customStartDate, customEndDate)) return false;
+      } else {
+        if (!matchesDatePreset(item.rawDate || item.dateStr, dateFilter)) return false;
       }
 
       // 2. Order Type Filter (Strict Check)
@@ -290,7 +272,7 @@ export default function AllDeliveriesPage({
       <FulfillmentSheetView
         order={targetOrder}
         users={users}
-        products={_products}
+        deliveryHubId={selectedHubId as HubId}
         deliveryAgents={deliveryAgents}
         selectedHubId={selectedHubId}
         onClose={() => setSelectedEntry(null)}

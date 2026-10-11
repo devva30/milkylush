@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { todayKey, addDays } from '../../data/dates';
 import { Package, Truck, CheckCircle2, Search, Filter, Eye, Calendar } from 'lucide-react';
 import type { Order, DeliveryAgent, User, Product } from '../../types';
 import FulfillmentSheetView from '../../components/common/FulfillmentSheetView';
@@ -32,8 +33,9 @@ export default function DispatchActiveBoardPage({
   const [statusFilter, setStatusFilter] = useState<'all' | 'packed' | 'outForDelivery' | 'delivered' | 'cancelled'>('all');
   const [selectedFulfillmentOrder, setSelectedFulfillmentOrder] = useState<Order | null>(null);
 
-  const isHosur = selectedHubId === 'hub_hosur_main' || selectedHubId === 'hub_hosur';
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const isHosur = selectedHubId === 'hosur' || selectedHubId === 'hub_hosur';
+  const todayStr = todayKey();
+  const weekStart = addDays(todayStr, -6);
 
   const filteredOrders = useMemo(() => {
     return displayOrders.filter(order => {
@@ -66,14 +68,14 @@ export default function DispatchActiveBoardPage({
       if (statusFilter === 'cancelled' && order.status !== 'cancelled') return false;
 
       // 4. Date Filter
-      if (dateFilter === 'today') {
-        const orderDateStr = (order.orderDate || '').slice(0, 10);
-        if (orderDateStr && orderDateStr !== todayStr && !isSub) return false;
-      }
+      // orderDate is the drop's IST day (yyyy-MM-dd)
+      const orderDateStr = (order.orderDate || '').slice(0, 10);
+      if (dateFilter === 'today' && orderDateStr !== todayStr) return false;
+      if (dateFilter === 'week' && (orderDateStr < weekStart || orderDateStr > todayStr)) return false;
 
       return true;
     });
-  }, [displayOrders, users, searchQuery, typeFilter, statusFilter, dateFilter, todayStr]);
+  }, [displayOrders, users, searchQuery, typeFilter, statusFilter, dateFilter, todayStr, weekStart]);
 
   // Shared Common Fulfillment Sheet View
   if (selectedFulfillmentOrder) {

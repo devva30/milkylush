@@ -1,70 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LayoutDashboard, Truck, Users, Calendar, IndianRupee, MapPin } from 'lucide-react';
 import type { Order, Subscription, User, Product, DeliveryAgent } from '../types';
+import type { HubId } from '../data/hubs';
+import { todayKey, formatDay } from '../data/dates';
+import { useHubCounts, loadDayStats, loadMonthStats, loadRecentOrders, type RecentOrder } from '../data/stats';
+import { PageLoader, ErrorState } from '../components/common/DataState';
 
 interface DashboardPageProps {
   selectedHubId: string;
   adminUsername: string;
-  hubOrders: Order[];
-  hubUsers: User[];
-  hubSubscriptions: Subscription[];
+  /** Unused: the dashboard loads counts itself. Kept so callers compile. */
+  hubOrders?: Order[];
+  hubUsers?: User[];
+  hubSubscriptions?: Subscription[];
   hubDeliveryAgents: DeliveryAgent[];
-  products: Product[];
-  totalRevenue: number;
+  products?: Product[];
+  totalRevenue?: number;
   onNavigateTab: (tabName: string) => void;
 }
 
 export default function DashboardPage({
   selectedHubId,
   adminUsername,
-  hubOrders,
-  hubUsers,
-  hubSubscriptions,
   hubDeliveryAgents,
-  products,
-  totalRevenue,
   onNavigateTab
 }: DashboardPageProps) {
   const [dashboardFilter, setDashboardFilter] = useState<'week' | 'month' | 'year'>('month');
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
   const hubName = isHosur ? 'Hosur Management Portal' : 'Bangalore Management Portal';
 
-  // Calculate dynamic sales/volume for chart
-  const getAggregatedData = () => {
-    if (dashboardFilter === 'week') {
-      return [
-        { label: 'Mon', revenue: totalRevenue * 0.12, volume: 120 },
-        { label: 'Tue', revenue: totalRevenue * 0.15, volume: 145 },
-        { label: 'Wed', revenue: totalRevenue * 0.18, volume: 160 },
-        { label: 'Thu', revenue: totalRevenue * 0.14, volume: 135 },
-        { label: 'Fri', revenue: totalRevenue * 0.16, volume: 150 },
-        { label: 'Sat', revenue: totalRevenue * 0.22, volume: 210 },
-        { label: 'Sun', revenue: totalRevenue * 0.25, volume: 240 }
-      ];
-    } else if (dashboardFilter === 'year') {
-      return [
-        { label: 'Jan', revenue: totalRevenue * 0.7, volume: 1200 },
-        { label: 'Feb', revenue: totalRevenue * 0.8, volume: 1350 },
-        { label: 'Mar', revenue: totalRevenue * 0.9, volume: 1500 },
-        { label: 'Apr', revenue: totalRevenue * 0.85, volume: 1400 },
-        { label: 'May', revenue: totalRevenue * 0.95, volume: 1600 },
-        { label: 'Jun', revenue: totalRevenue * 1.0, volume: 1750 },
-        { label: 'Jul', revenue: totalRevenue * 1.1, volume: 1900 },
-        { label: 'Aug', revenue: totalRevenue * 1.05, volume: 1800 },
-        { label: 'Sep', revenue: totalRevenue * 1.15, volume: 1950 },
-        { label: 'Oct', revenue: totalRevenue * 1.2, volume: 2100 },
-        { label: 'Nov', revenue: totalRevenue * 1.25, volume: 2200 },
-        { label: 'Dec', revenue: totalRevenue * 1.3, volume: 2350 }
-      ];
-    }
-    return [
-      { label: 'W1', revenue: totalRevenue * 0.2, volume: 450 },
-      { label: 'W2', revenue: totalRevenue * 0.25, volume: 520 },
-      { label: 'W3', revenue: totalRevenue * 0.28, volume: 580 },
-      { label: 'W4', revenue: totalRevenue * 0.32, volume: 640 }
-    ];
-  };
+  const hubId = selectedHubId as HubId;
+  const { counts, error, retry } = useHubCounts(hubId);
+  const [chartData, setChartData] = useState<{ label: string; revenue: number; volume: number }[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+
+  // Chart from the closed-day totals: revenue (₹) bars, delivered drops line
+  useEffect(() => {
+    let alive = true;
+    const toPoint = (label: string, st: { revenue: number; deliveriesDone: number }) => ({ label, revenue: st.revenue / 100, volume: st.deliveriesDone });
+    (async () => {
+      if (dashboardFilter === 'year') {
+        const months = await loadMonthStats(hubId, todayKey().slice(0, 4));
+        const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months.map((m, i) => toPoint(names[i], m.stats));
+      }
+      if (dashboardFilter === 'week') {
+        const days = await loadDayStats(hubId, 7);
+        return days.map((d) => toPoint(formatDay(d.date).slice(0, 6), d.stats));
+      }
+      const days = await loadDayStats(hubId, 28);
+      return [0, 1, 2, 3].map((w) => {
+        const part = days.slice(w * 7, w * 7 + 7);
+        return toPoint(`W${w + 1}`, {
+          revenue: part.reduce((a, d) => a + d.stats.revenue, 0),
+          deliveriesDone: part.reduce((a, d) => a + d.stats.deliveriesDone, 0),
+        });
+      });
+    })().then((pts) => alive && setChartData(pts)).catch((err) => console.warn('Dashboard chart:', err));
+    return () => { alive = false; };
+  }, [hubId, dashboardFilter]);
+
+  useEffect(() => {
+    let alive = true;
+    loadRecentOrders(hubId).then((o) => alive && setRecentOrders(o)).catch((err) => console.warn('Recent orders:', err));
+    return () => { alive = false; };
+  }, [hubId]);
+
+  if (error) return <ErrorState message={`Could not load the dashboard: ${error}`} onRetry={retry} />;
+  if (!counts) return <PageLoader label="Loading dashboard…" />;
+  const c = counts;
+  const totalRevenue = c.monthRevenue / 100;
+  const getAggregatedData = () => chartData;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
@@ -75,7 +82,7 @@ export default function DashboardPage({
           Good morning, {adminUsername || 'Admin'}
         </h2>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-          Here is the real-time operational status for <strong>{hubName}</strong> today ({new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}).
+          Here is the real-time operational status for <strong>{hubName}</strong> today ({formatDay(todayKey())}).
         </p>
       </div>
 
@@ -105,7 +112,7 @@ export default function DashboardPage({
               Catalog &amp; Orders
             </div>
             <div style={{ fontSize: '0.75rem', opacity: 0.95, marginTop: '4px' }}>
-              {hubOrders.length} Active Orders • {products.length} Products
+              {c.placedOrders} Active Orders • {c.products} Products
             </div>
           </div>
           <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '0.6rem', borderRadius: '12px' }}>
@@ -182,7 +189,7 @@ export default function DashboardPage({
           <div>
             <div className="metric-label">TOTAL REVENUE</div>
             <div className="metric-val">₹{totalRevenue.toLocaleString('en-IN')}</div>
-            <div className="metric-trend up">▲ Live Hub Cashflow</div>
+            <div className="metric-trend up">▲ This month (closed days)</div>
           </div>
           <div className="metric-icon-bg">
             <IndianRupee size={20} />
@@ -192,7 +199,7 @@ export default function DashboardPage({
         <div className="metric-card-clean">
           <div>
             <div className="metric-label">TODAY'S DELIVERIES</div>
-            <div className="metric-val">{hubOrders.length || 0}</div>
+            <div className="metric-val">{c.todayTotal}</div>
             <div className="metric-trend up">▲ Active Orders</div>
           </div>
           <div className="metric-icon-bg">
@@ -203,7 +210,7 @@ export default function DashboardPage({
         <div className="metric-card-clean">
           <div>
             <div className="metric-label">ACTIVE SUBSCRIPTIONS</div>
-            <div className="metric-val">{hubSubscriptions.length || 0}</div>
+            <div className="metric-val">{c.activeSubscriptions}</div>
             <div className="metric-trend up">▲ Recurring Users</div>
           </div>
           <div className="metric-icon-bg">
@@ -214,7 +221,7 @@ export default function DashboardPage({
         <div className="metric-card-clean">
           <div>
             <div className="metric-label">TOTAL CUSTOMERS</div>
-            <div className="metric-val">{hubUsers.length || 0}</div>
+            <div className="metric-val">{c.customers}</div>
             <div className="metric-trend up">▲ Registered Users</div>
           </div>
           <div className="metric-icon-bg">
@@ -333,10 +340,11 @@ export default function DashboardPage({
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Real-time status of orders in fulfillment flow</p>
           </div>
           {(() => {
-            const packedCount = hubOrders.filter(o => o.status === 'packed').length;
-            const transitCount = hubOrders.filter(o => o.status === 'outForDelivery').length;
-            const deliveredCount = hubOrders.filter(o => o.status === 'delivered').length;
-            const totalOrders = hubOrders.length || 1;
+            // today's drops by status
+            const packedCount = c.todayScheduled;
+            const transitCount = c.todayOut;
+            const deliveredCount = c.todayDelivered;
+            const totalOrders = c.todayTotal || 1;
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -381,10 +389,10 @@ export default function DashboardPage({
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Usage distribution of user delivery schedules</p>
           </div>
           {(() => {
-            const dailyCount = hubSubscriptions.filter(s => s.frequency === 'daily' || !s.frequency).length;
-            const alternateCount = hubSubscriptions.filter(s => s.frequency === 'alternateDays').length;
-            const customCount = hubSubscriptions.filter(s => s.frequency === 'customDays').length;
-            const totalSubs = hubSubscriptions.length || 1;
+            const dailyCount = c.subsDaily;
+            const alternateCount = c.subsAlternate;
+            const customCount = c.subsCustom;
+            const totalSubs = c.activeSubscriptions || 1;
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -444,25 +452,24 @@ export default function DashboardPage({
               </tr>
             </thead>
             <tbody>
-              {hubOrders.slice(0, 5).map(o => {
-                const userObj = hubUsers.find(u => u.id === o.userId);
+              {recentOrders.map(o => {
                 return (
                   <tr key={o.id}>
-                    <td style={{ fontWeight: 600, color: '#10B981' }}>{o.id.substring(0, 8)}...</td>
-                    <td style={{ fontWeight: 600 }}>{userObj?.name || 'Customer'}</td>
-                    <td>{o.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ') || 'Fresh Milk'}</td>
-                    <td style={{ fontWeight: 700 }}>₹{o.totalAmount}</td>
+                    <td style={{ fontWeight: 600, color: '#10B981' }}>{o.id}</td>
+                    <td style={{ fontWeight: 600 }}>{o.customerName}</td>
+                    <td>{o.items.map(i => `${i.qty}x ${i.name}`).join(', ') || '—'}</td>
+                    <td style={{ fontWeight: 700 }}>₹{o.total}</td>
                     <td>
-                      <span className={`badge ${o.status === 'delivered' ? 'badge-success' : o.status === 'outForDelivery' ? 'badge-warning' : o.status === 'cancelled' ? 'badge-error' : 'badge-neutral'}`}>
-                        {o.status === 'delivered' ? 'Delivered' : o.status === 'outForDelivery' ? 'Out for Delivery' : o.status === 'cancelled' ? 'Cancelled' : 'Packed'}
+                      <span className={`badge ${o.status === 'delivered' ? 'badge-success' : o.status === 'placed' ? 'badge-warning' : o.status === 'cancelled' || o.status === 'failed' ? 'badge-error' : 'badge-neutral'}`}>
+                        {o.status === 'delivered' ? 'Delivered' : o.status === 'placed' ? 'Placed' : o.status === 'cancelled' ? 'Cancelled' : o.status === 'failed' ? 'Failed' : 'Awaiting payment'}
                       </span>
                     </td>
                   </tr>
                 );
               })}
-              {hubOrders.length === 0 && (
+              {recentOrders.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No recent deliveries found for active hub.</td>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No orders yet for this hub.</td>
                 </tr>
               )}
             </tbody>

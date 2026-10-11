@@ -1,70 +1,56 @@
 // src/services/paymentSettingsService.ts
-// Razorpay Key ID per hub, so the mobile app can fetch the right one for the
-// customer's location instead of hardcoding it and needing an app release to
-// change it.
+// Razorpay Key ID per hub, stored in hubs/{hubId}/settings/payment so the
+// customer app reads the right key for the customer's hub.
 //
 // ONLY the Key ID belongs here. It is designed to be public — the mobile app
 // shows it to Razorpay's checkout. The Key SECRET must never be stored in
 // Firestore or sent to any app: anyone holding it can issue refunds and read
-// every transaction. When payment verification is added, the secret goes in a
-// server environment variable and is used only by a server function.
+// every transaction. There is no fallback key: a hub without one can't take
+// payments until an admin saves it.
 
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-
-const RAZORPAY_DOC = ['settings', 'razorpay'] as const;
+import { getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { hubDoc } from '../data/hubs';
+import { logAudit } from '../utils/auditLogger';
 
 export interface RazorpayHubConfig {
   keyId: string;
   /** Lets a hub be switched off without deleting its key. */
   enabled: boolean;
-  googleMapsKey?: string;
-  fcmServerKey?: string;
-  smsWebhookUrl?: string;
 }
 
 export type RazorpaySettings = Record<string, RazorpayHubConfig>;
 
-const defaultHubConfig = (hubId: string): RazorpayHubConfig => ({
-  keyId: hubId === 'hub_hosur_main' ? 'rzp_test_TVUJtWno7iUXYw' : 'rzp_test_Rt3Ppu4aqXwsO6',
-  enabled: true,
-  googleMapsKey: '',
-  fcmServerKey: '',
-  smsWebhookUrl: '',
-});
+const paymentDoc = (hubId: string) => hubDoc(hubId, 'settings', 'payment');
 
 export const getRazorpaySettings = async (hubIds: string[]): Promise<RazorpaySettings> => {
-  let stored: Record<string, Partial<RazorpayHubConfig>> = {};
-  try {
-    stored = ((await getDoc(doc(db, ...RAZORPAY_DOC))).data() ?? {}) as typeof stored;
-  } catch {
-    stored = {};
-  }
-
-  return Object.fromEntries(
-    hubIds.map((hubId) => [hubId, { ...defaultHubConfig(hubId), ...(stored[hubId] ?? {}) }])
+  const entries = await Promise.all(
+    hubIds.map(async (hubId) => {
+      try {
+        const data = (await getDoc(paymentDoc(hubId))).data() ?? {};
+        return [hubId, { keyId: data.razorpayKeyId ?? '', enabled: data.razorpayEnabled ?? false }] as const;
+      } catch {
+        return [hubId, { keyId: '', enabled: false }] as const; // no access to this hub
+      }
+    }),
   );
+  return Object.fromEntries(entries);
 };
 
-export const saveRazorpayForHub = async (
-  hubId: string,
-  config: RazorpayHubConfig
-): Promise<void> => {
-  const payload = {
-    ...config,
-    updatedAt: new Date().toISOString(),
-  };
+export const saveRazorpayForHub = async (hubId: string, config: RazorpayHubConfig): Promise<void> => {
+  const keyId = config.keyId.trim();
+  if (!describeKeyId(keyId).ok) throw new Error('That is not a valid Razorpay Key ID.');
   await setDoc(
-    doc(db, ...RAZORPAY_DOC),
-    { [hubId]: payload },
-    { merge: true }
+    paymentDoc(hubId),
+    { razorpayKeyId: keyId, razorpayEnabled: config.enabled && !!keyId, updatedAt: serverTimestamp() },
+    { merge: true },
   );
-  // Also sync to hub-specific doc for direct Flutter app subscriptions
-  await setDoc(
-    doc(db, 'settings', `hub_keys_${hubId}`),
-    payload,
-    { merge: true }
-  );
+  await logAudit({
+    hubId,
+    category: 'Financials & Refunds',
+    action: `Razorpay key ${keyId ? 'saved' : 'cleared'} (${config.enabled ? 'enabled' : 'disabled'})`,
+    target: `hubs/${hubId}/settings/payment`,
+    after: { razorpayKeyId: keyId, razorpayEnabled: config.enabled },
+  });
 };
 
 /**

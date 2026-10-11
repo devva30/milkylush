@@ -29,6 +29,7 @@ export interface User {
   id: string;
   name: string;
   phone: string;
+  deliveryInstructions?: string;
   email?: string;
   address?: string;
   walletBalance: number;
@@ -71,9 +72,16 @@ export interface Order {
   assignedRiderEmail?: string;
   items: CartItem[];
   orderDate: string;
+  /** Older orders' display number, if any. */
+  orderNumber?: string;
+  /** When the rider marked it delivered (ISO, from the delivery doc). */
+  deliveredAt?: string;
+  /** The rider attached a proof photo (proofPhotos/{deliveryId}). */
+  hasProofPhoto?: boolean;
+  failReason?: string;
   estimatedDelivery?: string;
   totalAmount: number;
-  status: 'packed' | 'outForDelivery' | 'delivered' | 'cancelled' | 'pending' | 'assigned';
+  status: 'packed' | 'outForDelivery' | 'delivered' | 'cancelled' | 'pending' | 'assigned' | 'confirmed' | 'processing' | 'skipped' | 'failed';
   isSubscriptionDelivery?: boolean;
   orderType?: 'one-time' | 'subscription' | string;
   subscriptionId?: string;
@@ -110,6 +118,13 @@ export interface Subscription {
   hubId?: string;
   deliveryAddress?: string;
   deliveryInstructions?: string;
+  customerId?: string;
+  createdAt?: string;
+  cancellationReason?: string;
+  historyLog?: any[];
+  pausedDateReasons?: Record<string, any>;
+  prepaidPlanId?: string;
+  prepaidDays?: number;
 }
 
 export interface OnboardingSlide {
@@ -129,6 +144,8 @@ export interface DeliveryAgent {
   email?: string;
   address?: string;
   assignedZone?: string;
+  /** Present/absent for the day being viewed (from hubs/{hub}/attendance). */
+  attendanceStatus?: 'present' | 'absent';
   vehicle?: string;
   hubId?: string;
   assignedHubId?: string;

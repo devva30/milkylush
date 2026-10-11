@@ -1,25 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Save, Navigation, Compass, Map as MapIcon, Building, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { GeoPoint, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useLiveDoc } from '../data/useFirestore';
+import { DataState } from '../components/common/DataState';
+import { logAudit } from '../utils/auditLogger';
 
 interface ServiceAreasPageProps {
   selectedHubId: string;
-  deliverySettings: {
-    address: string;
-    hubLatitude: string;
-    hubLongitude: string;
-    radiusKm: string;
-  };
-  onSaveSettings: (address: string, lat: string, lng: string, radius: string) => void;
+  /** Unused: the page reads and saves hubs/{hubId} itself. Kept so existing callers compile. */
+  deliverySettings?: unknown;
+  onSaveSettings?: unknown;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+interface HubDoc {
+  address?: string;
+  location?: GeoPoint;
+  radiusKm?: number;
+  active?: boolean;
 }
 
 export default function ServiceAreasPage({
   selectedHubId,
-  deliverySettings,
-  onSaveSettings,
   showToast,
 }: ServiceAreasPageProps) {
-  const isHosur = selectedHubId === 'hub_hosur_main' || selectedHubId.includes('hosur');
+  const hub = useLiveDoc<HubDoc>(doc(db, 'hubs', selectedHubId), [selectedHubId]);
+  const [saving, setSaving] = useState(false);
+  const isHosur = selectedHubId === 'hosur' || selectedHubId.includes('hosur');
 
   const hubTitle = isHosur ? 'Hosur - Central Hub (TN)' : 'Bangalore - Electronic City Hub (KA)';
   const hubCity = isHosur ? 'Hosur' : 'Bangalore';
@@ -40,8 +48,15 @@ export default function ServiceAreasPage({
   const [isActive, setIsActive] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(isHosur ? 12 : 13);
 
-  // Sync state strictly whenever selectedHubId or deliverySettings changes
+  // Fill the form from the hub document whenever it loads or the hub changes
   useEffect(() => {
+    const deliverySettings = hub.data && {
+      address: hub.data.address ?? '',
+      hubLatitude: hub.data.location ? String(hub.data.location.latitude) : '',
+      hubLongitude: hub.data.location ? String(hub.data.location.longitude) : '',
+      radiusKm: hub.data.radiusKm != null ? String(hub.data.radiusKm) : '',
+    };
+    setIsActive(hub.data?.active ?? false);
     const fallbackAddress = isHosur ? 'Plot 45, Sipcot Industrial Complex Phase 1, Hosur - 635126' : 'Building 12, Electronics City Phase 1, Bengaluru, Karnataka 560100';
     const fallbackLat = isHosur ? '12.742253' : '12.867697';
     const fallbackLng = isHosur ? '77.824213' : '77.666721';
@@ -59,12 +74,34 @@ export default function ServiceAreasPage({
       setRadius(fallbackRadius);
     }
     setZoomLevel(isHosur ? 12 : 13);
-  }, [selectedHubId, deliverySettings, isHosur]);
+  }, [selectedHubId, hub.data, isHosur]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveSettings(address, lat, lng, radius);
-    showToast(`Saved delivery service area & hub map radius (${radius} KM) for ${hubTitle}!`, 'success');
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    const radiusKm = parseFloat(radius);
+    if (!(Math.abs(latitude) <= 90) || !(Math.abs(longitude) <= 180) || !(radiusKm > 0)) {
+      showToast('Enter a valid latitude, longitude and a radius above 0 KM.', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const data = { address: address.trim(), location: new GeoPoint(latitude, longitude), radiusKm, active: isActive };
+      await setDoc(doc(db, 'hubs', selectedHubId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+      await logAudit({
+        hubId: selectedHubId,
+        category: 'Hub Operations',
+        action: `Service area saved: ${radiusKm} KM, ${isActive ? 'active' : 'inactive'}`,
+        target: `hubs/${selectedHubId}`,
+        after: { address: data.address, latitude, longitude, radiusKm, active: isActive },
+      });
+      showToast(`Saved delivery service area & hub map radius (${radiusKm} KM) for ${hubTitle}!`, 'success');
+    } catch (err) {
+      showToast(`Could not save service area: ${(err as Error).message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const latNum = parseFloat(lat) || (isHosur ? 12.742253 : 12.867697);
@@ -108,53 +145,24 @@ export default function ServiceAreasPage({
           .addTo(map)
           .bindPopup("<b>${hubTitle.replace(/'/g, "\\'")}</b><br/>${address.replace(/'/g, "\\'")}<br/><b>Radius:</b> ${numericRadius} KM");
 
-        ${isHosur ? `
-          // Hosur Base Polygon Coordinates Calibrated to 15.0 KM
-          const basePolygon = [
-            [12.815, 77.785],
-            [12.818, 77.840],
-            [12.795, 77.875],
-            [12.770, 77.910],
-            [12.710, 77.905],
-            [12.665, 77.865],
-            [12.660, 77.810],
-            [12.700, 77.765],
-            [12.750, 77.760],
-            [12.790, 77.768]
-          ];
-          const cLat = 12.7409;
-          const cLng = 77.8253;
-          const scale = ${numericRadius} / 15.0;
-          const scaledPts = basePolygon.map(pt => [
-            cLat + (pt[0] - cLat) * scale,
-            cLng + (pt[1] - cLng) * scale
-          ]);
-          L.polygon(scaledPts, {
-            color: '#047857',
-            weight: 3.5,
-            dashArray: '6, 6',
-            fillColor: '#047857',
-            fillOpacity: 0.12
-          }).addTo(map);
-        ` : `
-          // Bangalore Hub Outer Circle Radius Border
-          L.circle([${latNum}, ${lngNum}], {
-            radius: ${numericRadius * 1000},
-            color: '#0284C7',
-            weight: 3.5,
-            dashArray: '6, 6',
-            fillColor: '#0284C7',
-            fillOpacity: 0.12
-          }).addTo(map);
-        `}
+        // Delivery area = this circle (hub location + radius); the customer app checks the same circle.
+        L.circle([${latNum}, ${lngNum}], {
+          radius: ${numericRadius * 1000},
+          color: '${isHosur ? '#047857' : '#0284C7'}',
+          weight: 3.5,
+          dashArray: '6, 6',
+          fillColor: '${isHosur ? '#047857' : '#0284C7'}',
+          fillOpacity: 0.12
+        }).addTo(map);
       </script>
     </body>
     </html>
   `;
 
   return (
+    <DataState loading={hub.loading} error={hub.error} onRetry={hub.retry} loadingLabel="Loading hub settings…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
-      
+
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -254,7 +262,7 @@ export default function ServiceAreasPage({
             border: '1px solid #E5E7EB'
           }}>
             <Compass size={16} style={{ color: isHosur ? '#047857' : '#0284C7' }} />
-            <span>{isHosur ? `Hosur Hub Polygon Outline (${numericRadius} KM Dynamic Boundary)` : `Bangalore Hub Radius Border (${numericRadius} KM Circle)`}</span>
+            <span>{isHosur ? `Hosur Hub Radius Border (${numericRadius} KM Circle)` : `Bangalore Hub Radius Border (${numericRadius} KM Circle)`}</span>
           </div>
 
           <div style={{
@@ -285,7 +293,7 @@ export default function ServiceAreasPage({
 
           <div style={{ fontSize: '0.8rem', color: '#4B5563' }}>
             {isHosur 
-              ? `Hosur Polygon Boundary auto-scales relative to Sipcot Phase 1 & 2 center based on ${numericRadius} KM limit.` 
+              ? `Hosur Hub strictly restricts doorstep delivery within ${numericRadius} KM radius.` 
               : `Bangalore Electronic City Hub strictly restricts doorstep delivery within ${numericRadius} KM radius.`}
           </div>
         </div>
@@ -396,7 +404,9 @@ export default function ServiceAreasPage({
 
             <button
               type="submit"
+              disabled={saving}
               style={{
+                opacity: saving ? 0.7 : 1,
                 padding: '0.85rem 1.75rem',
                 fontSize: '0.92rem',
                 fontWeight: 800,
@@ -412,7 +422,7 @@ export default function ServiceAreasPage({
                 boxShadow: isHosur ? '0 4px 6px -1px rgba(4, 120, 87, 0.2)' : '0 4px 6px -1px rgba(2, 132, 199, 0.2)'
               }}
             >
-              <Save size={18} /> Save Hub Settings &amp; Update Map Bounds
+              <Save size={18} /> {saving ? 'Saving…' : 'Save Hub Settings & Update Map Bounds'}
             </button>
           </div>
         </form>
@@ -420,5 +430,6 @@ export default function ServiceAreasPage({
       </div>
 
     </div>
+    </DataState>
   );
 }

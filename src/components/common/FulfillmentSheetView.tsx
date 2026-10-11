@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import type { HubId } from '../../data/hubs';
+import { useProofPhoto, saveProofPhoto } from '../../data/proofPhotos';
+import { setDeliveryStatus } from '../../data/deliveries';
 import { ArrowLeft, ExternalLink, Camera, AlertTriangle, CheckCircle2, ShieldCheck, Printer, MapPin, User as UserIcon, Settings, Calendar } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useLiveDoc } from '../../data/useFirestore';
 import type { Order, DeliveryAgent, User } from '../../types';
 import { formatAddressDetails, getGoogleMapsUrl } from '../../utils/addressFormatter';
 
@@ -15,29 +19,38 @@ interface FulfillmentSheetViewProps {
   onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
   onNavigateTab?: (tabName: string, targetId?: string) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  /** Set by pages migrated to hubs/{hubId}/deliveries: photo + cancel go to the delivery. */
+  deliveryHubId?: HubId;
 }
 
 export default function FulfillmentSheetView({
   order: o,
   users = [],
   deliveryAgents = [],
-  selectedHubId = 'hub_hosur',
+  selectedHubId = 'hosur',
   onClose,
   onUpdateOrderStatus,
   onUpdateOrderDriver,
   onNavigateTab,
   showToast,
+  deliveryHubId: deliveryHubIdProp,
 }: FulfillmentSheetViewProps) {
+  // Every list row is a delivery (hubs/{hub}/deliveries/{date}_{source}) of the selected hub
+  const deliveryHubId = (deliveryHubIdProp ?? selectedHubId) as HubId;
+  const proofPhoto = useProofPhoto(deliveryHubId, o.id);
   const [cancellationReasonInput, setCancellationReasonInput] = useState<string>('');
   const [imgError, setImgError] = useState(false);
   const [zoomPhoto, setZoomPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [viewMode, setViewMode] = useState<'admin' | 'customer' | 'rider'>('admin');
+  // FSSAI number from config/app (Mobile Control → FSSAI & Social)
+  const appConfig = useLiveDoc<{ fssaiNumber?: string }>(doc(db, 'config', 'app'), []);
+  const fssai = appConfig.data?.fssaiNumber ? ` · FSSAI Reg. ${appConfig.data.fssaiNumber}` : '';
 
   // User & Address resolution
   const u = users.find((usr) => usr.id === o.userId);
   const customerName = o.customerName || u?.name || 'Valued Customer';
-  const customerPhone = o.customerPhone || u?.phone || '9876543210';
+  const customerPhone = o.customerPhone || u?.phone || '';
   const rawAddressText = o.deliveryAddress || o.address || u?.savedAddresses?.[0] || u?.address || 'Hosur Central Hub Area, TN';
   const formattedAddr = formatAddressDetails(rawAddressText);
   const { cleanAddress, addressType, contactInfo, hubId: parsedHubId, gpsCoords } = formattedAddr;
@@ -73,7 +86,7 @@ export default function FulfillmentSheetView({
     return '';
   };
 
-  const rawProof = o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || (o as any).photoProof || (o as any).photo || (o as any).dropoffPhoto || (o as any).image || (o as any).imageUrl || '';
+  const rawProof = proofPhoto.data?.dataUrl || o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || (o as any).photoProof || (o as any).photo || (o as any).dropoffPhoto || (o as any).image || (o as any).imageUrl || '';
   const proofUrl = getCleanProofUrl(rawProof);
   const cancelReason = (o as any).cancellationReason || (o as any).cancelReason || '';
   const assignedRiderName = o.assignedPartner || deliveryAgents.find((a) => a.id === o.deliveryAgentId)?.name || 'Local Delivery Partner';
@@ -87,26 +100,13 @@ export default function FulfillmentSheetView({
     if (!file) return;
     setIsUploadingPhoto(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        if (base64) {
-          const orderRef = doc(db, 'orders', o.id);
-          await updateDoc(orderRef, {
-            proofImageUrl: base64,
-            dropoffPhotoUrl: base64,
-            deliveryProofUrl: base64,
-            photoProofPath: base64,
-          });
-          setImgError(false);
-          setIsUploadingPhoto(false);
-          showToast('Doorstep photo proof uploaded and synced to Firestore!', 'success');
-        }
-      };
-      reader.readAsDataURL(file);
+      await saveProofPhoto(deliveryHubId, o.id, o.orderDate, file);
+      setImgError(false);
+      showToast('Doorstep photo proof saved (kept for 30 days).', 'success');
     } catch (err) {
+      showToast('Failed to save photo proof: ' + (err as Error).message, 'error');
+    } finally {
       setIsUploadingPhoto(false);
-      showToast('Failed to upload photo proof: ' + String(err), 'error');
     }
   };
 
@@ -145,10 +145,10 @@ export default function FulfillmentSheetView({
         <div style={{ borderBottom: '2px solid #047857', paddingBottom: '10px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontSize: '18px', fontWeight: 900, color: '#047857', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-              🥛 MILKYLUSH ORGANIC DAIRY &amp; FARM PRODUCTS
+              MILKYLUSH
             </div>
             <div style={{ fontSize: '10px', color: '#334155', marginTop: '2px', fontWeight: 600 }}>
-              100% Pure A2 Buffalo &amp; Cow Milk · Farm Fresh Daily Delivery · FSSAI Reg. 22424578000192
+              100% Pure A2 Buffalo &amp; Cow Milk · Farm Fresh Daily Delivery{fssai}
             </div>
             <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
               Hub: {hubCodeName} · Phone: +91 9658686686 · Email: support@milkylush.com
@@ -470,15 +470,17 @@ export default function FulfillmentSheetView({
             border: '1px solid var(--border-color, #E2E8F0)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
-              <h3 style={{
-                fontSize: '1.05rem',
+            {/* Top Drop Type Header & Manage Plan Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+              <span style={{
+                fontSize: '0.72rem',
                 fontWeight: 800,
-                margin: 0,
-                color: 'var(--text-main, #0F172A)'
+                color: isSubscription ? '#047857' : '#64748B',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase'
               }}>
-                Products and items — this drop
-              </h3>
+                {isSubscription ? 'SUBSCRIPTION DROP' : 'ONE-TIME DROP'}
+              </span>
 
               {isSubscription && onNavigateTab && (
                 <button
@@ -497,10 +499,19 @@ export default function FulfillmentSheetView({
                     cursor: 'pointer'
                   }}
                 >
-                  <Calendar size={13} /> Manage Subscription →
+                  <Calendar size={13} /> Manage plan
                 </button>
               )}
             </div>
+
+            <h3 style={{
+              fontSize: '1.05rem',
+              fontWeight: 800,
+              margin: '0 0 1.1rem 0',
+              color: 'var(--text-main, #0F172A)'
+            }}>
+              Products and items — this drop
+            </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {o.items && o.items.length > 0 ? (
@@ -509,13 +520,17 @@ export default function FulfillmentSheetView({
                   const unitPrice = item.product?.price && item.product.price > 0 
                     ? item.product.price 
                     : dropValue;
+                  const itemImgUrl = item.product?.imageUrl && item.product.imageUrl.startsWith('http')
+                    ? item.product.imageUrl
+                    : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80';
 
                   return (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img
-                          src={item.product?.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'}
+                          src={itemImgUrl}
                           alt={prodDisplayName}
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'; }}
                           style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
                         />
                         <div>
@@ -523,7 +538,7 @@ export default function FulfillmentSheetView({
                             {prodDisplayName}
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                            {item.quantity || 1} x {item.product?.unit || '750ml glass bottle'}
+                            {item.quantity || 1} x {item.product?.unit || '500ml glass bottle'}
                           </div>
                         </div>
                       </div>
@@ -543,10 +558,10 @@ export default function FulfillmentSheetView({
                     />
                     <div>
                       <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
-                        Fresh organic buffalo milk
+                        A2 desi cow milk
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                        1 x 750ml glass bottle
+                        1 x 500ml glass bottle
                       </div>
                     </div>
                   </div>
@@ -567,50 +582,46 @@ export default function FulfillmentSheetView({
                 fontSize: '0.84rem'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #64748B)' }}>
-                  <span>This drop's value</span>
+                  <span>{isSubscription ? "This drop's value" : "Item subtotal"}</span>
                   <span style={{ color: 'var(--text-main, #0F172A)', fontWeight: 700 }}>₹{dropValue}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #64748B)' }}>
-                  <span>Delivery charge</span>
+                  <span>Sunrise delivery charge</span>
                   <span style={{ color: '#047857', fontWeight: 800 }}>Free</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main, #0F172A)', fontWeight: 800, fontSize: '0.92rem', paddingTop: '0.4rem', borderTop: '1px solid #F1F5F9' }}>
+                  <span>{isSubscription ? 'Charged for this drop' : 'Grand total paid'}</span>
+                  <span>₹{dropValue}</span>
                 </div>
               </div>
 
-              {/* Brand Theme Green Highlight Box for Prepaid Plan */}
-              <div style={{
-                backgroundColor: '#ECFDF5',
-                border: '1px solid #A7F3D0',
-                borderRadius: '12px',
-                padding: '0.85rem 1rem',
-                fontSize: '0.82rem',
-                color: '#047857',
-                fontWeight: 700,
-                lineHeight: 1.45,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '8px'
-              }}>
-                <span>Part of prepaid plan {subscriptionId} · total plan value ₹{totalPlanValue.toLocaleString('en-IN')} · 30 drops</span>
-                {isSubscription && onNavigateTab && (
-                  <button
-                    onClick={() => onNavigateTab('subscriptions', subscriptionId)}
-                    style={{
-                      backgroundColor: '#047857',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '3px 9px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Manage Subscription
-                  </button>
-                )}
-              </div>
+              {/* Subtext Pill Card */}
+              {isSubscription ? (
+                <div style={{
+                  backgroundColor: '#E0F2FE',
+                  border: '1px solid #BAE6FD',
+                  borderRadius: '12px',
+                  padding: '0.85rem 1rem',
+                  fontSize: '0.82rem',
+                  color: '#0369A1',
+                  fontWeight: 700,
+                  lineHeight: 1.45
+                }}>
+                  Part of prepaid plan <strong>{subscriptionId}</strong> · total plan value ₹{totalPlanValue.toLocaleString('en-IN')} · 30 drops · already fully paid
+                </div>
+              ) : (
+                <div style={{
+                  backgroundColor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '10px',
+                  padding: '0.6rem 0.85rem',
+                  fontSize: '0.78rem',
+                  color: '#64748B',
+                  fontWeight: 600
+                }}>
+                  single transaction · not linked to a plan
+                </div>
+              )}
 
             </div>
           </div>
@@ -787,10 +798,14 @@ export default function FulfillmentSheetView({
                 </label>
                 <select
                   value={o.status}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const nextStatus = e.target.value as Order['status'];
+                    const dbStatus = nextStatus === 'outForDelivery' ? 'out_for_delivery' : nextStatus;
+                    try {
+                      await setDeliveryStatus(deliveryHubId, o.id, dbStatus as any);
+                    } catch (_) {}
                     onUpdateOrderStatus(o.id, nextStatus);
-                    showToast(`Updated status to ${nextStatus}`, 'success');
+                    showToast(`Updated delivery status to ${nextStatus}`, 'success');
                   }}
                   style={{
                     width: '100%',
@@ -872,13 +887,13 @@ export default function FulfillmentSheetView({
                   />
                   <button
                     onClick={async () => {
-                      onUpdateOrderStatus(o.id, 'cancelled');
-                      if (cancellationReasonInput.trim()) {
-                        try {
-                          await updateDoc(doc(db, 'orders', o.id), { cancellationReason: cancellationReasonInput.trim() });
-                        } catch (_) {}
+                      try {
+                        await setDeliveryStatus(deliveryHubId, o.id, 'cancelled', cancellationReasonInput.trim() || undefined);
+                        onUpdateOrderStatus(o.id, 'cancelled');
+                        showToast(`Cancelled delivery ${o.id}`, 'info');
+                      } catch (err) {
+                        showToast(`Could not cancel: ${(err as Error).message}`, 'error');
                       }
-                      showToast(`Cancelled job order #${o.id}`, 'error');
                     }}
                     style={{
                       backgroundColor: '#FEE2E2',
@@ -1070,7 +1085,7 @@ export default function FulfillmentSheetView({
                   transition: 'background-color 0.15s ease'
                 }}
               >
-                <ExternalLink size={15} /> Open exact pin in maps
+                <ExternalLink size={15} /> {gpsCoords ? `Open exact pin in maps (${gpsCoords})` : 'Open address in maps (no GPS pin)'}
               </a>
             </div>
           </div>
@@ -1141,8 +1156,8 @@ export default function FulfillmentSheetView({
                   border: '#A7F3D0'
                 });
 
-                // 2. Hub Processing / Dispatch
-                if (o.status === 'packed' || o.status === 'outForDelivery' || isDelivered || isCancelled) {
+                // 2. Hub Processing / Packed Stage
+                if (o.status === 'packed' || o.status === 'outForDelivery' || isDelivered) {
                   logs.push({
                     tag: 'packed',
                     title: 'Hub Processing & Packing Completed',
@@ -1153,8 +1168,8 @@ export default function FulfillmentSheetView({
                   });
                 }
 
-                // 3. Out For Delivery
-                if (o.status === 'outForDelivery' || isDelivered || isCancelled) {
+                // 3. Out For Delivery Stage
+                if (o.status === 'outForDelivery' || isDelivered) {
                   logs.push({
                     tag: 'transit',
                     title: 'Out For Delivery',
@@ -1165,35 +1180,47 @@ export default function FulfillmentSheetView({
                   });
                 }
 
-                // 4. Final Status (Delivered / Cancelled / Pending)
-                logs.push({
-                  tag: isDelivered ? 'delivered' : isCancelled ? 'cancelled' : 'pending',
-                  title: isDelivered 
-                    ? `Delivered by Rider (${assignedRiderName})` 
-                    : isCancelled 
-                      ? `Cancelled by Rider (${assignedRiderName})` 
-                      : 'Awaiting Dropoff',
-                  subtitle: isDelivered 
-                    ? `Doorstep photo & GPS verified at ${formattedCreatedDate}` 
-                    : isCancelled 
-                      ? `Reason: "${cancelReason || 'Customer unreachable / Delivery issue'}"` 
-                      : 'In transit on route',
-                  bg: isDelivered ? '#ECFDF5' : isCancelled ? '#FEE2E2' : '#F1F5F9',
-                  color: isDelivered ? '#047857' : isCancelled ? '#DC2626' : '#64748B',
-                  border: isDelivered ? '#A7F3D0' : isCancelled ? '#FCA5A5' : '#E2E8F0'
-                });
+                // 4. Current / Final Status Badge Log
+                if (isDelivered) {
+                  logs.push({
+                    tag: 'delivered',
+                    title: `Delivered by Rider (${assignedRiderName})`,
+                    subtitle: `Doorstep photo & GPS verified`,
+                    bg: '#ECFDF5',
+                    color: '#047857',
+                    border: '#A7F3D0'
+                  });
+                } else if (isCancelled) {
+                  logs.push({
+                    tag: 'cancelled',
+                    title: `Order Cancelled`,
+                    subtitle: cancelReason ? `Reason: "${cancelReason}"` : 'Cancelled by customer or support',
+                    bg: '#FEE2E2',
+                    color: '#DC2626',
+                    border: '#FCA5A5'
+                  });
+                } else if (o.status === 'packed') {
+                  logs.push({
+                    tag: 'ready',
+                    title: 'Ready for Rider Pickup',
+                    subtitle: `Packed at hub, waiting for rider assignment`,
+                    bg: '#EFF6FF',
+                    color: '#1D4ED8',
+                    border: '#BFDBFE'
+                  });
+                }
 
                 // Render custom historyLog entries if available in Firestore
                 const customHistory: any[] = (o as any).historyLog || (o as any).auditLogs || [];
                 if (customHistory.length > 0) {
                   customHistory.forEach((log) => {
                     logs.push({
-                      tag: log.status || log.action || 'audit log',
+                      tag: log.tag || log.status || log.action || 'audit log',
                       title: log.title || log.note || log.message || 'Audit Log Event',
-                      subtitle: log.timestamp || log.date ? new Date(log.timestamp || log.date).toLocaleString('en-GB') : 'Realtime event recorded',
-                      bg: '#F8FAFC',
-                      color: '#0F172A',
-                      border: '#CBD5E1'
+                      subtitle: log.subtitle || (log.timestamp || log.date ? new Date(log.timestamp || log.date).toLocaleString('en-GB') : 'Realtime event recorded'),
+                      bg: log.tag === 'cancelled' ? '#FEE2E2' : '#F8FAFC',
+                      color: log.tag === 'cancelled' ? '#DC2626' : '#0F172A',
+                      border: log.tag === 'cancelled' ? '#FCA5A5' : '#CBD5E1'
                     });
                   });
                 }

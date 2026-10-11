@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Tag, Smartphone, Image as ImageIcon, Bell, Send, History, ShieldCheck, Share2, Sparkles, Save, Headphones, Trash2, HelpCircle, Gift } from 'lucide-react';
-import { doc, getDoc, setDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { isHubId, type HubId } from '../data/hubs';
+import { useHubContext } from '../context/HubContext';
+import { DataState } from '../components/common/DataState';
+import {
+  useOnboardingSlides, saveOnboardingSlide, deleteOnboardingSlide, useHubBanners, saveBanner, deleteBanner,
+  loadHubSetting, saveHubSetting, loadAppConfig, saveAppConfig, loadBroadcasts, sendBroadcast, deleteBroadcast,
+} from '../data/appContent';
 import type { Banner, OnboardingSlide } from '../types';
 
 interface MobileControlPageProps {
   selectedHubId?: string;
-  banners: Banner[];
-  onboardingSlides: OnboardingSlide[];
+  /** Ignored: the page loads its own data. Kept so existing callers compile. */
+  banners?: Banner[];
+  onboardingSlides?: OnboardingSlide[];
   onAddBanner?: () => void;
   onAddOnboardingSlide?: () => void;
   onSaveBanner?: (banner: Partial<Banner>) => Promise<void>;
   onSaveOnboardingSlide?: (slide: Partial<OnboardingSlide>) => Promise<void>;
-  onDeleteBanner: (id: string) => void;
-  onDeleteOnboardingSlide: (id: string) => void;
+  onDeleteBanner?: (id: string) => void;
+  onDeleteOnboardingSlide?: (id: string) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -28,23 +34,41 @@ interface CampaignLog {
 }
 
 export default function MobileControlPage({
-  selectedHubId = 'hub_hosur_main',
-  banners,
-  onboardingSlides,
-  onSaveBanner,
-  onSaveOnboardingSlide,
-  onDeleteBanner,
-  onDeleteOnboardingSlide,
+  selectedHubId = 'hosur',
   showToast,
 }: MobileControlPageProps) {
+  const hubId = selectedHubId as HubId;
+  const { allowedHubIds, staff } = useHubContext();
+  const slidesQuery = useOnboardingSlides();
+  const bannersQuery = useHubBanners(hubId);
+  const banners = bannersQuery.data;
+  const onboardingSlides = slidesQuery.data;
+  const [loadingConfigs, setLoadingConfigs] = useState(true);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Every save reports the real result; errors are shown, never swallowed.
+  const attempt = async (okMessage: string, action: () => Promise<unknown>): Promise<boolean> => {
+    try {
+      await action();
+      showToast(okMessage, 'success');
+      return true;
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      showToast(code === 'permission-denied'
+        ? 'Only a Super Admin can change settings shared by both hubs.'
+        : `Could not save: ${(err as Error).message}`, 'error');
+      return false;
+    }
+  };
   const [activeTab, setActiveTab] = useState<'onboarding' | 'banners' | 'broadcast' | 'fssai-social' | 'popup-ad' | 'help-desk' | 'free-sample'>('onboarding');
 
   // FSSAI & Social Links State
-  const [fssaiNumber, setFssaiNumber] = useState('12423999000123');
+  const [fssaiNumber, setFssaiNumber] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('https://instagram.com/milkylush');
   const [youtubeUrl, setYoutubeUrl] = useState('https://youtube.com/@milkylush');
   const [facebookUrl, setFacebookUrl] = useState('https://facebook.com/milkylush');
-  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919876543210');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
 
   // Pop-up Offer Ad State
   const [popupActive, setPopupActive] = useState(true);
@@ -67,6 +91,7 @@ export default function MobileControlPage({
 
   // Help & Support Desk State
   const [helpPhone, setHelpPhone] = useState('+91 99028 82332');
+  const [helpPhone2, setHelpPhone2] = useState('');
   const [helpWhatsapp, setHelpWhatsapp] = useState('+91 99028 82332');
   const [helpEmail, setHelpEmail] = useState('milkylushorganic@gmail.com');
   const [helpAddress, setHelpAddress] = useState('Off Hosur Road, Near Electronic City, Bangalore - 560100');
@@ -91,75 +116,61 @@ export default function MobileControlPage({
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
   const [newFaqAnswer, setNewFaqAnswer] = useState('');
 
-  // Load Firestore configurations
+  // Load this hub's settings (and the shared app config) in parallel
   useEffect(() => {
+    let cancelled = false;
     const loadConfigs = async () => {
+      setLoadingConfigs(true);
+      setConfigError(null);
       try {
-        const appDoc = await getDoc(doc(db, 'settings', 'mobile_app'));
-        if (appDoc.exists()) {
-          const data = appDoc.data();
-          if (data.fssaiNumber) setFssaiNumber(data.fssaiNumber);
-          if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
-          if (data.youtubeUrl) setYoutubeUrl(data.youtubeUrl);
-          if (data.facebookUrl) setFacebookUrl(data.facebookUrl);
-          if (data.whatsappUrl) setWhatsappUrl(data.whatsappUrl);
-        }
+        const [app, popup, help, fs, campaigns] = await Promise.all([
+          loadAppConfig(),
+          loadHubSetting<Record<string, any>>(hubId, 'popup'),
+          loadHubSetting<Record<string, any>>(hubId, 'help'),
+          loadHubSetting<Record<string, any>>(hubId, 'freeSample'),
+          loadBroadcasts(hubId),
+        ]);
+        if (cancelled) return;
+        if (app.fssaiNumber !== undefined) setFssaiNumber(String(app.fssaiNumber));
+        if (app.instagramUrl !== undefined) setInstagramUrl(String(app.instagramUrl));
+        if (app.youtubeUrl !== undefined) setYoutubeUrl(String(app.youtubeUrl));
+        if (app.facebookUrl !== undefined) setFacebookUrl(String(app.facebookUrl));
+        if (app.whatsappUrl !== undefined) setWhatsappUrl(String(app.whatsappUrl));
 
-        const popupDoc = await getDoc(doc(db, 'settings', 'popup_ad'));
-        if (popupDoc.exists()) {
-          const p = popupDoc.data();
-          if (p.active !== undefined) setPopupActive(p.active);
-          if (p.title) setPopupTitle(p.title);
-          if (p.subtitle) setPopupSubtitle(p.subtitle);
-          if (p.imageUrl) setPopupImageUrl(p.imageUrl);
-          if (p.ctaText) setPopupCtaText(p.ctaText);
-          if (p.hubScope) setPopupHubScope(p.hubScope);
-          if (p.autoCloseSeconds !== undefined) setPopupTimerSeconds(p.autoCloseSeconds);
-        }
+        if (popup.active !== undefined) setPopupActive(popup.active);
+        if (popup.title !== undefined) setPopupTitle(popup.title);
+        if (popup.subtitle !== undefined) setPopupSubtitle(popup.subtitle);
+        if (popup.imageUrl !== undefined) setPopupImageUrl(popup.imageUrl);
+        if (popup.ctaText !== undefined) setPopupCtaText(popup.ctaText);
+        setPopupHubScope(hubId);
+        if (popup.autoCloseSeconds !== undefined) setPopupTimerSeconds(popup.autoCloseSeconds);
 
-        const helpDoc = await getDoc(doc(db, 'settings', 'help_support'));
-        if (helpDoc.exists()) {
-          const h = helpDoc.data();
-          if (h.phone) setHelpPhone(h.phone);
-          if (h.whatsapp) setHelpWhatsapp(h.whatsapp);
-          if (h.email) setHelpEmail(h.email);
-          if (h.address !== undefined) setHelpAddress(h.address);
-          if (h.faqs && Array.isArray(h.faqs)) setHelpFaqs(h.faqs);
-        }
+        if (help.phone !== undefined) setHelpPhone(help.phone);
+        if (help.phone2 !== undefined) setHelpPhone2(help.phone2);
+        if (help.whatsapp !== undefined) setHelpWhatsapp(help.whatsapp);
+        if (help.email !== undefined) setHelpEmail(help.email);
+        if (help.address !== undefined) setHelpAddress(help.address);
+        if (Array.isArray(help.faqs)) setHelpFaqs(help.faqs);
 
-        const fsDoc = await getDoc(doc(db, 'settings', 'free_sample'));
-        if (fsDoc.exists()) {
-          const f = fsDoc.data();
-          if (f.active !== undefined) setFsActive(f.active);
-          if (f.title) setFsTitle(f.title);
-          if (f.subtitle) setFsSubtitle(f.subtitle);
-          if (f.productName) setFsProductName(f.productName);
-          if (f.imageUrl) setFsImageUrl(f.imageUrl);
-          if (f.onlyNewCustomers !== undefined) setFsOnlyNew(f.onlyNewCustomers);
-          if (f.showInAuth !== undefined) setFsShowInAuth(f.showInAuth);
-          if (f.authTitle) setFsAuthTitle(f.authTitle);
-        }
+        if (fs.isActive !== undefined) setFsActive(fs.isActive);
+        if (fs.title !== undefined) setFsTitle(fs.title);
+        if (fs.subtitle !== undefined) setFsSubtitle(fs.subtitle);
+        if (fs.productName !== undefined) setFsProductName(fs.productName);
+        if (fs.imageUrl !== undefined) setFsImageUrl(fs.imageUrl);
+        if (fs.onlyNewCustomers !== undefined) setFsOnlyNew(fs.onlyNewCustomers);
+        if (fs.showInAuth !== undefined) setFsShowInAuth(fs.showInAuth);
+        if (fs.authTitle !== undefined) setFsAuthTitle(fs.authTitle);
 
-        const broadcastsSnap = await getDocs(collection(db, 'broadcasts'));
-        const loadedCampaigns: CampaignLog[] = broadcastsSnap.docs.map(d => {
-          const data = d.data();
-          return {
-            id: d.id,
-            title: data.title || 'Broadcast',
-            target: data.target || 'All Users',
-            type: data.type || 'Offer',
-            recipients: data.recipients || 1,
-            sentAt: data.sentAt ? new Date(data.sentAt).toLocaleString() : 'Just Now',
-            bodyPreview: data.bodyPreview || data.body || '',
-          };
-        });
-        setCampaignHistory(loadedCampaigns);
+        setCampaignHistory(campaigns);
       } catch (err) {
-        console.error('Error loading mobile settings:', err);
+        if (!cancelled) setConfigError((err as Error).message);
+      } finally {
+        if (!cancelled) setLoadingConfigs(false);
       }
     };
     loadConfigs();
-  }, []);
+    return () => { cancelled = true; };
+  }, [hubId, reloadKey]);
 
   // Internal state for banners & slides directly synced with Firestore snapshots
   const [localSlides, setLocalSlides] = useState<OnboardingSlide[]>(onboardingSlides || []);
@@ -217,18 +228,13 @@ export default function MobileControlPage({
     } else {
       setLocalSlides([...localSlides, editingSlide]);
     }
-    if (onSaveOnboardingSlide) {
-      await onSaveOnboardingSlide(editingSlide);
-    } else {
-      showToast('Updated onboarding presentation slide!', 'success');
+    if (await attempt('Saved onboarding slide (shown in both hubs).', () => saveOnboardingSlide(editingSlide))) {
+      setIsSlideModalOpen(false);
     }
-    setIsSlideModalOpen(false);
   };
 
   const handleDeleteSlideInternal = (id: string) => {
-    setLocalSlides(localSlides.filter(s => s.id !== id));
-    onDeleteOnboardingSlide(id);
-    showToast('Onboarding slide removed.', 'info');
+    attempt('Onboarding slide removed.', () => deleteOnboardingSlide(id));
   };
 
   // Banner Handlers
@@ -245,7 +251,7 @@ export default function MobileControlPage({
       return;
     }
     setEditingBanner({
-      id: `ban_${Date.now()}`,
+      id: '', // Firestore assigns the id on first save
       title: 'Fresh Organic Milk Offer',
       description: 'Subscribe today and get zero delivery charges for the first month!',
       displayOrder: localBanners.length + 1,
@@ -271,18 +277,13 @@ export default function MobileControlPage({
     } else {
       setLocalBanners([...localBanners, editingBanner]);
     }
-    if (onSaveBanner) {
-      await onSaveBanner(editingBanner);
-    } else {
-      showToast('Updated promotional banner!', 'success');
+    if (await attempt(`Saved banner for ${hubId === 'hosur' ? 'Hosur' : 'Bengaluru'}.`, () => saveBanner(hubId, editingBanner))) {
+      setIsBannerModalOpen(false);
     }
-    setIsBannerModalOpen(false);
   };
 
   const handleDeleteBannerInternal = (id: string) => {
-    setLocalBanners(localBanners.filter(b => b.id !== id));
-    onDeleteBanner(id);
-    showToast('Banner deleted.', 'info');
+    attempt('Banner deleted.', () => deleteBanner(hubId, id));
   };
 
   // Broadcast Handler (Writes live notification documents to Firestore for mobile system push bar)
@@ -293,141 +294,63 @@ export default function MobileControlPage({
       return;
     }
 
-    try {
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const notifType = alertCategory === 'Special Offer' ? 'offer' : 'general';
-      const now = new Date();
-
-      let recipientCount = 0;
-      for (const userDoc of usersSnap.docs) {
-        const notifRef = doc(collection(db, 'users', userDoc.id, 'notifications'));
-        await setDoc(notifRef, {
-          title: broadcastTitle.trim(),
-          body: broadcastBody.trim(),
-          type: notifType,
-          timestamp: now,
-          isRead: false
-        });
-        recipientCount++;
-      }
-
-      const campaignId = `cmp_${Date.now()}`;
-      await setDoc(doc(db, 'broadcasts', campaignId), {
-        id: campaignId,
+    await attempt(`Broadcast "${broadcastTitle.trim()}" published to ${hubId === 'hosur' ? 'Hosur' : 'Bengaluru'} customers.`, async () => {
+      const row = await sendBroadcast(hubId, {
         title: broadcastTitle.trim(),
-        bodyPreview: broadcastBody.trim(),
-        target: targetAudience,
-        type: alertCategory === 'Special Offer' ? 'Offer' : 'Wishes & Info',
-        recipients: recipientCount || 1,
-        sentAt: now.toISOString()
+        body: broadcastBody.trim(),
+        type: alertCategory === 'Special Offer' ? 'offer' : 'info',
+        audienceLabel: targetAudience,
+        sentByUid: staff?.uid ?? '',
       });
-
-      const newLog: CampaignLog = {
-        id: campaignId,
-        title: broadcastTitle.trim(),
-        target: targetAudience,
-        type: alertCategory === 'Special Offer' ? 'Offer' : 'Wishes & Info',
-        recipients: recipientCount || 1,
-        sentAt: now.toLocaleString(),
-        bodyPreview: broadcastBody.trim()
-      };
-
-      setCampaignHistory([newLog, ...campaignHistory]);
-      showToast(`Broadcast notification "${broadcastTitle}" pushed live to ${recipientCount || 1} mobile app notification bar(s)! 🚀`, 'success');
+      setCampaignHistory((prev) => [row, ...prev]);
       setBroadcastTitle('');
       setBroadcastBody('');
-    } catch (err) {
-      console.error('Error sending broadcast:', err);
-      showToast(`Error sending broadcast notification: ${err}`, 'error');
-    }
+    });
   };
 
   const handleDeleteBroadcast = async (campaignId: string) => {
-    try {
-      await deleteDoc(doc(db, 'broadcasts', campaignId));
-      setCampaignHistory(prev => prev.filter(c => c.id !== campaignId));
-      showToast('Broadcast campaign log deleted.', 'info');
-    } catch (err) {
-      console.error('Error deleting broadcast campaign:', err);
-      showToast(`Error deleting campaign log: ${err}`, 'error');
-    }
+    await attempt('Broadcast campaign log deleted.', async () => {
+      await deleteBroadcast(hubId, campaignId);
+      setCampaignHistory((prev) => prev.filter((c) => c.id !== campaignId));
+    });
   };
 
-  // FSSAI & Social Media Save Handler
+  // FSSAI & Social Media Save Handler (shared by both hubs → super admin only)
   const handleSaveSocialFssai = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await setDoc(doc(db, 'settings', 'mobile_app'), {
-        fssaiNumber,
-        instagramUrl,
-        youtubeUrl,
-        facebookUrl,
-        whatsappUrl,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      showToast('FSSAI & Social Links saved successfully!', 'success');
-    } catch (err) {
-      showToast(`Error saving settings: ${err}`, 'error');
-    }
+    await attempt('FSSAI & Social Links saved successfully!', () =>
+      saveAppConfig({ fssaiNumber, instagramUrl, youtubeUrl, facebookUrl, whatsappUrl }));
   };
 
-  // Pop-up Offer Ad Save Handler
+  // Pop-up Offer Ad Save Handler ("all" scope writes the same popup to every hub this admin manages)
   const handleSavePopupAd = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await setDoc(doc(db, 'settings', 'popup_ad'), {
-        active: popupActive,
-        title: popupTitle,
-        subtitle: popupSubtitle,
-        imageUrl: popupImageUrl,
-        ctaText: popupCtaText,
-        hubScope: popupHubScope,
-        autoCloseSeconds: popupTimerSeconds,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      showToast('Home Screen Pop-up Offer Ad updated live for customer app!', 'success');
-    } catch (err) {
-      showToast(`Error saving pop-up offer ad: ${err}`, 'error');
-    }
+    const targets: HubId[] = popupHubScope === 'all' ? allowedHubIds : [isHubId(popupHubScope) ? popupHubScope : hubId];
+    await attempt('Home Screen Pop-up Offer Ad updated live for customer app!', () =>
+      saveHubSetting(targets, 'popup', {
+        active: popupActive, title: popupTitle, subtitle: popupSubtitle, imageUrl: popupImageUrl,
+        ctaText: popupCtaText, autoCloseSeconds: Number(popupTimerSeconds) || 0,
+      }));
   };
 
-  // Help & Support Desk Handler
+  // Help & Support Desk Handler (customer-facing; rider contacts live in settings/contact)
   const handleSaveHelpSupport = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await setDoc(doc(db, 'settings', 'help_support'), {
-        phone: helpPhone,
-        whatsapp: helpWhatsapp,
-        email: helpEmail,
-        address: helpAddress,
-        faqs: helpFaqs,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      showToast('Help & Support Desk settings & FAQs saved live!', 'success');
-    } catch (err) {
-      showToast(`Error saving Help & Support settings: ${err}`, 'error');
-    }
+    await attempt('Help & Support Desk settings & FAQs saved live!', () =>
+      saveHubSetting([hubId], 'help', {
+        phone: helpPhone.trim(), phone2: helpPhone2.trim(), whatsapp: helpWhatsapp.trim(),
+        email: helpEmail.trim(), address: helpAddress.trim(), faqs: helpFaqs,
+      }));
   };
 
   // Free Sample Campaign Control Handler
   const handleSaveFreeSample = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await setDoc(doc(db, 'settings', 'free_sample'), {
-        active: fsActive,
-        title: fsTitle,
-        subtitle: fsSubtitle,
-        productName: fsProductName,
-        imageUrl: fsImageUrl,
-        onlyNewCustomers: fsOnlyNew,
-        showInAuth: fsShowInAuth,
-        authTitle: fsAuthTitle,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      showToast('Free Sample Gateway Controls updated live for customer app!', 'success');
-    } catch (err) {
-      showToast(`Error saving Free Sample settings: ${err}`, 'error');
-    }
+    await attempt('Free Sample Gateway Controls updated live for customer app!', () =>
+      saveHubSetting([hubId], 'freeSample', {
+        isActive: fsActive, title: fsTitle, subtitle: fsSubtitle, productName: fsProductName, imageUrl: fsImageUrl,
+        onlyNewCustomers: fsOnlyNew, showInAuth: fsShowInAuth, authTitle: fsAuthTitle,
+      }));
   };
 
   const handleAddFaq = () => {
@@ -452,6 +375,12 @@ export default function MobileControlPage({
   };
 
   return (
+    <DataState
+      loading={loadingConfigs || slidesQuery.loading || bannersQuery.loading}
+      error={configError || slidesQuery.error || bannersQuery.error}
+      onRetry={() => { setReloadKey((k) => k + 1); slidesQuery.retry(); bannersQuery.retry(); }}
+      loadingLabel="Loading app content…"
+    >
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       
       {/* Sub-Navigation Header Pills */}
@@ -1313,7 +1242,17 @@ export default function MobileControlPage({
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
                 {/* FSSAI Official Logo Emblem Badge */}
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', padding: '6px 14px', borderRadius: '14px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 900, fontStyle: 'italic', fontFamily: 'serif', color: '#1E3A8A', letterSpacing: '-0.5px' }}>
+                  <img
+                    src="https://fssai.gov.in/images/online-platforms/nsc.png"
+                    alt="FSSAI Logo"
+                    style={{ height: '20px', objectFit: 'contain' }}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                      const fallback = (e.target as HTMLElement).nextElementSibling;
+                      if (fallback) (fallback as HTMLElement).style.display = 'block';
+                    }}
+                  />
+                  <div style={{ display: 'none', fontSize: '1.1rem', fontWeight: 900, fontStyle: 'italic', fontFamily: 'serif', color: '#1E3A8A', letterSpacing: '-0.5px' }}>
                     fssa<span style={{ color: '#EA580C' }}>i</span>
                   </div>
                   <div style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
@@ -1633,13 +1572,26 @@ export default function MobileControlPage({
               <form onSubmit={handleSaveHelpSupport} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                    Customer Helpline Phone Number
+                    Customer Helpline Phone Number (Primary)
                   </label>
                   <input
                     type="text"
                     value={helpPhone}
                     onChange={(e) => setHelpPhone(e.target.value)}
                     placeholder="e.g. +91 99028 82332"
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    Extra Helpline Phone Number (Secondary / Phone 2)
+                  </label>
+                  <input
+                    type="text"
+                    value={helpPhone2}
+                    onChange={(e) => setHelpPhone2(e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
                     style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
                   />
                 </div>
@@ -2045,7 +1997,7 @@ export default function MobileControlPage({
                   fontSize: '0.82rem',
                   fontWeight: 800
                 }}>
-                  <span>📍 Locked to {selectedHubId === 'hub_hosur_main' ? 'Hosur Central Hub (hub_hosur_main)' : 'Bangalore Electronic City Hub (hub_blr_ecity)'}</span>
+                  <span>📍 Locked to {selectedHubId === 'hosur' ? 'Hosur Central Hub (hub_hosur_main)' : 'Bangalore Electronic City Hub (hub_blr_ecity)'}</span>
                 </div>
               </div>
 
@@ -2128,5 +2080,6 @@ export default function MobileControlPage({
       )}
 
     </div>
+    </DataState>
   );
 }

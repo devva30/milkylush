@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Clock, Lock, Send, UserCheck, ShieldAlert, Sparkles, X, Check } from 'lucide-react';
-import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { hubDoc } from '../../data/hubs';
+import { logAudit } from '../../utils/auditLogger';
+import { PageLoader } from '../../components/common/DataState';
 import type { DeliveryAgent } from '../../types';
 
 interface DispatchSystemControlsPageProps {
@@ -30,11 +32,15 @@ export default function DispatchSystemControlsPage({
   
   const [isSaving, setIsSaving] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  // Rider app on/off hours, exceptions and notice for this hub: hubs/{hub}/settings/riderApp
+  const settingsRef = hubDoc(selectedHubId, 'settings', 'riderApp');
 
   useEffect(() => {
     const fetchConfig = async () => {
+      setIsLoading(true);
       try {
-        const docRef = doc(db, 'system_settings', 'config');
+        const docRef = settingsRef;
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -47,29 +53,31 @@ export default function DispatchSystemControlsPage({
           }
         }
       } catch (e) {
-        console.warn("Config load note:", e);
+        showToast("Could not load rider app settings: " + (e as Error).message, "error");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchConfig();
-  }, []);
+  }, [selectedHubId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveConfig = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
     try {
       await setDoc(
-        doc(db, 'system_settings', 'config'),
+        settingsRef,
         {
           statusMode,
           openTime,
           closeTime,
           closedMessage,
           allowedRiders,
-          isAppOpen: statusMode === 'force-open' ? true : statusMode === 'force-closed' ? false : true,
-          updatedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       );
+      await logAudit({ hubId: selectedHubId as 'hosur' | 'bengaluru', category: 'Hub Operations', action: `Rider app status: ${statusMode} (${openTime}-${closeTime})`, target: `hubs/${selectedHubId}/settings/riderApp` });
 
       showToast("App status and operational settings saved successfully!", "success");
     } catch (err: any) {
@@ -107,29 +115,11 @@ export default function DispatchSystemControlsPage({
 
     setIsBroadcasting(true);
     try {
-      const alertData = {
-        title: alertTitle.trim(),
-        message: alertMessage.trim(),
-        hubId: selectedHubId,
-        createdAt: new Date().toISOString(),
-        timestamp: new Date().getTime(),
-      };
-
-      // Save to system_settings config for real-time app overlay listener
-      await setDoc(
-        doc(db, 'system_settings', 'config'),
-        {
-          latestAlert: alertData,
-          broadcastAlert: alertData,
-        },
-        { merge: true }
-      );
-
-      // Add to broadcast history collection
-      await addDoc(collection(db, 'system_notifications'), {
-        ...alertData,
-        sentAt: serverTimestamp(),
-      });
+      // One notice per hub on the settings doc; the rider app shows it until a newer one is sent.
+      await setDoc(settingsRef, {
+        alert: { title: alertTitle.trim(), message: alertMessage.trim(), sentAt: serverTimestamp() },
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
 
       showToast(`Broadcast notice "${alertTitle}" sent to all active riders in ${selectedHubId}!`, "success");
       setAlertMessage('');
@@ -139,6 +129,8 @@ export default function DispatchSystemControlsPage({
       setIsBroadcasting(false);
     }
   };
+
+  if (isLoading) return <PageLoader label="Loading rider app settings…" />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>

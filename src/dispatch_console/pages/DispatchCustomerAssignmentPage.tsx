@@ -1,98 +1,97 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { UserCheck, Search, ShieldCheck, RefreshCw, ArrowRightLeft, UserX, CheckCircle, AlertTriangle } from 'lucide-react';
-import { doc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase';
 import type { User, DeliveryAgent } from '../../types';
+import type { HubId } from '../../data/hubs';
+import { useHubCustomers, findCustomers, isServerSearch, type Customer } from '../../data/customers';
+import { useHubRoutes, assignCustomerToRider, setSubstitute, clearSubstitute } from '../../data/routes';
+import { todayKey } from '../../data/dates';
+import { DataState, LoadMore } from '../../components/common/DataState';
 
 interface DispatchCustomerAssignmentPageProps {
-  users: User[];
+  /** Ignored: customers are loaded page by page here. Kept so existing callers compile. */
+  users?: User[];
   hubDeliveryAgents: DeliveryAgent[];
   selectedHubId: string;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+type Row = User & { customerId?: string; defaultAddressId?: string };
+
 export default function DispatchCustomerAssignmentPage({
-  users,
   hubDeliveryAgents,
   selectedHubId,
   showToast
 }: DispatchCustomerAssignmentPageProps) {
+  const hubId = selectedHubId as HubId;
+  const customersQuery = useHubCustomers(hubId);
+  const routesQuery = useHubRoutes(hubId);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchHits, setSearchHits] = useState<Customer[] | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
-  // Temporary Shift Swap State
+  // Temporary Shift Swap State (stored on the routes, so riders and other admins see it)
   const [absentRiderId, setAbsentRiderId] = useState<string>('');
   const [substituteRiderId, setSubstituteRiderId] = useState<string>('');
-  const [activeShiftSwap, setActiveShiftSwap] = useState<{ absentId: string; absentName: string; subId: string; subName: string; date: string } | null>(() => {
-    const saved = localStorage.getItem(`shift_swap_${selectedHubId}`);
-    return saved ? JSON.parse(saved) : null;
-  });
+  const today = todayKey();
+  const activeShiftSwap = useMemo(() => {
+    const r = routesQuery.data.find((x) => x.substitute && x.substitute.date === today);
+    return r && r.substitute
+      ? { absentId: r.riderUid, absentName: r.riderName, subId: r.substitute.riderUid, subName: r.substitute.riderName, date: r.substitute.date }
+      : null;
+  }, [routesQuery.data, today]);
 
-  const filteredUsers = (users || []).filter(u => {
-    return (
-      (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (u.phone || '').includes(searchQuery) ||
-      (u.address || u.savedAddresses?.[0] || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  // customer → rider, from route membership
+  const riderOf = useMemo(() => {
+    const m = new Map<string, string>();
+    routesQuery.data.forEach((r) => r.stops.forEach((s) => m.set(s.customerUid, r.riderUid)));
+    return m;
+  }, [routesQuery.data]);
 
-  const assignedUsersCount = (users || []).filter(u => Boolean(u.assignedDeliveryAgentId)).length;
+  // Phone / HSR-CUS-… searches go to the server; name searches filter the loaded page.
+  useEffect(() => {
+    if (!isServerSearch(searchQuery)) { setSearchHits(null); return; }
+    let cancelled = false;
+    findCustomers(hubId, searchQuery).then((hits) => { if (!cancelled) setSearchHits(hits); });
+    return () => { cancelled = true; };
+  }, [hubId, searchQuery]);
 
-  const handleAssignRiderToCustomer = async (user: User, agentId: string) => {
+  const toRow = (c: Customer): Row => ({
+    id: c.id, name: c.name, phone: c.phone, email: c.email, address: c.defaultAddressText ?? '',
+    customerId: c.customerId, defaultAddressId: c.defaultAddressId,
+    assignedDeliveryAgentId: riderOf.get(c.id), hubId: c.hubId,
+  } as Row);
+
+  const users: Row[] = (searchHits ?? customersQuery.data).map(toRow);
+  const filteredUsers = searchHits ? users : users.filter(u =>
+    (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (u.phone || '').includes(searchQuery) ||
+    (u.customerId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (u.address || '').toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const assignedUsersCount = users.filter(u => Boolean(u.assignedDeliveryAgentId)).length;
+
+  const handleAssignRiderToCustomer = async (user: Row, agentId: string) => {
     setSavingUserId(user.id);
     const agent = hubDeliveryAgents.find(a => a.id === agentId);
-    const agentName = agent ? agent.name : '';
-
     try {
-      await updateDoc(doc(db, 'users', user.id), {
-        assignedDeliveryAgentId: agentId || null,
-        assignedDeliveryAgentName: agentName || null,
-        assignedHubId: selectedHubId
-      });
-
-      // Batch sync all orders and subscriptions for this customer in Firestore
-      const updateData = {
-        deliveryAgentId: agentId || null,
-        assignedRiderId: agentId || null,
-        assignedPartner: agentName || null,
-        assignedRider: agentName || null,
-        updatedAt: new Date().toISOString(),
-      };
-
-      try {
-        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.id));
-        const ordersSnap = await getDocs(ordersQuery);
-        for (const orderDoc of ordersSnap.docs) {
-          await updateDoc(doc(db, 'orders', orderDoc.id), updateData);
-        }
-
-        const subsQuery = query(collection(db, 'subscriptions'), where('userId', '==', user.id));
-        const subsSnap = await getDocs(subsQuery);
-        for (const subDoc of subsSnap.docs) {
-          await updateDoc(doc(db, 'subscriptions', subDoc.id), updateData);
-        }
-      } catch (syncErr) {
-        console.warn("Auto-assign order sync note:", syncErr);
-      }
-
+      await assignCustomerToRider(hubId, {
+        customerUid: user.id, customerId: user.customerId ?? '', name: user.name ?? '', phone: user.phone ?? '',
+        address: user.address ?? '', addressId: user.defaultAddressId ?? '',
+      }, agent ? { uid: agent.id, name: agent.name } : null);
       showToast(
-        agentId 
-          ? `Assigned dedicated rider "${agentName}" to customer "${user.name || 'Customer'}" and synced active drops!` 
-          : `Removed dedicated rider assignment for "${user.name || 'Customer'}".`,
+        agent
+          ? `Assigned "${agent.name}" to "${user.name || 'Customer'}". They are now the last stop on that route.`
+          : `Removed rider assignment for "${user.name || 'Customer'}".`,
         'success'
       );
-    } catch (err: any) {
-      console.warn("Firestore update note:", err);
-      // Fallback local update
-      user.assignedDeliveryAgentId = agentId || undefined;
-      user.assignedDeliveryAgentName = agentName || undefined;
-      showToast(`Updated dedicated rider for "${user.name || 'Customer'}"!`, 'success');
+    } catch (err) {
+      showToast(`Could not assign rider: ${(err as Error).message}`, 'error');
     } finally {
       setSavingUserId(null);
     }
   };
 
-  const handleCreateShiftSwap = () => {
+  const handleCreateShiftSwap = async () => {
     if (!absentRiderId || !substituteRiderId) {
       showToast("Please select both the absent rider and substitute rider", "error");
       return;
@@ -101,30 +100,29 @@ export default function DispatchCustomerAssignmentPage({
       showToast("Absent rider and substitute rider cannot be the same person", "error");
       return;
     }
-
-    const absentRider = hubDeliveryAgents.find(a => a.id === absentRiderId);
-    const subRider = hubDeliveryAgents.find(a => a.id === substituteRiderId);
-
-    const swapObj = {
-      absentId: absentRiderId,
-      absentName: absentRider?.name || 'Absent Rider',
-      subId: substituteRiderId,
-      subName: subRider?.name || 'Substitute Rider',
-      date: new Date().toISOString().slice(0, 10)
-    };
-
-    setActiveShiftSwap(swapObj);
-    localStorage.setItem(`shift_swap_${selectedHubId}`, JSON.stringify(swapObj));
-    showToast(`Temporary Shift Active: Orders for "${swapObj.absentName}" will automatically route to "${swapObj.subName}" today!`, 'success');
+    const absent = hubDeliveryAgents.find(a => a.id === absentRiderId);
+    const sub = hubDeliveryAgents.find(a => a.id === substituteRiderId);
+    if (!absent || !sub) return;
+    try {
+      const moved = await setSubstitute(hubId, { uid: absent.id, name: absent.name }, { uid: sub.id, name: sub.name });
+      showToast(`${sub.name} covers ${absent.name} today. ${moved} already-generated drop(s) moved.`, 'success');
+    } catch (err) {
+      showToast(`Could not set substitute: ${(err as Error).message}`, 'error');
+    }
   };
 
-  const handleClearShiftSwap = () => {
-    setActiveShiftSwap(null);
-    localStorage.removeItem(`shift_swap_${selectedHubId}`);
-    showToast("Cleared temporary shift swap override.", "info");
+  const handleClearShiftSwap = async () => {
+    if (!activeShiftSwap) return;
+    try {
+      const back = await clearSubstitute(hubId, activeShiftSwap.absentId, activeShiftSwap.date);
+      showToast(`Cleared shift swap. ${back} pending drop(s) returned to ${activeShiftSwap.absentName}.`, "info");
+    } catch (err) {
+      showToast(`Could not clear swap: ${(err as Error).message}`, 'error');
+    }
   };
 
   return (
+    <DataState loading={customersQuery.loading || routesQuery.loading} error={customersQuery.error || routesQuery.error} onRetry={() => { customersQuery.retry(); routesQuery.retry(); }} loadingLabel="Loading customers & routes…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
       
       {/* Top Header Card */}
@@ -372,6 +370,8 @@ export default function DispatchCustomerAssignmentPage({
         </div>
       </div>
 
+      {!searchHits && <LoadMore hasMore={customersQuery.hasMore} loading={customersQuery.loadingMore} onClick={customersQuery.loadMore} />}
     </div>
+    </DataState>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { 
+  Camera,
   LayoutDashboard, 
   Truck, 
   Zap, 
@@ -75,6 +76,7 @@ export default function DispatchSidebar({
         { id: 'bottle-reclamation', label: 'Bottle Reclamation Log', icon: Wine },
         { id: 'deliveries-archive', label: 'Deliveries Archive', icon: Archive },
         { id: 'delivery-history', label: 'Delivery History', icon: History },
+        { id: 'delivery-photos', label: 'Delivery Photos', icon: Camera },
       ]
     },
     {

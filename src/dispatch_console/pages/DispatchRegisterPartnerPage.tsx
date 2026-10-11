@@ -1,13 +1,23 @@
 import { useState } from 'react';
-import { ArrowLeft, UserPlus, Info, CheckCircle, ShieldCheck } from 'lucide-react';
-import { doc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, secondaryAuth } from '../../firebase';
+import { ArrowLeft, UserPlus, Info, CheckCircle, ShieldCheck, Share2, Copy, Send, Mail, MessageSquare, Printer, X } from 'lucide-react';
+import { createRider } from '../../data/staff';
+import type { HubId } from '../../data/hubs';
 
 interface DispatchRegisterPartnerPageProps {
   selectedHubId: string;
   onBack: () => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+interface CreatedPartnerData {
+  staffCode: string;
+  name: string;
+  phone: string;
+  email: string;
+  password: string;
+  vehicleNumber: string;
+  vehicleType: string;
+  hubName: string;
 }
 
 export default function DispatchRegisterPartnerPage({
@@ -16,6 +26,7 @@ export default function DispatchRegisterPartnerPage({
   showToast
 }: DispatchRegisterPartnerPageProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [createdPartner, setCreatedPartner] = useState<CreatedPartnerData | null>(null);
   
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
@@ -28,53 +39,83 @@ export default function DispatchRegisterPartnerPage({
   const [formLicenseValidity, setFormLicenseValidity] = useState('');
   const [formHubId, setFormHubId] = useState(selectedHubId || 'hub_hosur');
 
+  const getEffectiveHubId = (hubId?: string) => {
+    if (!hubId) return 'hub_hosur';
+    const lower = hubId.toLowerCase();
+    if (lower.includes('bengaluru') || lower.includes('blr') || lower.includes('bangalore')) {
+      return 'bengaluru';
+    }
+    return 'hub_hosur';
+  };
+
+  const activeHubId = getEffectiveHubId(selectedHubId);
+  const targetHubName = activeHubId === 'bengaluru' 
+    ? 'Bengaluru Electronic City Hub (Bengaluru)' 
+    : 'Hosur Central Hub (Hosur)';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formPhone || !formEmail) {
-      showToast("Full Name, Phone Number, and Email Address are required", "error");
+    if (!formName || !formPhone || !formEmail || !formPassword) {
+      showToast("Full Name, Phone Number, Email, and Password are required", "error");
       return;
     }
-
     setIsSaving(true);
-    const targetHub = formHubId || selectedHubId || 'hub_hosur';
-    const pass = formPassword || 'delivery123';
-
     try {
-      let uid = 'agent_' + Date.now();
-      try {
-        const userCred = await createUserWithEmailAndPassword(secondaryAuth, formEmail, pass);
-        uid = userCred.user.uid;
-      } catch (authErr: any) {
-        console.warn("Firebase Auth creation note:", authErr);
-      }
-
-      await setDoc(doc(db, 'delivery_agents', uid), {
-        id: uid,
+      const { staffCode } = await createRider(selectedHubId as HubId, {
+        name: formName, phone: formPhone, email: formEmail, password: formPassword, address: formAddress,
+        vehicleNumber: formVehicleNumber, vehicleType: formVehicleType,
+        licenseNumber: formLicenseNumber, licenseValidity: formLicenseValidity,
+      });
+      
+      const newPartner = {
+        staffCode,
         name: formName,
         phone: formPhone,
         email: formEmail,
-        password: pass,
-        address: formAddress || '',
-        vehicleNumber: formVehicleNumber || 'TN 29 AB 4521',
-        vehicleType: formVehicleType || 'Electric Scooter',
-        assignedVehicle: `${formVehicleNumber || 'TN 29 AB 4521'} • ${formVehicleType || 'Electric Scooter'}`,
-        licenseNumber: formLicenseNumber || 'DL-90823411',
-        licenseValidity: formLicenseValidity || '2030',
-        drivingLicense: `${formLicenseNumber || 'DL-90823411'} • ${formLicenseValidity || 'Valid till 2030'}`,
-        hubId: targetHub,
-        assignedHubId: targetHub,
-        isOnline: false,
-        isActive: true,
-        createdAt: new Date().toISOString()
-      });
-
-      showToast(`Delivery Partner "${formName}" registered successfully!`, "success");
-      onBack();
-    } catch (error: any) {
-      showToast("Failed to register delivery partner: " + error.message, "error");
+        password: formPassword,
+        vehicleNumber: formVehicleNumber,
+        vehicleType: formVehicleType,
+        hubName: targetHubName
+      };
+      setCreatedPartner(newPartner);
+      showToast(`Delivery Partner "${formName}" registered successfully! Share credentials below.`, "success");
+    } catch (error) {
+      showToast((error as Error).message, "error");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const buildShareText = () => {
+    if (!createdPartner) return '';
+    return `🥛 *MilkyLush Rider Account Credentials*\n\nHello ${createdPartner.name},\nWelcome to MilkyLush Delivery Team! Here are your mobile app login details:\n\n👤 *Rider ID:* ${createdPartner.staffCode}\n📍 *Assigned Hub:* ${createdPartner.hubName}\n📧 *Email:* ${createdPartner.email}\n🔑 *Password:* ${createdPartner.password}\n🛵 *Vehicle:* ${createdPartner.vehicleType} (${createdPartner.vehicleNumber || 'N/A'})\n\n📲 Open your MilkyLush Delivery Partner App and log in with these credentials.`;
+  };
+
+  const handleCopyText = () => {
+    const text = buildShareText();
+    navigator.clipboard.writeText(text);
+    showToast("Login credentials copied to clipboard!", "success");
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!createdPartner) return;
+    const cleanPhone = createdPartner.phone.replace(/[^0-9]/g, '');
+    const phoneWithCode = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const text = encodeURIComponent(buildShareText());
+    window.open(`https://wa.me/${phoneWithCode}?text=${text}`, '_blank');
+  };
+
+  const handleShareSMS = () => {
+    if (!createdPartner) return;
+    const text = encodeURIComponent(buildShareText());
+    window.open(`sms:${createdPartner.phone}?body=${text}`, '_blank');
+  };
+
+  const handleShareEmail = () => {
+    if (!createdPartner) return;
+    const subject = encodeURIComponent("MilkyLush Rider App Login Credentials");
+    const body = encodeURIComponent(buildShareText());
+    window.open(`mailto:${createdPartner.email}?subject=${subject}&body=${body}`, '_blank');
   };
 
   return (
@@ -109,7 +150,7 @@ export default function DispatchRegisterPartnerPage({
         </p>
       </div>
 
-      {/* 2-Column Layout matching Screenshot #2 */}
+      {/* 2-Column Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 0.6fr)', gap: '1.5rem' }}>
         
         {/* Left Column: Form Card */}
@@ -228,15 +269,23 @@ export default function DispatchRegisterPartnerPage({
             </div>
 
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Assigned Operations Hub *</label>
-              <select
-                value={formHubId}
-                onChange={(e) => setFormHubId(e.target.value)}
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.88rem', marginTop: '6px', backgroundColor: '#FFFFFF', outline: 'none' }}
-              >
-                <option value="hub_hosur">Hosur Central Hub (Hosur)</option>
-                <option value="hub_bengaluru">Bengaluru Electronic City Hub (Bengaluru)</option>
-              </select>
+              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Assigned Operations Hub (Auto-Assigned)</label>
+              <div style={{
+                width: '100%',
+                padding: '0.7rem',
+                borderRadius: '8px',
+                border: '1px solid #CBD5E1',
+                fontSize: '0.88rem',
+                marginTop: '6px',
+                backgroundColor: '#F8FAFC',
+                fontWeight: 700,
+                color: '#0F172A',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span>📍 {targetHubName}</span>
+              </div>
             </div>
 
             <button
@@ -288,6 +337,125 @@ export default function DispatchRegisterPartnerPage({
 
       </div>
 
+      {/* SHARE CREDENTIALS MODAL */}
+      {createdPartner && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '2rem', maxWidth: '520px', width: '100%',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', textAlign: 'left', border: '1px solid #E2E8F0', position: 'relative'
+          }}>
+            <button
+              onClick={() => { setCreatedPartner(null); onBack(); }}
+              style={{ position: 'absolute', top: '16px', right: '16px', border: 'none', background: 'none', cursor: 'pointer', color: '#64748B' }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={24} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                  Partner Account Registered!
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>
+                  Share credentials with {createdPartner.name} via WhatsApp, SMS, or Email.
+                </p>
+              </div>
+            </div>
+
+            {/* Credentials Card Preview */}
+            <div style={{ backgroundColor: '#F8FAFC', border: '1px dashed #047857', borderRadius: '12px', padding: '1.15rem', margin: '1rem 0' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                🆔 RIDER LOG-IN CREDENTIALS
+              </div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E293B', marginTop: '8px' }}>
+                Rider ID: <span style={{ color: '#047857' }}>{createdPartner.staffCode}</span>
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#334155', marginTop: '4px' }}>
+                Hub: <strong>{createdPartner.hubName}</strong>
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#334155', marginTop: '4px' }}>
+                Email / ID: <strong>{createdPartner.email}</strong>
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#334155', marginTop: '4px' }}>
+                Password: <strong>{createdPartner.password}</strong>
+              </div>
+            </div>
+
+            {/* Share Action Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '1.25rem' }}>
+              
+              {/* WhatsApp Button */}
+              <button
+                onClick={handleShareWhatsApp}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '0.65rem', borderRadius: '10px', backgroundColor: '#25D366', color: '#FFFFFF',
+                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                }}
+              >
+                <Send size={16} /> WhatsApp Share
+              </button>
+
+              {/* Copy Button */}
+              <button
+                onClick={handleCopyText}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '0.65rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF',
+                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                }}
+              >
+                <Copy size={16} /> Copy Credentials
+              </button>
+
+              {/* SMS Button */}
+              <button
+                onClick={handleShareSMS}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '0.65rem', borderRadius: '10px', backgroundColor: '#3B82F6', color: '#FFFFFF',
+                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                }}
+              >
+                <MessageSquare size={16} /> SMS Text
+              </button>
+
+              {/* Email Button */}
+              <button
+                onClick={handleShareEmail}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '0.65rem', borderRadius: '10px', backgroundColor: '#6366F1', color: '#FFFFFF',
+                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                }}
+              >
+                <Mail size={16} /> Send Email
+              </button>
+
+            </div>
+
+            <button
+              onClick={() => { setCreatedPartner(null); onBack(); }}
+              style={{
+                width: '100%', marginTop: '1rem', padding: '0.65rem', borderRadius: '10px',
+                backgroundColor: '#F1F5F9', color: '#475569', fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+              }}
+            >
+              Done & Return to Riders List
+            </button>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

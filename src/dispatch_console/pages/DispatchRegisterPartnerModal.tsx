@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { X, UserPlus, ShieldCheck, Truck, BadgeCheck, MapPin } from 'lucide-react';
-import { doc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, secondaryAuth } from '../../firebase';
+import { createRider } from '../../data/staff';
+import type { HubId } from '../../data/hubs';
 
 interface DispatchRegisterPartnerModalProps {
   isOpen: boolean;
@@ -22,70 +21,50 @@ export default function DispatchRegisterPartnerModal({
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formEmail, setFormEmail] = useState('');
-  const [formPassword, setFormPassword] = useState('delivery123');
+  const [formPassword, setFormPassword] = useState('');
   const [formAddress, setFormAddress] = useState('');
   
   // New Vehicle, License, and Recognition Badge Fields
-  const [formVehicleNumber, setFormVehicleNumber] = useState('TN 29 AB 4521');
+  const [formVehicleNumber, setFormVehicleNumber] = useState('');
   const [formVehicleType, setFormVehicleType] = useState('Electric Scooter');
-  const [formLicenseNumber, setFormLicenseNumber] = useState('DL-90823411');
-  const [formLicenseValidity, setFormLicenseValidity] = useState('Valid till 2030');
-  const [formRiderId, setFormRiderId] = useState('#ML-RIDER-' + Math.floor(1000 + Math.random() * 9000));
-  const [formBadgeLevel, setFormBadgeLevel] = useState('Top Performer');
-  const [formRecognitionTag, setFormRecognitionTag] = useState('Top Performer • 100% Bottle Return Rate');
+  const [formLicenseNumber, setFormLicenseNumber] = useState('');
+  const [formLicenseValidity, setFormLicenseValidity] = useState('');
+  const [formRiderId, setFormRiderId] = useState('Assigned on save (e.g. HSR-RDR-001)');
+  const [formBadgeLevel, setFormBadgeLevel] = useState('');
+  const [formRecognitionTag, setFormRecognitionTag] = useState('');
 
   if (!isOpen) return null;
 
-  const targetHub = selectedHubId || 'hub_hosur';
-  const hubName = targetHub === 'hub_bengaluru' ? "Bangalore Central Hub (Bengaluru)" : "Hosur Central Hub (Hosur)";
+  const getEffectiveHubId = (hubId?: string) => {
+    if (!hubId) return 'hub_hosur';
+    const lower = hubId.toLowerCase();
+    if (lower.includes('bengaluru') || lower.includes('blr') || lower.includes('bangalore')) {
+      return 'bengaluru';
+    }
+    return 'hub_hosur';
+  };
+
+  const targetHub = getEffectiveHubId(selectedHubId);
+  const hubName = targetHub === 'bengaluru' ? "Bangalore Central Hub (Bengaluru)" : "Hosur Central Hub (Hosur)";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formPhone || !formEmail) {
-      showToast("Name, Phone, and Email are required", "error");
+      showToast("Full Name, Phone Number, and Email Address are required", "error");
       return;
     }
-
     setIsSaving(true);
-    const pass = formPassword || 'delivery123';
-
     try {
-      let uid = 'agent_' + Date.now();
-      try {
-        const userCred = await createUserWithEmailAndPassword(secondaryAuth, formEmail, pass);
-        uid = userCred.user.uid;
-      } catch (authErr: any) {
-        console.warn("Firebase Auth creation note:", authErr);
-      }
-
-      await setDoc(doc(db, 'delivery_agents', uid), {
-        id: uid,
-        riderId: formRiderId,
-        name: formName,
-        phone: formPhone,
-        email: formEmail,
-        password: pass,
-        address: formAddress || '',
-        assignedVehicle: `${formVehicleNumber} • ${formVehicleType}`,
-        vehicleNumber: formVehicleNumber,
-        vehicleType: formVehicleType,
-        drivingLicense: `${formLicenseNumber} • ${formLicenseValidity}`,
-        licenseNumber: formLicenseNumber,
-        licenseValidity: formLicenseValidity,
-        recognitionBadge: formBadgeLevel,
-        recognitionTag: formRecognitionTag,
-        hubId: targetHub,
-        assignedHubId: targetHub,
-        isOnline: false,
-        isActive: true,
-        inactiveReason: '',
-        createdAt: new Date().toISOString()
+      const { staffCode } = await createRider(selectedHubId as HubId, {
+        name: formName, phone: formPhone, email: formEmail, password: formPassword, address: formAddress,
+        vehicleNumber: formVehicleNumber, vehicleType: formVehicleType,
+        licenseNumber: formLicenseNumber, licenseValidity: formLicenseValidity,
+        badgeLevel: formBadgeLevel, recognitionTag: formRecognitionTag,
       });
-
-      showToast(`Delivery Partner "${formName}" onboarded successfully!`, "success");
+      showToast(`Delivery Partner "${formName}" registered as ${staffCode}. Share the email and password with the rider.`, "success");
       onClose();
-    } catch (error: any) {
-      showToast("Failed to onboard delivery partner: " + error.message, "error");
+    } catch (error) {
+      showToast((error as Error).message, "error");
     } finally {
       setIsSaving(false);
     }

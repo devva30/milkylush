@@ -19,7 +19,10 @@ import DispatchDeliveriesArchivePage from './pages/DispatchDeliveriesArchivePage
 import DispatchDeliveryHistoryPage from './pages/DispatchDeliveryHistoryPage';
 import DispatchSystemControlsPage from './pages/DispatchSystemControlsPage';
 import DispatchHubContactSettingsPage from './pages/DispatchHubContactSettingsPage';
+import DispatchDeliveryPhotosPage from './pages/DispatchDeliveryPhotosPage';
 import ServiceAreasPage from '../pages/ServiceAreasPage';
+import { DeliveriesDayShell, DeliveriesRangeShell, RiderDeliveriesShell } from '../components/common/DeliveriesRangeShell';
+import type { HubId } from '../data/hubs';
 
 import type { DeliveryAgent, Order, Subscription, User, Product } from '../types';
 
@@ -67,6 +70,9 @@ export default function DispatchConsoleLayout({
   adminUsername = 'Tomadmin@gmail.com'
 }: DispatchConsoleLayoutProps) {
   const { theme, toggleTheme } = useHubContext();
+  // Delivery pages read hubs/{hub}/deliveries through these shells (period + loader + status/rider writes).
+  const hubId = selectedHubId as HubId;
+  const shell = { hubId, deliveryAgents: hubDeliveryAgents, showToast };
   const [activeTab, setActiveTab] = useState<string>('dispatch-dashboard');
   const [selectedPartner, setSelectedPartner] = useState<DeliveryAgent | null>(null);
   const [isHubModalOpen, setIsHubModalOpen] = useState<boolean>(false);
@@ -118,10 +124,11 @@ export default function DispatchConsoleLayout({
         {/* Dynamic Page Router */}
         <main style={{ flex: 1, padding: '1.5rem 1.75rem' }}>
           {activeTab === 'dispatch-dashboard' && (
+            <DeliveriesDayShell {...shell} fixedToday>{(d) => (
             <DispatchDashboardPage
               hubDeliveryAgents={hubDeliveryAgents}
-              hubOrders={hubOrders}
-              users={hubUsers}
+              hubOrders={d.orders}
+              users={d.users}
               products={products}
               selectedHubId={selectedHubId}
               onOpenRegisterModal={() => setActiveTab('register-partner')}
@@ -129,36 +136,41 @@ export default function DispatchConsoleLayout({
                 setSelectedPartner(partner);
                 setActiveTab('partner-detail');
               }}
-              onUpdateOrderStatus={handleUpdateStatus}
-              onUpdateOrderDriver={handleUpdateDriver}
+              onUpdateOrderStatus={d.onUpdateOrderStatus}
+              onUpdateOrderDriver={d.onUpdateOrderDriver}
               showToast={showToast}
             />
+            )}</DeliveriesDayShell>
           )}
 
           {activeTab === 'todays-deliveries' && (
+            <DeliveriesDayShell {...shell} allowGenerate>{(d) => (
             <DispatchTodaysDeliveriesPage
               selectedHubId={selectedHubId}
-              hubOrders={hubOrders}
-              users={hubUsers}
+              hubOrders={d.orders}
+              users={d.users}
               products={products}
               deliveryAgents={hubDeliveryAgents}
-              onUpdateOrderStatus={handleUpdateStatus}
-              onUpdateOrderDriver={handleUpdateDriver}
+              onUpdateOrderStatus={d.onUpdateOrderStatus}
+              onUpdateOrderDriver={d.onUpdateOrderDriver}
               showToast={showToast}
             />
+            )}</DeliveriesDayShell>
           )}
 
           {activeTab === 'dispatch-board' && (
+            <DeliveriesRangeShell {...shell} defaultDays={7}>{(d) => (
             <DispatchActiveBoardPage
-              hubOrders={hubOrders}
+              hubOrders={d.orders}
               hubDeliveryAgents={hubDeliveryAgents}
-              users={hubUsers}
+              users={d.users}
               products={products}
               selectedHubId={selectedHubId}
-              onUpdateOrderStatus={handleUpdateStatus}
-              onUpdateOrderDriver={handleUpdateDriver}
+              onUpdateOrderStatus={d.onUpdateOrderStatus}
+              onUpdateOrderDriver={d.onUpdateOrderDriver}
               showToast={showToast}
             />
+            )}</DeliveriesRangeShell>
           )}
 
           {activeTab === 'delivery-partners' && (
@@ -202,20 +214,22 @@ export default function DispatchConsoleLayout({
           )}
 
           {activeTab === 'partner-detail' && (
+            <RiderDeliveriesShell {...shell} riderUid={selectedPartner?.id ?? null}>{(d) => (
             <DispatchPartnerDetailPage
               partner={selectedPartner || hubDeliveryAgents[0] || {
                 id: 'agent_default',
                 name: 'Delivery Agent',
-                phone: '+91 98765 43210',
+                phone: '',
                 email: 'agent@milkylush.com',
                 assignedZone: 'General Route',
                 isOnline: true,
                 isActive: true
               }}
-              hubOrders={hubOrders}
+              hubOrders={d.orders}
               onBack={() => setActiveTab('delivery-partners')}
               showToast={showToast}
             />
+            )}</RiderDeliveriesShell>
           )}
 
           {activeTab === 'rider-attendance' && (
@@ -243,25 +257,29 @@ export default function DispatchConsoleLayout({
           )}
 
           {activeTab === 'deliveries-archive' && (
+            <DeliveriesRangeShell {...shell} defaultDays={30}>{(d) => (
             <DispatchDeliveriesArchivePage
-              hubOrders={hubOrders}
-              users={hubUsers}
+              hubOrders={d.orders}
+              users={d.users}
               products={products}
               deliveryAgents={hubDeliveryAgents}
               selectedHubId={selectedHubId}
-              onUpdateOrderStatus={handleUpdateStatus}
-              onUpdateOrderDriver={handleUpdateDriver}
+              onUpdateOrderStatus={d.onUpdateOrderStatus}
+              onUpdateOrderDriver={d.onUpdateOrderDriver}
               showToast={showToast}
             />
+            )}</DeliveriesRangeShell>
           )}
 
           {activeTab === 'delivery-history' && (
+            <DeliveriesRangeShell {...shell} defaultDays={30}>{(d) => (
             <DispatchDeliveryHistoryPage
-              hubOrders={hubOrders}
-              users={hubUsers}
+              hubOrders={d.orders}
+              users={d.users}
               deliveryAgents={hubDeliveryAgents}
               selectedHubId={selectedHubId}
             />
+            )}</DeliveriesRangeShell>
           )}
 
           {activeTab === 'system-controls' && (
@@ -270,6 +288,10 @@ export default function DispatchConsoleLayout({
               showToast={showToast}
               deliveryAgents={hubDeliveryAgents}
             />
+          )}
+
+          {activeTab === 'delivery-photos' && (
+            <DispatchDeliveryPhotosPage selectedHubId={selectedHubId} showToast={showToast} />
           )}
 
           {activeTab === 'hub-contacts' && (

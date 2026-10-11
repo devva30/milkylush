@@ -22,7 +22,7 @@ export const DEFAULT_HUBS: Hub[] = [
     isActive: true,
   },
   {
-    id: 'hub_blr_ecity',
+    id: 'bengaluru',
     code: 'BLR_ECITY_01',
     name: 'Bangalore - Electronic City Hub',
     cityName: 'Bangalore',
@@ -30,7 +30,7 @@ export const DEFAULT_HUBS: Hub[] = [
     isActive: true,
   },
   {
-    id: 'hub_hosur_main',
+    id: 'hosur',
     code: 'HOS_MAIN_01',
     name: 'Hosur - Central Hub',
     cityName: 'Hosur',

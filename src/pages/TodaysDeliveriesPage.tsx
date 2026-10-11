@@ -1,21 +1,30 @@
 import { useState, useMemo } from 'react';
+import { closeDay } from '../data/stats';
 import { Download, Search, ArrowLeft, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import type { Order, DeliveryAgent, User, Product } from '../types';
+import type { HubId } from '../data/hubs';
+import { todayKey, formatDay } from '../data/dates';
+import {
+  useDeliveries, generateDeliveries, setDeliveryStatus, reassignDelivery, deliveryToOrder as toOrderRow, DB_STATUS,
+} from '../data/deliveries';
+import { DateFilter, todayRange, type DateRange } from '../components/common/DateFilter';
+import { DataState } from '../components/common/DataState';
+
+
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 import { formatAddressDetails } from '../utils/addressFormatter';
 
 interface TodaysDeliveriesPageProps {
   selectedHubId: string;
-  orders: Order[];
+  /** Ignored: the page reads hubs/{hubId}/deliveries for the chosen date. Kept so callers compile. */
+  orders?: Order[];
   subscriptions?: any[];
-  users: User[];
+  users?: User[];
   products?: Product[];
   deliveryAgents: DeliveryAgent[];
   isLoading?: boolean;
   onOpenAddOrderModal?: () => void;
-  onUpdateOrderStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateOrderStatus?: (orderId: string, status: Order['status']) => void;
   onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onNavigateTab?: (tab: string) => void;
@@ -23,15 +32,10 @@ interface TodaysDeliveriesPageProps {
 
 export default function TodaysDeliveriesPage({
   selectedHubId,
-  orders,
-  subscriptions = [],
-  users,
   products = [],
   deliveryAgents,
   isLoading = false,
   onOpenAddOrderModal,
-  onUpdateOrderStatus,
-  onUpdateOrderDriver,
   showToast,
   onNavigateTab,
 }: TodaysDeliveriesPageProps) {
@@ -45,144 +49,80 @@ export default function TodaysDeliveriesPage({
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
-  const hubCodeName = isHosur ? 'hub_hosur_main' : 'hub_blr_ecity';
+  const hubId = selectedHubId as HubId;
+  const isHosur = hubId === 'hosur';
+  const hubCodeName = hubId;
+  const [range, setRange] = useState<DateRange>(todayRange());
+  const date = range.from;
+  const isToday = date === todayKey();
+  const dayLabel = isToday ? 'today' : formatDay(date);
+  const deliveriesQuery = useDeliveries(hubId, date);
+  const [generating, setGenerating] = useState(false);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // One row per drop, grouped by rider then stop order
+  const todayOnlyOrders = useMemo(() => deliveriesQuery.data
+    .slice()
+    .sort((a, b) => (a.riderName ?? '~').localeCompare(b.riderName ?? '~') || a.stopSeq - b.stopSeq)
+    .map(toOrderRow), [deliveriesQuery.data]);
 
-  // Dynamic today filtering: Include active orders & recurring subscriptions scheduled for today
-  const todayOnlyOrders = useMemo(() => {
-    const now = new Date();
-    const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  // Customer details travel on each delivery, so no customer list is loaded.
+  const users = useMemo(() => {
+    const m = new Map<string, User>();
+    deliveriesQuery.data.forEach((d) => m.set(d.customerUid, {
+      id: d.customerUid, name: d.customerName, phone: d.customerPhone, savedAddresses: [d.addressText], customerId: d.customerId,
+    } as unknown as User));
+    return Array.from(m.values());
+  }, [deliveriesQuery.data]);
 
-    const items: Order[] = [];
-    const processedSubIds = new Set<string>();
-
-    // 1. Process explicit orders from orders list
-    for (const o of orders) {
-      if (o.status === 'delivered' || o.status === 'cancelled') continue;
-
-      const isSub = o.isSubscriptionDelivery || o.orderType === 'subscription';
-      if (isSub && subscriptions.length > 0) {
-        const subId = o.subscriptionId || o.id.replace('DISPATCH_', '').replace('SUB-', '');
-        const matchingSub = subscriptions.find(s => s.id === subId || s.id === o.id || o.id.includes(s.id));
-        if (matchingSub) {
-          processedSubIds.add(matchingSub.id);
-
-          // Rule: If subscription was ordered today or starts tomorrow/later, exclude from today's deliveries
-          if (matchingSub.startDate) {
-            const sStart = new Date(matchingSub.startDate);
-            sStart.setHours(0, 0, 0, 0);
-            if (sStart.getTime() >= todayZero.getTime() && matchingSub.startDate.startsWith(todayStr)) {
-              continue; // Created today, starts tomorrow!
-            }
-          }
-
-          // Check paused dates
-          const pausedList: string[] = matchingSub.pausedDates || [];
-          const isTodayPaused = pausedList.some(pd => {
-            const pDate = new Date(pd);
-            const pdStr = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}-${String(pDate.getDate()).padStart(2, '0')}`;
-            return pdStr === localDateStr || pdStr === todayStr;
-          });
-          if (isTodayPaused) continue;
-
-          // Check vacation range
-          if (matchingSub.vacationStart && matchingSub.vacationEnd) {
-            const vStart = new Date(matchingSub.vacationStart);
-            vStart.setHours(0, 0, 0, 0);
-            const vEnd = new Date(matchingSub.vacationEnd);
-            vEnd.setHours(23, 59, 59, 999);
-            if (now.getTime() >= vStart.getTime() && now.getTime() <= vEnd.getTime()) {
-              continue;
-            }
-          }
-
-          items.push(o);
-          continue;
-        }
-      }
-
-      if (!o.orderDate) continue;
-
-      // Rule: If order was placed today, it is scheduled for tomorrow delivery -> exclude from today's deliveries
-      if (o.orderDate.startsWith(todayStr) || o.orderDate.startsWith(localDateStr)) {
-        continue; // Ordered today, delivered tomorrow!
-      }
-
-      const parsed = new Date(o.orderDate);
-      if (!isNaN(parsed.getTime())) {
-        const pStr = parsed.toISOString().slice(0, 10);
-        const localPStr = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
-        if (pStr !== todayStr && localPStr !== todayStr) {
-          items.push(o);
-        }
-      }
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const r = await generateDeliveries(hubId, date);
+      showToast(
+        `${formatDay(date)}: ${r.created} new, ${r.refreshed} updated, ${r.skippedNow} now skipped` +
+        (r.unassigned ? `. ${r.unassigned} drop(s) have no rider - assign those customers to a route.` : '.'),
+        r.unassigned ? 'info' : 'success');
+    } catch (err) {
+      showToast(`Could not generate deliveries: ${(err as Error).message}`, 'error');
+    } finally {
+      setGenerating(false);
     }
+  };
 
-    // 2. Process active recurring subscriptions whose delivery date is today
-    for (const sub of subscriptions) {
-      if (processedSubIds.has(sub.id)) continue;
-      if (sub.status === 'cancelled') continue;
-
-      // Rule: If subscription was ordered today, it starts tomorrow -> exclude from today's deliveries
-      if (sub.startDate) {
-        const sStart = new Date(sub.startDate);
-        sStart.setHours(0, 0, 0, 0);
-        if (sStart.getTime() >= todayZero.getTime() && sub.startDate.startsWith(todayStr)) {
-          continue; // Created today, starts tomorrow!
-        }
-      }
-
-      const pausedList: string[] = sub.pausedDates || [];
-      const isTodayPaused = pausedList.some(pd => {
-        const pDate = new Date(pd);
-        const pdStr = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}-${String(pDate.getDate()).padStart(2, '0')}`;
-        return pdStr === localDateStr || pdStr === todayStr;
-      });
-      if (isTodayPaused) continue;
-
-      if (sub.vacationStart && sub.vacationEnd) {
-        const vStart = new Date(sub.vacationStart);
-        vStart.setHours(0, 0, 0, 0);
-        const vEnd = new Date(sub.vacationEnd);
-        vEnd.setHours(23, 59, 59, 999);
-        if (now.getTime() >= vStart.getTime() && now.getTime() <= vEnd.getTime()) {
-          continue;
-        }
-      }
-
-      items.push({
-        id: sub.id,
-        userId: sub.userId || sub.customerId || 'user_01',
-        orderDate: localDateStr,
-        status: sub.status || 'confirmed',
-        deliveryAgentId: sub.deliveryAgentId || sub.assignedRiderId || sub.assignedDeliveryAgentId || '',
-        assignedPartner: sub.assignedPartner || sub.lastDeliveryPartner || sub.assignedRider || '',
-        totalAmount: (sub.product?.price || 95) * (sub.quantity || 1),
-        isSubscriptionDelivery: true,
-        orderType: 'subscription',
-        subscriptionId: sub.id,
-        address: sub.address || sub.deliveryAddress || '',
-        items: [
-          {
-            product: sub.product || {
-              id: 'prod_a2_milk',
-              name: 'A2 Desi Cow Milk',
-              price: 95,
-              unit: '750ml Glass Bottle',
-              imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600'
-            },
-            quantity: sub.quantity || 1,
-            unitPrice: sub.product?.price || 95,
-          }
-        ]
-      });
+  const [closing, setClosing] = useState(false);
+  const handleCloseDay = async () => {
+    if (!window.confirm(`Close ${formatDay(date)}? One-time orders get their delivery result and the day's totals are saved. You can close again later to refresh them.`)) return;
+    setClosing(true);
+    try {
+      const r = await closeDay(hubId, date);
+      showToast(`${formatDay(date)} closed: ${r.deliveriesDone}/${r.deliveriesScheduled} delivered, ${r.deliveriesFailed} failed, ${r.ordersUpdated} order(s) updated.`, 'success');
+    } catch (err) {
+      showToast(`Could not close the day: ${(err as Error).message}`, 'error');
+    } finally {
+      setClosing(false);
     }
+  };
 
-    return items;
-  }, [orders, subscriptions, todayStr]);
+  const handleStatus = async (id: string, status: Order['status']) => {
+    const next = DB_STATUS[status as string];
+    if (!next) return;
+    try {
+      await setDeliveryStatus(hubId, id, next);
+      showToast(`Delivery ${id} -> ${next.replace(/_/g, ' ')}`, 'success');
+    } catch (err) {
+      showToast(`Could not update delivery: ${(err as Error).message}`, 'error');
+    }
+  };
+
+  const handleDriver = async (id: string, agentId: string) => {
+    const agent = deliveryAgents.find((a) => a.id === agentId);
+    try {
+      await reassignDelivery(hubId, id, agent ? { uid: agent.id, name: agent.name } : null);
+      showToast(agent ? `Assigned ${agent.name}` : 'Rider removed from this drop', 'success');
+    } catch (err) {
+      showToast(`Could not reassign: ${(err as Error).message}`, 'error');
+    }
+  };
 
   const activeOrdersList = todayOnlyOrders;
 
@@ -240,7 +180,7 @@ export default function TodaysDeliveriesPage({
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `Today_Deliveries_${isHosur ? 'Hosur' : 'Bangalore'}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Today_Deliveries_${isHosur ? 'Hosur' : 'Bangalore'}_${date}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -252,16 +192,16 @@ export default function TodaysDeliveriesPage({
       <FulfillmentSheetView
         order={selectedFulfillmentOrder}
         users={users}
-        products={products}
         deliveryAgents={deliveryAgents}
         selectedHubId={selectedHubId}
+        deliveryHubId={hubId}
         onClose={() => setSelectedFulfillmentOrder(null)}
         onUpdateOrderStatus={(orderId, status) => {
-          onUpdateOrderStatus(orderId, status);
+          handleStatus(orderId, status);
           setSelectedFulfillmentOrder((prev) => prev ? { ...prev, status } : null);
         }}
         onUpdateOrderDriver={(orderId, agentId) => {
-          if (onUpdateOrderDriver) onUpdateOrderDriver(orderId, agentId);
+          handleDriver(orderId, agentId);
           setSelectedFulfillmentOrder((prev) => prev ? { ...prev, deliveryAgentId: agentId } : null);
         }}
         showToast={showToast}
@@ -274,6 +214,26 @@ export default function TodaysDeliveriesPage({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       
+      {/* Date + Generate */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>Deliveries for {formatDay(date)}</span>
+          <DateFilter value={range} onChange={(r) => { setRange(r); setCurrentPage(1); }} />
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {date <= todayKey() && (
+          <button className="btn-secondary" onClick={handleCloseDay} disabled={closing} style={{ opacity: closing ? 0.7 : 1 }}>
+            {closing ? 'Closing…' : `Close day`}
+          </button>
+        )}
+        <button className="btn-primary" onClick={handleGenerate} disabled={generating} style={{ opacity: generating ? 0.7 : 1 }}>
+          {generating ? 'Generating…' : `Generate deliveries for ${formatDay(date)}`}
+        </button>
+        </div>
+      </div>
+
+      <DataState loading={deliveriesQuery.loading} error={deliveriesQuery.error} onRetry={deliveriesQuery.retry} loadingLabel="Loading deliveries…">
+
       {/* Top 3 Summary Cards - COMPACT SLEEK SIZE */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
         
@@ -289,13 +249,13 @@ export default function TodaysDeliveriesPage({
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            TODAY'S SCHEDULED DELIVERIES
+            {isToday ? "TODAY'S" : formatDay(date).toUpperCase()} SCHEDULED DELIVERIES
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {totalTodayCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Total deliveries scheduled for today
+            Total deliveries scheduled for {dayLabel}
           </div>
         </div>
 
@@ -317,7 +277,7 @@ export default function TodaysDeliveriesPage({
             {subScheduledCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Recurring subscription drops today
+            Recurring subscription drops {dayLabel}
           </div>
         </div>
 
@@ -575,11 +535,7 @@ export default function TodaysDeliveriesPage({
                       <select
                         value={o.deliveryAgentId || ''}
                         onChange={(e) => {
-                          const nextAgentId = e.target.value;
-                          if (onUpdateOrderDriver) {
-                            onUpdateOrderDriver(o.id, nextAgentId);
-                          }
-                          showToast(`Assigned driver to order ${o.id}`, 'success');
+                          handleDriver(o.id, e.target.value);
                         }}
                         style={{
                           padding: '0.35rem 0.55rem',
@@ -666,7 +622,7 @@ export default function TodaysDeliveriesPage({
               ) : paginatedOrders.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                    No delivery records found for today matching the filters.
+                    No delivery records for {dayLabel} matching the filters. If none were generated yet, press "Generate deliveries" above.
                   </td>
                 </tr>
               ) : null}
@@ -760,6 +716,7 @@ export default function TodaysDeliveriesPage({
 
       </div>
 
+      </DataState>
     </div>
   );
 }

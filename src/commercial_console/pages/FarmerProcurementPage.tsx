@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Milk,
   Users,
@@ -14,26 +14,53 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
-import { setDoc, doc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { auth } from '../../firebase';
+import type { HubId } from '../../data/hubs';
+import { formatDay, formatDateTime, todayKey } from '../../data/dates';
+import {
+  useFarmers, addFarmer, useProcurement, addProcurement, useFarmerPayments, pendingFarmerDues, payFarmer,
+} from '../../data/commercial';
+import { LoadMore } from '../../components/common/DataState';
 import type { Farmer, MilkProcurementItem } from '../../types';
 
 interface FarmerProcurementPageProps {
   selectedTab: 'farmers' | 'collection-persons' | 'milk-purchase' | 'purchase-reports' | 'rate-chart' | 'farmer-payments';
   selectedHubId: string;
-  farmers: Farmer[];
-  milkProcurements: MilkProcurementItem[];
+  /** Unused: farmers and purchases are loaded for the hub. */
+  farmers?: Farmer[];
+  milkProcurements?: MilkProcurementItem[];
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export default function FarmerProcurementPage({
   selectedTab,
   selectedHubId,
-  farmers,
-  milkProcurements,
   showToast,
 }: FarmerProcurementPageProps) {
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const hubId = selectedHubId as HubId;
+  const farmersQuery = useFarmers(hubId);
+  const procQuery = useProcurement(hubId);
+  const payments = useFarmerPayments(hubId);
+  const [dues, setDues] = useState<Record<string, { amount: number; count: number }>>({});
+  const [duesTick, setDuesTick] = useState(0);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    pendingFarmerDues(hubId).then((d) => alive && setDues(d)).catch(() => alive && setDues({}));
+    return () => { alive = false; };
+  }, [hubId, duesTick]);
+
+  const farmers: Farmer[] = useMemo(() => farmersQuery.data.map((d) => ({
+    id: d.id, code: d.id, name: d.name, phone: d.phone, village: d.village, hubId,
+    dailySupplyLiters: d.dailySupplyLiters, bankAccount: d.bankAccount, status: d.status,
+    createdAt: d.createdAt ? formatDateTime(d.createdAt) : '',
+  })), [farmersQuery.data, hubId]);
+  const milkProcurements: MilkProcurementItem[] = useMemo(() => procQuery.data.map((p) => ({
+    id: p.id, farmerId: p.farmerId, farmerName: p.farmerName, farmerCode: p.farmerId, date: p.date,
+    quantityLiters: p.litres, fatPercent: p.fat, snfPercent: p.snf, ratePerLiter: p.ratePerLitre / 100,
+    totalPayout: p.amount / 100, hubId, collectionPerson: p.collectionPerson, paymentStatus: p.paymentStatus, createdAt: '',
+  })), [procQuery.data, hubId]);
+  const isHosur = selectedHubId === 'hosur';
   const hubTitle = isHosur ? 'Hosur Milk Collection Center' : 'Bangalore Procurement Station';
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,7 +68,8 @@ export default function FarmerProcurementPage({
   const [isAddPurchaseModalOpen, setIsAddPurchaseModalOpen] = useState(false);
 
   // New Farmer Modal State
-  const [farmerCode, setFarmerCode] = useState(`FRM-${isHosur ? 'HSR' : 'BLR'}-${Math.floor(100 + Math.random() * 900)}`);
+  // The id (HSR-FRM-###) is issued from the hub counter when the farmer is saved
+  const [farmerCode, setFarmerCode] = useState(`${isHosur ? 'HSR' : 'BLR'}-FRM-### (assigned on save)`);
   const [farmerName, setFarmerName] = useState('');
   const [farmerPhone, setFarmerPhone] = useState('');
   const [farmerVillage, setFarmerVillage] = useState(isHosur ? 'Hosur Dairy Circle' : 'Anekal Village');
@@ -53,7 +81,7 @@ export default function FarmerProcurementPage({
   const [milkLiters, setMilkLiters] = useState('120');
   const [fatPercentage, setFatPercentage] = useState('4.2');
   const [snfPercentage, setSnfPercentage] = useState('8.5');
-  const [collectionPerson, setCollectionPerson] = useState('Srinivas (Route Lead)');
+  const collectionPerson = auth.currentUser?.email ?? 'admin';
 
   // Rate calculation formula: Base ₹38 for Fat 4.0% & SNF 8.5% (+ ₹0.5 per 0.1% Fat)
   const calcRatePerLiter = (fatStr: string) => {
@@ -73,27 +101,25 @@ export default function FarmerProcurementPage({
       showToast('Please enter farmer name', 'error');
       return;
     }
+    if (!/^\+?\d{10,13}$/.test(farmerPhone.replace(/\s/g, ''))) {
+      showToast('Please enter the farmer\'s 10-digit phone number', 'error');
+      return;
+    }
     try {
-      const newId = `farmer_${Date.now()}`;
-      const newFarmer: Farmer = {
-        id: newId,
-        code: farmerCode,
-        name: farmerName,
-        phone: farmerPhone || '9876543210',
-        village: farmerVillage,
-        hubId: selectedHubId,
-        dailySupplyLiters: parseFloat(dailySupply) || 100,
-        bankAccount,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, 'farmers', newId), newFarmer);
-      showToast(`Added farmer ${farmerName} (${farmerCode}) successfully to Firestore!`, 'success');
+      const id = await addFarmer(hubId, {
+        name: farmerName.trim(),
+        phone: farmerPhone.replace(/\s/g, ''),
+        village: farmerVillage.trim(),
+        dailySupplyLiters: parseFloat(dailySupply) || 0,
+        bankAccount: bankAccount.trim(),
+      });
+      showToast(`Added farmer ${farmerName} (${id})`, 'success');
       setIsAddFarmerModalOpen(false);
       setFarmerName('');
       setFarmerPhone('');
+      setBankAccount('');
     } catch (err) {
-      showToast(`Error adding farmer: ${err}`, 'error');
+      showToast(`Error adding farmer: ${(err as Error).message}`, 'error');
     }
   };
 
@@ -106,48 +132,67 @@ export default function FarmerProcurementPage({
       return;
     }
     const targetFarmer = farmers.find((f) => f.id === selectedFarmerId) || farmers[0];
-    const farmerLabelName = targetFarmer ? targetFarmer.name : 'Ramesh Gowda';
-    const farmerLabelCode = targetFarmer ? targetFarmer.code : 'FRM-HSR-01';
-
+    if (!targetFarmer) {
+      showToast('Add a farmer first.', 'error');
+      return;
+    }
     try {
-      const newId = `proc_${Date.now()}`;
-      const newProc: MilkProcurementItem = {
-        id: newId,
-        farmerId: targetFarmer ? targetFarmer.id : 'frm_default',
-        farmerName: farmerLabelName,
-        farmerCode: farmerLabelCode,
-        date: new Date().toISOString().split('T')[0],
-        quantityLiters: qty,
-        fatPercent: parseFloat(fatPercentage) || 4.2,
-        snfPercent: parseFloat(snfPercentage) || 8.5,
-        ratePerLiter: currentRate,
-        totalPayout: currentTotalPayout,
-        hubId: selectedHubId,
+      await addProcurement(hubId, {
+        farmerId: targetFarmer.id,
+        farmerName: targetFarmer.name,
+        date: todayKey(),
+        litres: qty,
+        fat: parseFloat(fatPercentage) || 0,
+        snf: parseFloat(snfPercentage) || 0,
+        ratePerLitre: Math.round(currentRate * 100),
+        amount: Math.round(currentTotalPayout * 100),
         collectionPerson,
-        paymentStatus: 'pending',
-        createdAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, 'milk_procurement', newId), newProc);
-      showToast(`Logged procurement: ${qty}L from ${farmerLabelName} @ ₹${currentRate.toFixed(2)}/L`, 'success');
+      });
+      showToast(`Logged procurement: ${qty}L from ${targetFarmer.name} @ ₹${currentRate.toFixed(2)}/L`, 'success');
       setIsAddPurchaseModalOpen(false);
+      procQuery.retry();
+      setDuesTick((t) => t + 1);
     } catch (err) {
-      showToast(`Error logging purchase: ${err}`, 'error');
+      showToast(`Error logging purchase: ${(err as Error).message}`, 'error');
     }
   };
 
-  // Display Farmers (Live Firestore Data with Fallbacks)
-  const displayFarmers = farmers.length > 0 ? farmers : [
-    { id: '1', code: 'FRM-HSR-01', name: 'Ramesh Gowda', phone: '9845012345', village: 'Hosur Dairy Circle', hubId: 'hub_hosur_main', dailySupplyLiters: 180, status: 'active' as const, createdAt: '' },
-    { id: '2', code: 'FRM-HSR-02', name: 'Murugan Milk Farm', phone: '9443210987', village: 'Bagalur Village', hubId: 'hub_hosur_main', dailySupplyLiters: 220, status: 'active' as const, createdAt: '' },
-    { id: '3', code: 'FRM-HSR-03', name: 'Venkatesh Farmers Co.', phone: '9880123456', village: 'Shoolagiri Dairy', hubId: 'hub_hosur_main', dailySupplyLiters: 310, status: 'active' as const, createdAt: '' },
-    { id: '4', code: 'FRM-BLR-04', name: 'Srinivasa Dairy', phone: '9900112233', village: 'Anekal Hub', hubId: 'hub_bangalore_main', dailySupplyLiters: 150, status: 'active' as const, createdAt: '' },
-  ];
+  const handlePayFarmer = async (farmerId: string, farmerName: string) => {
+    const due = dues[farmerId];
+    if (!due) return;
+    const method = window.prompt(`Pay ₹${(due.amount / 100).toFixed(2)} to ${farmerName} for ${due.count} purchase(s). Payment method (e.g. NEFT, UPI, Cash):`, 'NEFT');
+    if (!method) return;
+    setBusy(true);
+    try {
+      const paid = await payFarmer(hubId, farmerId, farmerName, method.trim());
+      showToast(`Recorded ₹${(paid / 100).toFixed(2)} paid to ${farmerName}`, 'success');
+      setDuesTick((t) => t + 1);
+      procQuery.retry();
+    } catch (err) {
+      showToast(`Could not record payment: ${(err as Error).message}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  // Display Procurements (Live Firestore Data with Fallbacks)
-  const displayProcurements = milkProcurements.length > 0 ? milkProcurements : [
-    { id: 'p1', farmerId: '1', farmerName: 'Ramesh Gowda', farmerCode: 'FRM-HSR-01', date: '2026-09-13', quantityLiters: 180, fatPercent: 4.2, snfPercent: 8.5, ratePerLiter: 39.0, totalPayout: 7020, hubId: 'hub_hosur_main', collectionPerson: 'Srinivas', paymentStatus: 'pending' as const, createdAt: '' },
-    { id: 'p2', farmerId: '2', farmerName: 'Murugan Milk Farm', farmerCode: 'FRM-HSR-02', date: '2026-09-13', quantityLiters: 220, fatPercent: 4.5, snfPercent: 8.6, ratePerLiter: 40.5, totalPayout: 8910, hubId: 'hub_hosur_main', collectionPerson: 'Kalyan', paymentStatus: 'paid' as const, createdAt: '' },
-  ];
+  // Collection staff, from who logged the purchases on screen
+  const collectors = useMemo(() => {
+    const m = new Map<string, { litres: number; days: Set<string>; farmers: Set<string> }>();
+    milkProcurements.forEach((p) => {
+      const row = m.get(p.collectionPerson) ?? { litres: 0, days: new Set<string>(), farmers: new Set<string>() };
+      row.litres += p.quantityLiters;
+      row.days.add(p.date);
+      row.farmers.add(p.farmerName);
+      m.set(p.collectionPerson, row);
+    });
+    return Array.from(m.entries()).map(([name, r]) => ({
+      name, route: `${r.farmers.size} farmer(s)`, phone: '—', qty: `${Math.round(r.litres / Math.max(1, r.days.size))} L / day`,
+    }));
+  }, [milkProcurements]);
+
+  // Display Farmers (Live Firestore Data with Fallbacks)
+  const displayFarmers = farmers;
+  const displayProcurements = milkProcurements;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -377,7 +422,7 @@ export default function FarmerProcurementPage({
             <tbody>
               {displayProcurements.map((p) => (
                 <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748B', fontWeight: 600 }}>{p.date}</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748B', fontWeight: 600 }}>{formatDay(p.date)}</td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{p.farmerName} ({p.farmerCode})</td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#166534' }}>{p.quantityLiters} L</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>Fat {p.fatPercent}% | SNF {p.snfPercent}%</td>
@@ -389,6 +434,8 @@ export default function FarmerProcurementPage({
           </table>
         </div>
       )}
+
+      {selectedTab === 'purchase-reports' && <LoadMore hasMore={procQuery.hasMore} loading={procQuery.loadingMore} onClick={procQuery.loadMore} />}
 
       {selectedTab === 'collection-persons' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
@@ -406,11 +453,11 @@ export default function FarmerProcurementPage({
               </tr>
             </thead>
             <tbody>
-              {[
-                { name: 'Srinivas R.', route: 'Hosur Dairy Route A', phone: '9844011223', qty: '650 L / day' },
-                { name: 'Kalyan Kumar', route: 'Bagalur Collection Circle', phone: '9740122334', qty: '520 L / day' },
-                { name: 'Raju M.', route: 'Shoolagiri Dairy Pickup', phone: '9611223344', qty: '480 L / day' },
-              ].map((c) => (
+              {collectors.length === 0 && (
+                <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: '#64748B' }}>No milk purchases logged yet.</td></tr>
+              )}
+              {[...collectors
+].map((c) => (
                 <tr key={c.name} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{c.name}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{c.route}</td>
@@ -476,17 +523,34 @@ export default function FarmerProcurementPage({
               </tr>
             </thead>
             <tbody>
-              {displayFarmers.map((f, idx) => (
-                <tr key={f.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#166534' }}>PAY-FRM-{1000 + idx}</td>
+              {displayFarmers.filter((f) => dues[f.id]).map((f) => (
+                <tr key={`due-${f.id}`} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#D97706' }}>{dues[f.id].count} unpaid purchase(s)</td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{f.name} ({f.code})</td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>Direct Bank Transfer (NEFT)</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{f.bankAccount ? `A/c ${f.bankAccount}` : '—'}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <button type="button" disabled={busy} onClick={() => handlePayFarmer(f.id, f.name)}
+                      style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem', border: '1px solid #FDE68A', cursor: 'pointer' }}>
+                      PENDING · Mark paid
+                    </button>
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#D97706' }}>₹{(dues[f.id].amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+              {payments.data.map((p) => (
+                <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#166534' }}>{p.paidAt ? formatDateTime(p.paidAt) : '—'}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{p.farmerName} ({p.farmerId})</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{p.method}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>
                     <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem' }}>SETTLED</span>
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>₹{(f.dailySupplyLiters * 39).toLocaleString()}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>₹{(p.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
+              {payments.data.length === 0 && Object.keys(dues).length === 0 && (
+                <tr><td colSpan={5} style={{ padding: '1rem', textAlign: 'center', color: '#64748B' }}>No farmer dues or payouts yet.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -506,7 +570,7 @@ export default function FarmerProcurementPage({
             <form onSubmit={handleSaveFarmer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Farmer Code</label>
-                <input type="text" value={farmerCode} onChange={(e) => setFarmerCode(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
+                <input type="text" value={farmerCode} readOnly onChange={(e) => setFarmerCode(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
               </div>
 
               <div>

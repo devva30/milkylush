@@ -1,15 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Gift, Search, Edit2, CheckCircle2, Truck, Package, X, Save, Power, Sparkles, Eye, Printer, User as UserIcon, MapPin } from 'lucide-react';
-import { collection, query, where, onSnapshot, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import type { HubId } from '../data/hubs';
+import { formatDay, formatDateTime } from '../data/dates';
+import { useHubProducts } from '../data/products';
+import { loadHubSetting, saveHubSetting } from '../data/appContent';
+import {
+  useFreeSampleDeliveries, deliveryToOrder, setDeliveryStatus, reassignDelivery, setDeliveryAddressText, DB_STATUS,
+} from '../data/deliveries';
+import { LoadMore } from '../components/common/DataState';
 import type { Order, User, Product, DeliveryAgent } from '../types';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 import { formatAddressDetails } from '../utils/addressFormatter';
 
 interface FreeSamplesPageProps {
   selectedHubId: string;
-  users: User[];
-  products: Product[];
+  /** Unused: customers come with each drop; products are loaded for the hub. */
+  users?: User[];
+  products?: Product[];
   deliveryAgents?: DeliveryAgent[];
   onUpdateOrderStatus?: (orderId: string, status: Order['status']) => void;
   onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
@@ -28,16 +35,25 @@ interface FreeSampleSettings {
 
 export default function FreeSamplesPage({
   selectedHubId,
-  users,
-  products = [],
   deliveryAgents = [],
   onUpdateOrderStatus,
   onUpdateOrderDriver,
   onNavigateTab,
   showToast,
 }: FreeSamplesPageProps) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const hubId = selectedHubId as HubId;
+  const products = useHubProducts(hubId).data;
+  // Free-sample drops (deliveries flagged isFreeSample), with live rider status
+  const samplesQuery = useFreeSampleDeliveries(hubId);
+  const orders: Order[] = useMemo(() => samplesQuery.data.map(deliveryToOrder), [samplesQuery.data]);
+  const loading = samplesQuery.loading;
+  const users: User[] = useMemo(() => {
+    const m = new Map<string, User>();
+    samplesQuery.data.forEach((d) => m.set(d.customerUid, {
+      id: d.customerUid, name: d.customerName, phone: d.customerPhone, savedAddresses: [d.addressText], customerId: d.customerId,
+    } as unknown as User));
+    return Array.from(m.values());
+  }, [samplesQuery.data]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [customerFilter, setCustomerFilter] = useState<'all' | 'new_customer' | 'claimed' | 'not_claimed'>('all');
@@ -67,117 +83,29 @@ export default function FreeSamplesPage({
   const [editPin, setEditPin] = useState<string>('');
   const [isUpdatingAddress, setIsUpdatingAddress] = useState<boolean>(false);
 
-  // 1. Fetch Campaign Settings from Firestore
-  // 1. Fetch Campaign Settings from Firestore for Selected Hub in Real-Time
+  // Campaign settings of this hub: hubs/{hub}/settings/freeSample
   useEffect(() => {
-    const hubDocRef = doc(db, 'settings', `free_sample_${selectedHubId}`);
-    const globalDocRef = doc(db, 'settings', 'free_sample');
-
-    const unsubscribeHub = onSnapshot(hubDocRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setSettings({
-          active: data.active ?? true,
-          title: data.title || 'Get Free Sample Today!',
-          subtitle: data.subtitle || 'Taste our farm fresh organic A2 milk delivered directly to your doorstep. 100% Free!',
-          productName: data.productName || 'Free Sample 500ml A2 Desi Cow Milk',
-          imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800',
-          maxClaimsPerDevice: data.maxClaimsPerDevice ? Number(data.maxClaimsPerDevice) : 1,
-        });
-      } else {
-        // Fallback to global doc
-        getDoc(globalDocRef).then((globalSnap) => {
-          if (globalSnap.exists()) {
-            const data = globalSnap.data();
-            setSettings({
-              active: data[`active_${selectedHubId}`] ?? data.active ?? true,
-              title: data.title || 'Get Free Sample Today!',
-              subtitle: data.subtitle || 'Taste our farm fresh organic A2 milk delivered directly to your doorstep. 100% Free!',
-              productName: data.productName || 'Free Sample 500ml A2 Desi Cow Milk',
-              imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800',
-              maxClaimsPerDevice: data[`maxClaims_${selectedHubId}`] ? Number(data[`maxClaims_${selectedHubId}`]) : (data.maxClaimsPerDevice ? Number(data.maxClaimsPerDevice) : 1),
-            });
-          }
-        });
-      }
-    }, (err) => {
-      console.error('Error streaming free sample settings:', err);
-    });
-
-    return () => unsubscribeHub();
-  }, [selectedHubId]);
-
-  // 2. Fetch Free Sample Orders in Real-Time
-  useEffect(() => {
-    setLoading(true);
-    const q = collection(db, 'orders');
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const sampleOrders: Order[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const isSample =
-          data.isFreeSample === true ||
-          docSnap.id.startsWith('FS_') ||
-          data.paymentMethod === 'DIRECT_FREE_SAMPLE' ||
-          data.orderType === 'free_sample';
-
-        if (isSample) {
-          let parsedDate = new Date().toISOString();
-          if (data.orderDate) {
-            parsedDate = data.orderDate;
-          } else if (data.createdAt?.toDate) {
-            parsedDate = data.createdAt.toDate().toISOString();
-          }
-
-          sampleOrders.push({
-            id: docSnap.id,
-            userId: data.userId || '',
-            items: data.items || [],
-            totalAmount: data.totalAmount || 0,
-            status: data.status || 'packed',
-            orderDate: parsedDate,
-            createdAt: data.createdAt,
-            deliveryAddress: data.deliveryAddress || data.address || '',
-            address: data.address || data.deliveryAddress || '',
-            isSubscriptionDelivery: false,
-            hubId: data.hubId || 'hub_hosur_main',
-            assignedPartner: data.assignedPartner || '',
-            assignedRiderId: data.assignedRiderId || '',
-          } as unknown as Order);
-        }
-      });
-      sampleOrders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-      setOrders(sampleOrders);
-      setLoading(false);
-    }, (err) => {
-      console.error('Error streaming free sample orders:', err);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    let alive = true;
+    loadHubSetting<Record<string, unknown>>(hubId, 'freeSample').then((data) => {
+      if (!alive) return;
+      setSettings((prev) => ({
+        active: (data.isActive as boolean | undefined) ?? false,
+        title: (data.title as string) || prev.title,
+        subtitle: (data.subtitle as string) || prev.subtitle,
+        productName: (data.productName as string) || prev.productName,
+        imageUrl: (data.imageUrl as string) || prev.imageUrl,
+        maxClaimsPerDevice: Number(data.maxClaimsPerDevice) || 1,
+      }));
+      setSelectedProductId((data.productId as string) || '');
+    }).catch((err) => showToast(`Could not load free sample settings: ${(err as Error).message}`, 'error'));
+    return () => { alive = false; };
+  }, [hubId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hub Filtering & Products Stock Filtering per Selected Hub
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
   
-  const hubProducts = useMemo(() => {
-    return products.filter((p) => {
-      const pHubs = (p as any).hubIds || [];
-      if (pHubs.length === 0 || pHubs.includes('all')) return true;
-      return pHubs.includes(selectedHubId);
-    });
-  }, [products, selectedHubId]);
-
-  const hubSampleOrders = useMemo(() => {
-    return orders.filter((o) => {
-      if (!o.hubId || o.hubId === 'all') return true;
-      if (o.hubId === selectedHubId) return true;
-      const addrLower = (o.address || o.deliveryAddress || '').toLowerCase();
-      const isHosurAddr = addrLower.includes('hosur') || addrLower.includes('tamil nadu') || addrLower.includes('635');
-      return isHosur ? isHosurAddr : (!isHosurAddr && addrLower.length > 5);
-    });
-  }, [orders, selectedHubId, isHosur]);
+  const hubProducts = products;
+  const hubSampleOrders = orders;
 
   const filteredOrders = useMemo(() => {
     return hubSampleOrders.filter((o) => {
@@ -192,7 +120,8 @@ export default function FreeSamplesPage({
       if (statusFilter !== 'all' && o.status !== statusFilter) return false;
 
       if (customerFilter !== 'all') {
-        const isClaimed = user?.hasClaimedFreeSample ?? true;
+        // every row here is a claimed sample
+        const isClaimed = true;
         const isNewCustomer = !user || (user as any).customerType === 'new';
         if (customerFilter === 'new_customer' && !isNewCustomer) return false;
         if (customerFilter === 'claimed' && !isClaimed) return false;
@@ -210,49 +139,38 @@ export default function FreeSamplesPage({
   const deliveredCount = hubSampleOrders.filter((o) => o.status === 'delivered').length;
 
   // Handle Save Campaign Settings
+  const settingsPayload = (active: boolean) => ({
+    isActive: active,
+    productId: selectedProductId || '',
+    quantity: 1,
+    title: settings.title,
+    subtitle: settings.subtitle,
+    productName: settings.productName,
+    imageUrl: settings.imageUrl,
+    maxClaimsPerDevice: Number(settings.maxClaimsPerDevice) || 1,
+    onlyNewCustomers: true,
+  });
+
   const handleSaveSettings = async () => {
     setIsSavingSettings(true);
     try {
-      const payload = {
-        ...settings,
-        hubId: selectedHubId,
-        maxClaimsPerDevice: Number(settings.maxClaimsPerDevice) || 1,
-        updatedAt: new Date().toISOString(),
-      };
-      // 1. Save per-hub document
-      await setDoc(doc(db, 'settings', `free_sample_${selectedHubId}`), payload, { merge: true });
-      // 2. Save to global document with hub-specific key overrides
-      await setDoc(doc(db, 'settings', 'free_sample'), {
-        ...payload,
-        [`active_${selectedHubId}`]: settings.active,
-        [`maxClaims_${selectedHubId}`]: Number(settings.maxClaimsPerDevice) || 1,
-      }, { merge: true });
-
-      showToast(`Free Sample Campaign Settings Saved for ${selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Hub'}! 🎉`, 'success');
+      await saveHubSetting([hubId], 'freeSample', settingsPayload(settings.active));
+      showToast(`Free Sample Campaign Settings Saved for ${isHosur ? 'Hosur Hub' : 'Bangalore Hub'}! 🎉`, 'success');
     } catch (err) {
-      showToast(`Failed to save settings: ${err}`, 'error');
+      showToast(`Failed to save settings: ${(err as Error).message}`, 'error');
     } finally {
       setIsSavingSettings(false);
     }
   };
 
-  // Handle Instant Active Toggle
   const handleToggleActive = async () => {
     const newActive = !settings.active;
-    setSettings((prev) => ({ ...prev, active: newActive }));
     try {
-      await setDoc(doc(db, 'settings', `free_sample_${selectedHubId}`), {
-        active: newActive,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-      await setDoc(doc(db, 'settings', 'free_sample'), {
-        [`active_${selectedHubId}`]: newActive,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
+      await saveHubSetting([hubId], 'freeSample', { isActive: newActive });
+      setSettings((prev) => ({ ...prev, active: newActive }));
       showToast(`Campaign offer status updated to ${newActive ? 'ACTIVE' : 'OFF'} for ${isHosur ? 'Hosur Hub' : 'Bangalore Hub'}!`, 'success');
     } catch (err) {
-      console.error("Failed to update active state:", err);
-      showToast(`Failed to update campaign status: ${err}`, 'error');
+      showToast(`Failed to update campaign status: ${(err as Error).message}`, 'error');
     }
   };
 
@@ -270,10 +188,13 @@ export default function FreeSamplesPage({
   };
 
   // Handle Order Status Update
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+  const handleUpdateStatus = async (deliveryId: string, newStatus: string) => {
+    const next = DB_STATUS[newStatus];
+    if (!next) return;
     try {
-      await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
-      showToast(`Updated sample order ${orderId} to ${newStatus}`, 'success');
+      await setDeliveryStatus(hubId, deliveryId, next);
+      showToast(`Updated sample drop ${deliveryId} to ${next.replace(/_/g, ' ')}`, 'success');
+      samplesQuery.retry();
     } catch (err) {
       showToast(`Could not update status: ${err}`, 'error');
     }
@@ -291,14 +212,14 @@ export default function FreeSamplesPage({
       setEditCity(parts[3]?.includes('Hosur') ? 'Hosur' : parts[3]?.includes('Bengaluru') || parts[3]?.includes('Bangalore') ? 'Bengaluru' : 'Hosur');
       setEditState(parts[4]?.includes('Karnataka') ? 'Karnataka' : 'Tamil Nadu');
       const pinMatch = fullAddr.match(/\b\d{6}\b/);
-      setEditPin(pinMatch ? pinMatch[0] : '635109');
+      setEditPin(pinMatch ? pinMatch[0] : '');
     } else {
       setEditHouseNo('');
       setEditStreet(fullAddr);
       setEditArea('');
-      setEditCity('Hosur');
-      setEditState('Tamil Nadu');
-      setEditPin('635109');
+      setEditCity(isHosur ? 'Hosur' : 'Bengaluru');
+      setEditState(isHosur ? 'Tamil Nadu' : 'Karnataka');
+      setEditPin('');
     }
   };
 
@@ -309,16 +230,15 @@ export default function FreeSamplesPage({
     try {
       const formattedAddress = `${editHouseNo ? editHouseNo + ', ' : ''}${editStreet ? editStreet + ', ' : ''}${editArea ? editArea + ', ' : ''}${editCity}, ${editState} - ${editPin}`;
 
-      await updateDoc(doc(db, 'orders', editingOrder.id), {
-        deliveryAddress: formattedAddress,
-        address: formattedAddress,
-        updatedAt: new Date().toISOString(),
-      });
+      const drop = samplesQuery.data.find((d) => d.id === editingOrder.id);
+      if (!drop) throw new Error('drop not found');
+      await setDeliveryAddressText(hubId, drop, formattedAddress);
+      samplesQuery.retry();
 
       showToast(`Address updated for order ${editingOrder.id}! 📍`, 'success');
       setEditingOrder(null);
     } catch (err) {
-      showToast(`Failed to update address: ${err}`, 'error');
+      showToast(`Failed to update address: ${(err as Error).message}`, 'error');
     } finally {
       setIsUpdatingAddress(false);
     }
@@ -339,9 +259,18 @@ export default function FreeSamplesPage({
         onClose={() => setSelectedSampleSheet(null)}
         onUpdateOrderStatus={(orderId, status) => {
           handleUpdateStatus(orderId, status);
-          if (onUpdateOrderStatus) onUpdateOrderStatus(orderId, status);
         }}
-        onUpdateOrderDriver={onUpdateOrderDriver}
+        onUpdateOrderDriver={async (id, agentId) => {
+          const agent = deliveryAgents.find((a) => a.id === agentId);
+          try {
+            await reassignDelivery(hubId, id, agent ? { uid: agent.id, name: agent.name } : null);
+            showToast(agent ? `Assigned ${agent.name}` : 'Rider removed', 'success');
+            samplesQuery.retry();
+          } catch (err) {
+            showToast(`Could not reassign: ${(err as Error).message}`, 'error');
+          }
+          onUpdateOrderDriver?.(id, agentId);
+        }}
         onNavigateTab={onNavigateTab}
         showToast={showToast}
       />
@@ -618,7 +547,7 @@ export default function FreeSamplesPage({
                     <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
                         <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
-                          🎁 {o.id}
+                          🎁 {o.id.slice(11)}
                         </span>
                       </td>
 
@@ -640,27 +569,12 @@ export default function FreeSamplesPage({
                       </td>
 
                       <td style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
-                        {(() => {
-                          try {
-                            const d = new Date(o.orderDate);
-                            if (isNaN(d.getTime())) return o.orderDate || 'N/A';
-                            return d.toLocaleString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                            });
-                          } catch (_) {
-                            return o.orderDate || 'N/A';
-                          }
-                        })()}
+                        {o.deliveredAt ? formatDateTime(o.deliveredAt) : formatDay(o.orderDate)}
                       </td>
 
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <select
-                          value={o.status}
+                          value={o.status === 'pending' ? 'packed' : o.status}
                           onChange={(e) => handleUpdateStatus(o.id, e.target.value)}
                           style={{
                             padding: '0.3rem 0.6rem',
@@ -731,6 +645,8 @@ export default function FreeSamplesPage({
       </div>
 
 
+
+      <LoadMore hasMore={samplesQuery.hasMore} loading={samplesQuery.loadingMore} onClick={samplesQuery.loadMore} />
 
       {/* EDIT ADDRESS MODAL */}
       {editingOrder && (

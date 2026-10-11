@@ -1,23 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { count, getAggregateFromServer, query, where } from 'firebase/firestore';
+import { hubCol } from '../data/hubs';
+import { formatDateTime } from '../data/dates';
 import { 
   Truck, MapPin, Phone, CheckCircle, Clock, Navigation, Plus, ArrowLeft, 
   ShieldCheck, Star, CheckCircle2, X 
 } from 'lucide-react';
 import type { DeliveryAgent, Order } from '../types';
 import { useToast } from '../context/ToastContext';
-import { doc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, secondaryAuth } from '../firebase';
+import { createRider } from '../data/staff';
+import type { HubId } from '../data/hubs';
+import { useDeliveries } from '../data/deliveries';
+import { todayKey } from '../data/dates';
 
 interface DeliveryManagementPageProps {
   hubDeliveryAgents: DeliveryAgent[];
-  hubOrders: Order[];
+  /** Unused: today's drops are read here. */
+  hubOrders?: Order[];
   selectedHubId?: string;
 }
 
-export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, selectedHubId }: DeliveryManagementPageProps) {
+export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubId }: DeliveryManagementPageProps) {
   const { showToast } = useToast();
+  // Today's drops of this hub (live)
+  const todayDrops = useDeliveries((selectedHubId ?? 'hosur') as HubId, todayKey());
   const [selectedAgent, setSelectedAgent] = useState<DeliveryAgent | null>(null);
+  const [lifetimeDrops, setLifetimeDrops] = useState<number | null>(null);
+  useEffect(() => {
+    if (!selectedAgent) return;
+    let alive = true;
+    setLifetimeDrops(null);
+    getAggregateFromServer(query(hubCol((selectedHubId ?? 'hosur') as HubId, 'deliveries'),
+      where('riderUid', '==', selectedAgent.id), where('status', '==', 'delivered')), { n: count() })
+      .then((a) => alive && setLifetimeDrops(a.data().n))
+      .catch(() => alive && setLifetimeDrops(0));
+    return () => { alive = false; };
+  }, [selectedAgent, selectedHubId]);
 
   // Add Partner Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -47,52 +65,38 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
     setFormHubId(selectedHubId || 'hub_hosur');
   };
 
+  const getEffectiveHubId = (hubId?: string) => {
+    if (!hubId) return 'hub_hosur';
+    const lower = hubId.toLowerCase();
+    if (lower.includes('bengaluru') || lower.includes('blr') || lower.includes('bangalore')) {
+      return 'bengaluru';
+    }
+    return 'hub_hosur';
+  };
+
+  const activeHubId = getEffectiveHubId(selectedHubId);
+  const targetHubName = activeHubId === 'bengaluru' 
+    ? 'Bengaluru Electronic City Hub (Bengaluru)' 
+    : 'Hosur Central Hub (Hosur)';
+
   const handleAddDeliveryPartner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formPhone || !formEmail) {
       showToast("Name, Phone, and Email are required", "error");
       return;
     }
-
     setIsSaving(true);
-    const targetHub = formHubId || selectedHubId || 'hub_hosur';
-    const pass = formPassword || 'delivery123';
-
     try {
-      let uid = 'agent_' + Date.now();
-      try {
-        const userCred = await createUserWithEmailAndPassword(secondaryAuth, formEmail, pass);
-        uid = userCred.user.uid;
-      } catch (authErr: any) {
-        console.warn("Firebase Auth creation failed/bypassed, storing in Firestore directly:", authErr);
-      }
-
-      await setDoc(doc(db, 'delivery_agents', uid), {
-        id: uid,
-        name: formName,
-        phone: formPhone,
-        email: formEmail,
-        password: pass,
-        address: formAddress || '',
-        vehicleNumber: formVehicleNumber || 'TN 29 AB 4521',
-        vehicleType: formVehicleType || 'Electric Scooter',
-        assignedVehicle: `${formVehicleNumber || 'TN 29 AB 4521'} • ${formVehicleType || 'Electric Scooter'}`,
-        licenseNumber: formLicenseNumber || 'DL-90823411',
-        licenseValidity: formLicenseValidity || '2030',
-        drivingLicense: `${formLicenseNumber || 'DL-90823411'} • ${formLicenseValidity || 'Valid till 2030'}`,
-        hubId: targetHub,
-        assignedHubId: targetHub,
-        isOnline: false,
-        isActive: true,
-        createdAt: new Date().toISOString()
+      const { staffCode } = await createRider(selectedHubId as HubId, {
+        name: formName, phone: formPhone, email: formEmail, password: formPassword, address: formAddress,
+        vehicleNumber: formVehicleNumber, vehicleType: formVehicleType,
+        licenseNumber: formLicenseNumber, licenseValidity: formLicenseValidity,
       });
-
-      showToast(`Delivery Partner "${formName}" registered successfully!`, "success");
+      showToast(`Delivery Partner "${formName}" registered as ${staffCode}. Share the email and password with the rider.`, "success");
       setShowAddModal(false);
       resetForm();
-    } catch (error: any) {
-      console.error("Error creating delivery agent:", error);
-      showToast("Failed to create delivery partner: " + error.message, "error");
+    } catch (error) {
+      showToast((error as Error).message, "error");
     } finally {
       setIsSaving(false);
     }
@@ -103,13 +107,13 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
 
   const activeAgentsCount = displayAgents.filter(a => a.isOnline).length;
   const totalFleetCount = displayAgents.length;
-  const outForDeliveryOrders = hubOrders.filter(o => o.status === 'outForDelivery').length;
-  const deliveredOrders = hubOrders.filter(o => o.status === 'delivered').length;
+  const outForDeliveryOrders = todayDrops.data.filter(d => d.status === 'out_for_delivery').length;
+  const deliveredOrders = todayDrops.data.filter(d => d.status === 'delivered').length;
 
   // Render Dedicated Driver Profile Sub-View if selected
   if (selectedAgent) {
     const isOnline = selectedAgent.isOnline;
-    const isHosur = selectedAgent.assignedHubId === 'hub_hosur_main';
+    const isHosur = selectedAgent.assignedHubId === 'hosur';
     const hubName = isHosur ? 'Hosur Central Hub (Sector 1 & 2)' : 'Bangalore Electronic City Hub (Phase 1)';
 
     return (
@@ -191,19 +195,19 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
                 <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>TODAY'S DELIVERIES</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>24 Doorsteps</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>{todayDrops.data.filter(d => d.riderUid === selectedAgent.id).length} Doorsteps</div>
                 </div>
 
                 <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>LIFETIME DELIVERIES</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>1,480 Doorsteps</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>{lifetimeDrops === null ? '…' : lifetimeDrops.toLocaleString('en-IN')} Doorsteps</div>
                 </div>
 
                 <div style={{ backgroundColor: '#ECFDF5', padding: '0.85rem', borderRadius: '12px', border: '1px solid #A7F3D0' }}>
                   <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Star size={13} fill="#047857" /> RATING SCORE
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>4.9 / 5.0 ★</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>No ratings yet</div>
                 </div>
               </div>
             </div>
@@ -216,44 +220,34 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                
-                <div style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#D1FAE5', color: '#047857', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>Customer Recipient</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sector 1 &amp; 2 • 1L A2 Milk</div>
+                {todayDrops.data.filter(d => d.riderUid === selectedAgent.id).length === 0 && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No drops assigned to this rider today.</div>
+                )}
+                {todayDrops.data
+                  .filter(d => d.riderUid === selectedAgent.id)
+                  .sort((a, b) => a.stopSeq - b.stopSeq)
+                  .map((d, i) => (
+                  <div key={d.id} style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: d.status === 'delivered' ? '#D1FAE5' : '#FEF3C7', color: d.status === 'delivered' ? '#047857' : '#D97706', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>{d.customerName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.addressText.slice(0, 40)} • {d.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</div>
+                      </div>
                     </div>
+                    {d.status === 'delivered' ? (
+                      <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={12} /> Delivered {d.deliveredAt ? formatDateTime(d.deliveredAt).split(', ').pop() : ''}
+                      </span>
+                    ) : d.status === 'out_for_delivery' ? (
+                      <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={12} /> On Route
+                      </span>
+                    ) : (
+                      <span className="badge badge-neutral">{d.status.replace(/_/g, ' ')}</span>
+                    )}
                   </div>
-                  <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <CheckCircle2 size={12} /> Delivered 06:15 AM
-                  </span>
-                </div>
-
-                <div style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#FEF3C7', color: '#B45309', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>Anita Roy</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Flat 402, Green Valley • 500ml Buffalo Milk</div>
-                    </div>
-                  </div>
-                  <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={12} /> On Route
-                  </span>
-                </div>
-
-                <div style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>Karthik Raja</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Plot 88, Sipcot Housing • 1L A2 Milk + Paneer</div>
-                    </div>
-                  </div>
-                  <span className="badge badge-neutral">Scheduled 06:45 AM</span>
-                </div>
-
+                ))}
               </div>
             </div>
 
@@ -298,12 +292,12 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
                   height="100%"
                   style={{ border: 0 }}
                   loading="lazy"
-                  src={`https://maps.google.com/maps?q=${isHosur ? '12.742253,77.824213' : '12.867697,77.666721'}&z=14&output=embed`}
+                  src={`https://maps.google.com/maps?q=${(selectedAgent as { latitude?: number }).latitude != null ? `${(selectedAgent as { latitude?: number }).latitude},${(selectedAgent as { longitude?: number }).longitude}` : isHosur ? '12.742253,77.824213' : '12.867697,77.666721'}&z=14&output=embed`}
                 />
               </div>
 
               <button 
-                onClick={() => showToast(`Pinging live GPS coordinates for ${selectedAgent.name}...`, "info")}
+                onClick={() => showToast((selectedAgent as { latitude?: number }).latitude != null ? `Showing ${selectedAgent.name}'s last location from the rider app.` : `${selectedAgent.name} has not shared a location yet (rider app, on duty).`, "info")}
                 className="btn-secondary" 
                 style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
@@ -429,7 +423,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
                       <MapPin size={14} style={{ color: 'var(--text-muted)' }} />
-                      <span>{agent.assignedHubId === 'hub_hosur_main' ? 'Hosur Sector 1 & 2' : 'Bangalore Electronic City Phase 1'}</span>
+                      <span>{agent.assignedHubId === 'hosur' ? 'Hosur Sector 1 & 2' : 'Bangalore Electronic City Phase 1'}</span>
                     </div>
                   </td>
 
@@ -539,7 +533,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
                   className="form-input"
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder="Enter login password (e.g. delivery123)"
+                  placeholder="At least 8 characters"
                   required
                   style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
                 />
@@ -599,16 +593,22 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, hubOrders, s
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Assigned Operations Hub *</label>
-                <select
-                  className="form-select"
-                  value={formHubId}
-                  onChange={(e) => setFormHubId(e.target.value)}
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.85rem', backgroundColor: '#FFFFFF' }}
-                >
-                  <option value="hub_hosur">Hosur Central Hub (Hosur)</option>
-                  <option value="hub_bengaluru">Bengaluru Electronic City Hub (Bengaluru)</option>
-                </select>
+                <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Assigned Operations Hub (Auto-Assigned)</label>
+                <div style={{
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '8px',
+                  backgroundColor: '#F1F5F9',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <MapPin size={16} style={{ color: '#047857' }} />
+                  {targetHubName}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

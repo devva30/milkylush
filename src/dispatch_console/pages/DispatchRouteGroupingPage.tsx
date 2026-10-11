@@ -1,13 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Layers, MoveUp, MoveDown, RefreshCw, Save, MapPin, Truck, CheckCircle2, User, Phone, Package, Eye, X } from 'lucide-react';
-import { doc, writeBatch } from 'firebase/firestore';
-import { db } from '../../firebase';
+import type { HubId } from '../../data/hubs';
+import { useHubRoutes, saveStopOrder, type RouteStop } from '../../data/routes';
+import { DataState } from '../../components/common/DataState';
 import type { DeliveryAgent, Order, Subscription, User as CustomerUser } from '../../types';
 
 interface DispatchRouteGroupingPageProps {
   hubDeliveryAgents: DeliveryAgent[];
-  hubOrders: Order[];
-  hubSubscriptions: Subscription[];
+  /** Ignored: stops come from the riders' routes. Kept so existing callers compile. */
+  hubOrders?: Order[];
+  hubSubscriptions?: Subscription[];
   users?: CustomerUser[];
   selectedHubId: string;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -30,9 +32,6 @@ interface CustomerStopItem {
 
 export default function DispatchRouteGroupingPage({
   hubDeliveryAgents,
-  hubOrders,
-  hubSubscriptions,
-  users = [],
   selectedHubId,
   showToast,
 }: DispatchRouteGroupingPageProps) {
@@ -42,181 +41,53 @@ export default function DispatchRouteGroupingPage({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [selectedItemsModal, setSelectedItemsModal] = useState<CustomerStopItem | null>(null);
 
-  // Helper to match order/subscription to an agent via doc data or user profile assignment
-  const isAgentMatch = (data: any, agent: DeliveryAgent) => {
-    if (!agent) return false;
-    const agentUid = (agent.id || '').trim();
-    const agentName = (agent.name || '').toLowerCase().trim();
-    const agentEmail = (agent.email || '').toLowerCase().trim();
+  // Stops come from each rider's route document; the array order is the drop sequence.
+  const routesQuery = useHubRoutes(selectedHubId as HubId);
+  const routeOf = (agentId: string) => routesQuery.data.find((r) => r.riderUid === agentId);
 
-    const riderId = (data.deliveryAgentId || data.assignedRiderId || data.riderId || '').toString().trim();
-    const partner = (data.assignedPartner || data.assignedRider || data.lastDeliveryPartner || '').toString().toLowerCase().trim();
-    const email = (data.assignedRiderEmail || '').toString().toLowerCase().trim();
-
-    if (agentUid.length > 0 && riderId === agentUid) return true;
-    if (agentEmail.length > 0 && email === agentEmail) return true;
-    if (agentName.length > 0 && partner.length > 0 && (partner === agentName || partner.includes(agentName) || agentName.includes(partner))) return true;
-
-    // Check user profile assignment
-    const userId = data.userId;
-    if (userId && users && users.length > 0) {
-      const u = users.find((usr) => usr.id === userId);
-      if (u) {
-        const uAgentId = (u.assignedDeliveryAgentId || '').toString().trim();
-        const uAgentName = (u.assignedDeliveryAgentName || '').toString().toLowerCase().trim();
-        if (agentUid.length > 0 && uAgentId === agentUid) return true;
-        if (agentName.length > 0 && uAgentName.length > 0 && (uAgentName === agentName || uAgentName.includes(agentName) || agentName.includes(uAgentName))) return true;
-      }
-    }
-
-    return false;
-  };
-
-  // Build real-time fleet overview stats per rider
   const riderSummaries = useMemo(() => {
     return hubDeliveryAgents.map((agent) => {
-      const orders = (hubOrders || []).filter(
-        (o) => o.status !== 'delivered' && o.status !== 'cancelled' && isAgentMatch(o, agent)
-      );
-      const subs = (hubSubscriptions || []).filter(
-        (s) => s.status !== 'delivered' && s.status !== 'cancelled' && isAgentMatch(s, agent)
-      );
-
-      const totalCount = orders.length + subs.length;
-      return {
-        agent,
-        ordersCount: orders.length,
-        subsCount: subs.length,
-        totalCount,
-      };
+      const stops = routeOf(agent.id)?.stops.length ?? 0;
+      return { agent, ordersCount: 0, subsCount: stops, totalCount: stops };
     });
-  }, [hubDeliveryAgents, hubOrders, hubSubscriptions, users]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hubDeliveryAgents, routesQuery.data]);
 
   // Active Selected Agent
   const selectedAgent = useMemo(() => {
     return hubDeliveryAgents.find((a) => a.id === selectedAgentId) || hubDeliveryAgents[0];
   }, [hubDeliveryAgents, selectedAgentId]);
 
-  // Group all assigned drops into CUSTOMER-LEVEL STOPS (One row per customer)
-  const initialCustomerStops = useMemo(() => {
-    if (!selectedAgent) return [];
+  const selectedRoute = selectedAgent ? routeOf(selectedAgent.id) : undefined;
 
-    const assignedOrders = (hubOrders || [])
-      .filter((o) => o.status !== 'delivered' && o.status !== 'cancelled' && isAgentMatch(o, selectedAgent))
-      .map((o) => {
-        const u = users.find((usr) => usr.id === o.userId);
-        const nameInDoc = o.customerName || u?.name;
-        const cleanName = (nameInDoc && nameInDoc !== 'Valued Customer') ? nameInDoc : (u?.name || `Customer #${o.id.substring(0, 5)}`);
-        const itemDesc = o.items && o.items.length > 0 
-          ? o.items.map((i: any) => `${i.quantity || 1}x ${i.productName || i.product?.name || 'Dairy Item'}`).join(', ')
-          : 'Fresh Dairy Dispatch';
-
-        return {
-          id: o.id,
-          collection: 'orders',
-          customerName: cleanName,
-          customerPhone: o.customerPhone || u?.phone || 'Contact via app',
-          address: o.deliveryAddress || o.address || u?.savedAddresses?.[0] || 'Hosur Hub Region',
-          isSubscription: false,
-          itemsSummary: itemDesc,
-          dropSequence: (o as any).dropSequence ?? (o as any).sequence ?? 999,
-        };
-      });
-
-    const assignedSubs = (hubSubscriptions || [])
-      .filter((s) => s.status !== 'delivered' && s.status !== 'cancelled' && isAgentMatch(s, selectedAgent))
-      .map((s) => {
-        const u = users.find((usr) => usr.id === s.userId);
-        const nameInDoc = s.customerName || (s as any).userName || u?.name;
-        const cleanName = (nameInDoc && nameInDoc !== 'Daily Subscriber' && nameInDoc !== 'Valued Customer') ? nameInDoc : (u?.name || `Subscriber #${s.id.substring(0, 5)}`);
-        const itemDesc = (s as any).productName || (s as any).product?.name ? `${(s as any).quantity || 1}x ${(s as any).productName || (s as any).product?.name} (Subscription)` : 'Fresh Milk Subscription';
-
-        return {
-          id: s.id,
-          collection: 'subscriptions',
-          customerName: cleanName,
-          customerPhone: s.customerPhone || (s as any).userPhone || u?.phone || 'Contact via app',
-          address: s.deliveryAddress || s.address || u?.savedAddresses?.[0] || 'Hosur Central Hub',
-          isSubscription: true,
-          itemsSummary: itemDesc,
-          dropSequence: (s as any).dropSequence ?? (s as any).sequence ?? 999,
-        };
-      });
-
-    const allIndividualDrops = [...assignedOrders, ...assignedSubs];
-
-    // Group by unique Customer Key (Name + Phone or Address)
-    const groupedMap = new Map<string, CustomerStopItem>();
-
-    allIndividualDrops.forEach((drop) => {
-      const groupKey = `${drop.customerName.toLowerCase().trim()}_${drop.customerPhone.trim()}`;
-
-      if (!groupedMap.has(groupKey)) {
-        groupedMap.set(groupKey, {
-          id: groupKey,
-          customerName: drop.customerName,
-          customerPhone: drop.customerPhone,
-          address: drop.address,
-          allDocItems: [
-            {
-              id: drop.id,
-              collection: drop.collection,
-              isSubscription: drop.isSubscription,
-              itemsSummary: drop.itemsSummary,
-              dropSequence: drop.dropSequence,
-            },
-          ],
-          dropSequence: drop.dropSequence,
-        });
-      } else {
-        const existing = groupedMap.get(groupKey)!;
-        existing.allDocItems.push({
-          id: drop.id,
-          collection: drop.collection,
-          isSubscription: drop.isSubscription,
-          itemsSummary: drop.itemsSummary,
-          dropSequence: drop.dropSequence,
-        });
-        if (drop.dropSequence < existing.dropSequence) {
-          existing.dropSequence = drop.dropSequence;
-        }
-      }
-    });
-
-    const customerStops = Array.from(groupedMap.values());
-    customerStops.sort((a, b) => (a.dropSequence || 999) - (b.dropSequence || 999));
-    return customerStops;
-  }, [selectedAgent, hubOrders, hubSubscriptions, users]);
+  const initialCustomerStops = useMemo<CustomerStopItem[]>(() => {
+    return (selectedRoute?.stops ?? []).map((st, idx) => ({
+      id: st.customerUid,
+      customerName: st.customerId ? `${st.name} (${st.customerId})` : st.name,
+      customerPhone: st.phone,
+      address: st.address,
+      allDocItems: [],
+      dropSequence: idx + 1,
+    }));
+  }, [selectedRoute]);
 
   const [customerStops, setCustomerStops] = useState<CustomerStopItem[]>([]);
 
-  // Update local customer stops state when initialCustomerStops changes
+  // Update local customer stops state when the route changes
   useEffect(() => {
     setCustomerStops(initialCustomerStops);
   }, [initialCustomerStops]);
 
+  // One write: the route's stops array in the new order.
   const saveDropSequenceBatch = async (stopsToSave: CustomerStopItem[]) => {
+    if (!selectedRoute) throw new Error('This rider has no route yet. Assign customers first.');
+    const byUid = new Map(selectedRoute.stops.map((st) => [st.customerUid, st]));
+    const ordered = stopsToSave.map((st) => byUid.get(st.id)).filter((x): x is RouteStop => !!x);
     setIsSaving(true);
     try {
-      const batch = writeBatch(db);
-      stopsToSave.forEach((stop, stopIdx) => {
-        const newSeq = stopIdx + 1;
-        stop.allDocItems.forEach((docItem) => {
-          const ref = doc(db, docItem.collection, docItem.id);
-          batch.update(ref, {
-            dropSequence: newSeq,
-            sequence: newSeq,
-            stopSequence: newSeq,
-            routeSequence: newSeq,
-            updatedAt: new Date().toISOString(),
-          });
-        });
-      });
-      await batch.commit();
+      await saveStopOrder(selectedHubId as HubId, selectedRoute.id, ordered);
+    } finally {
       setIsSaving(false);
-    } catch (err) {
-      setIsSaving(false);
-      throw err;
     }
   };
 
@@ -282,6 +153,7 @@ export default function DispatchRouteGroupingPage({
   };
 
   return (
+    <DataState loading={routesQuery.loading} error={routesQuery.error} onRetry={routesQuery.retry} loadingLabel="Loading routes…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
       
       {/* Page Header */}
@@ -393,7 +265,7 @@ export default function DispatchRouteGroupingPage({
 
                     {/* Phone */}
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#334155' }}>
-                      📞 {agent.phone || '9876543210'}
+                      📞 {agent.phone || '—'}
                     </td>
 
                     {/* Customer Count */}
@@ -694,7 +566,7 @@ export default function DispatchRouteGroupingPage({
                   borderRadius: '12px',
                   padding: '0.85rem 1rem',
                   display: 'flex',
-                  justify: 'space-between',
+                  justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
                   <div>
@@ -741,5 +613,6 @@ export default function DispatchRouteGroupingPage({
       )}
 
     </div>
+    </DataState>
   );
 }

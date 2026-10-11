@@ -1,13 +1,23 @@
 import { useState, useMemo, useEffect } from 'react';
+import { subscriptionEndDate } from '../data/deliveries';
+import {
+  loadSubscriptionAnalytics, useExpiringSubscriptions, extendSubscription, sendRenewalReminder, type SubscriptionAnalytics,
+} from '../data/subscriptions';
+import { todayKey, formatDay, istDayStart } from '../data/dates';
+import { count, getAggregateFromServer, query, sum, where } from 'firebase/firestore';
+import { hubCol } from '../data/hubs';
 import { BarChart2, Plus, TrendingUp, Edit3, Trash2, RefreshCw } from 'lucide-react';
-import { setDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { logAdminAuditAction } from '../utils/auditLogger';
 import type { Subscription, PrepaidPackage, Product } from '../types';
+import { isHubId, type HubId } from '../data/hubs';
+import { useHubPlans, savePlan, deletePlan } from '../data/plans';
+import { useHubProducts } from '../data/products';
+import { useHubContext } from '../context/HubContext';
+import { DataState } from '../components/common/DataState';
 
 interface ManageSubscriptionsPageProps {
   selectedHubId: string;
-  subscriptions: Subscription[];
+  /** Unused: per-plan counts are read from the database on export. */
+  subscriptions?: Subscription[];
   prepaidPackages?: PrepaidPackage[];
   products?: Product[];
   adminUsername?: string;
@@ -24,21 +34,44 @@ interface ExpiringSubscription {
   planDuration: string;
   dailyRate: number;
   churnRisk: 'High' | 'Medium' | 'Low';
+  customerUid: string;
+  /** end date as yyyy-MM-dd */
+  endKey: string;
 }
 
 export default function ManageSubscriptionsPage({
   selectedHubId,
-  prepaidPackages: initialPackages,
-  products = [],
-  adminUsername,
   showToast,
 }: ManageSubscriptionsPageProps) {
-  const [prepaidPackages, setPrepaidPackages] = useState<PrepaidPackage[]>(initialPackages || []);
-
-  useEffect(() => {
-    setPrepaidPackages(initialPackages || []);
-  }, [initialPackages]);
-  const [expiringList, setExpiringList] = useState<ExpiringSubscription[]>([]);
+  const hubId = selectedHubId as HubId;
+  const { allowedHubIds } = useHubContext();
+  const plansQuery = useHubPlans(hubId);
+  const prepaidPackages = plansQuery.data;
+  const products: Product[] = useHubProducts(hubId).data;
+  const expiringQuery = useExpiringSubscriptions(hubId, 15);
+  const expiringList: (ExpiringSubscription & { customerUid: string; endKey: string })[] = useMemo(() => {
+    const today = istDayStart(todayKey()).getTime();
+    return expiringQuery.data.map((d) => {
+      // Live end date: skips / vacation push a paid-drop plan's last drop later.
+      const endKey = subscriptionEndDate(d as any) ?? d.endDate ?? todayKey();
+      const daysLeft = Math.max(0, Math.round((istDayStart(endKey).getTime() - today) / 86400000));
+      return {
+        id: d.id,
+        customerUid: d.customerUid,
+        endKey,
+        customerName: d.customerId ? `${d.customerName ?? 'Customer'} (${d.customerId})` : (d.customerName ?? 'Customer'),
+        phone: d.customerPhone ?? '—',
+        productName: `${d.productName} x${d.quantity}`,
+        expiryDate: formatDay(endKey),
+        daysLeft,
+        planDuration: d.planTitle ?? d.frequency,
+        dailyRate: (d.unitPrice ?? 0) / 100,
+        churnRisk: (daysLeft <= 3 ? 'High' : daysLeft <= 7 ? 'Medium' : 'Low') as ExpiringSubscription['churnRisk'],
+      };
+    }).filter((x) => x.daysLeft <= 15).sort((a, b) => a.daysLeft - b.daysLeft);
+  }, [expiringQuery.data]);
+  const [analytics, setAnalytics] = useState<SubscriptionAnalytics | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<PrepaidPackage | null>(null);
 
@@ -57,7 +90,7 @@ export default function ManageSubscriptionsPage({
   const [pkgHubId, setPkgHubId] = useState('all');
   const [pkgProductId, setPkgProductId] = useState('all');
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
   const hubCodeName = isHosur ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub';
 
   // Filter products to list ONLY subscription-enabled products for subscription packages
@@ -73,6 +106,27 @@ export default function ManageSubscriptionsPage({
       return true;
     });
   }, [prepaidPackages, selectedHubId]);
+
+  const planKey = prepaidPackages.map((p) => p.id).join(',');
+  useEffect(() => {
+    let alive = true;
+    setAnalytics(null);
+    loadSubscriptionAnalytics(hubId, prepaidPackages.map((p) => ({ id: p.id, title: p.title || p.name || p.id })))
+      .then((a) => alive && setAnalytics(a))
+      .catch((err) => showToast(`Could not load subscription analytics: ${(err as Error).message}`, 'error'));
+    return () => { alive = false; };
+  }, [hubId, planKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Retention = active out of all subscriptions that ran (active + ended + cancelled)
+  const a = analytics;
+  const ran = a ? a.active + a.completed + a.cancelled : 0;
+  const retention = a && ran > 0 ? Math.round((a.active / ran) * 1000) / 10 : 0;
+  const churn = ran > 0 ? Math.round((100 - retention) * 10) / 10 : 0;
+  const totalActive = a?.active ?? 0;
+  const topPlans = (a?.perPlan ?? []).slice(0, 3).map((p) => ({ ...p, pct: totalActive ? Math.round((p.n / totalActive) * 100) : 0 }));
+  const top = topPlans[0];
+  const revenue30 = (a?.last30 ?? 0) / 100;
+  const growth = a && a.prev30 > 0 ? Math.round(((a.last30 - a.prev30) / a.prev30) * 1000) / 10 : null;
 
   const handleOpenAddPackage = () => {
     setEditingPackage(null);
@@ -112,7 +166,7 @@ export default function ManageSubscriptionsPage({
     const selProductName = pkgProductId === 'all' ? 'All Products' : selectedProduct ? selectedProduct.name : '';
 
     const newPkg: PrepaidPackage = {
-      id: editingPackage ? editingPackage.id : `pkg_${Date.now()}`,
+      id: editingPackage ? editingPackage.id : '',
       name: pkgTitle,
       title: pkgTitle,
       price: 0,
@@ -127,60 +181,27 @@ export default function ManageSubscriptionsPage({
       productName: selProductName,
     };
 
-    if (editingPackage) {
-      setPrepaidPackages(prepaidPackages.map((p: PrepaidPackage) => (p.id === editingPackage.id ? newPkg : p)));
-      showToast(`Updated prepaid package "${newPkg.title}"!`, 'success');
-    } else {
-      setPrepaidPackages([...prepaidPackages, newPkg]);
-      showToast(`Created new prepaid package "${newPkg.title}"!`, 'success');
-    }
+    // "All hubs" copies the plan to every hub this admin manages; a plan tied to a
+    // specific product stays in this hub, because products are per hub.
+    const targetHubs: HubId[] =
+      pkgHubId === 'all' && pkgProductId === 'all' ? allowedHubIds : [isHubId(pkgHubId) ? pkgHubId : hubId];
 
     try {
-      const planData = {
-        id: newPkg.id,
-        title: newPkg.title,
-        name: newPkg.title,
-        durationDays: newPkg.durationDays,
-        discountPercentage: newPkg.discountPercent,
-        discountPercent: newPkg.discountPercent,
-        isRecommended: newPkg.isRecommended,
-        badgeText: newPkg.badgeLabel,
-        badgeLabel: newPkg.badgeLabel,
-        displayOrder: newPkg.displayOrder,
-        active: newPkg.isActive,
-        isActive: newPkg.isActive,
-        hubId: newPkg.hubId || 'all',
-        productId: newPkg.productId || 'all',
-        productName: newPkg.productName || 'All Products',
-      };
-      await setDoc(doc(db, 'subscription_plans', newPkg.id), planData);
-      await setDoc(doc(db, 'prepaid_packages', newPkg.id), newPkg);
-      await logAdminAuditAction(
-        adminUsername || 'Tom SuperAdmin',
-        'tomadmin@gmail.com',
-        'Super Admin',
-        'Catalog & Pricing',
-        `Saved Prepaid Package "${newPkg.title}" (${newPkg.durationDays} Days, ${newPkg.discountPercent}% OFF, Hub: ${newPkg.hubId}, Product: ${selProductName || 'All'})`,
-        `Prepaid Package #${newPkg.id}`,
-        newPkg,
-        selectedHubId
-      );
+      await savePlan(targetHubs, newPkg);
+      showToast(`${editingPackage ? 'Updated' : 'Created'} plan "${newPkg.title}"${targetHubs.length > 1 ? ' for all hubs' : ''}!`, 'success');
+      setIsPackageModalOpen(false);
     } catch (e) {
-      console.error('Error persisting package to Firestore:', e);
+      showToast(`Could not save plan: ${(e as Error).message}`, 'error');
     }
-
-    setIsPackageModalOpen(false);
   };
 
   const handleDeletePackage = async (id: string) => {
-    setPrepaidPackages(prepaidPackages.filter((p: PrepaidPackage) => p.id !== id));
     try {
-      await deleteDoc(doc(db, 'subscription_plans', id));
-      await deleteDoc(doc(db, 'prepaid_packages', id));
+      await deletePlan(hubId, id);
+      showToast('Deleted package tier.', 'info');
     } catch (e) {
-      console.error('Error deleting package from Firestore:', e);
+      showToast(`Could not delete plan: ${(e as Error).message}`, 'error');
     }
-    showToast('Deleted package tier.', 'info');
   };
 
   // Filter Expiring List
@@ -201,6 +222,7 @@ export default function ManageSubscriptionsPage({
   }, [expiringList, expiringSearch, riskFilter]);
 
   return (
+    <DataState loading={plansQuery.loading} error={plansQuery.error} onRetry={plansQuery.retry} loadingLabel="Loading plans…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
       
       {/* Header Banner */}
@@ -241,11 +263,15 @@ export default function ManageSubscriptionsPage({
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
-            onClick={() => {
-              const headers = ['Package Title', 'Duration Days', 'Discount %', 'Active Subscribers', 'Est. Inflow Revenue', 'Target Hub', 'Target Product'];
-              const rows = displayedPackages.map((pkg) => {
-                const count = (subscriptions || []).filter((s) => (s.prepaidPlanId && s.prepaidPlanId.includes(String(pkg.durationDays))) || (s.prepaidDays === pkg.durationDays)).length;
-                const estRev = count * 110 * pkg.durationDays * (1 - (pkg.discountPercent || 0) / 100);
+            onClick={async () => {
+              const headers = ['Package Title', 'Duration Days', 'Discount %', 'Active Subscribers', 'Paid by them (₹)', 'Target Hub', 'Target Product'];
+              // Active subscriptions on each plan and what they paid (count/sum queries)
+              const stats = await Promise.all(displayedPackages.map((pkg) => getAggregateFromServer(
+                query(hubCol(hubId, 'subscriptions'), where('status', '==', 'active'), where('planId', '==', pkg.id)),
+                { n: count(), paid: sum('amountPaid') }).then((a) => a.data()).catch(() => ({ n: 0, paid: 0 }))));
+              const rows = displayedPackages.map((pkg, idx) => {
+                const count = stats[idx].n;
+                const estRev = (stats[idx].paid ?? 0) / 100;
                 return [
                   `"${pkg.title}"`,
                   pkg.durationDays,
@@ -311,24 +337,24 @@ export default function ManageSubscriptionsPage({
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>RETENTION &amp; CHURN</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '8px' }}>94.2% Health</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '8px' }}>{a ? `${totalActive} active` : '…'}</span>
             </div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
-              94.2%
+              {a ? `${retention}%` : '…'}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Monthly Customer Renewal Retention
+              Still active out of all subscriptions ({a?.cancelled ?? 0} cancelled, {a?.completed ?? 0} ended)
             </div>
           </div>
 
           {/* Retention Progress Bar */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 700, marginBottom: '4px' }}>
-              <span style={{ color: '#047857' }}>Active Retained (94.2%)</span>
-              <span style={{ color: '#DC2626' }}>Churn (5.8%)</span>
+              <span style={{ color: '#047857' }}>Active Retained ({retention}%)</span>
+              <span style={{ color: '#DC2626' }}>Churn ({churn}%)</span>
             </div>
             <div style={{ height: '8px', backgroundColor: '#FEE2E2', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-              <div style={{ width: '94.2%', backgroundColor: '#047857', height: '100%' }}></div>
+              <div style={{ width: `${retention}%`, backgroundColor: '#047857', height: '100%' }}></div>
             </div>
           </div>
         </div>
@@ -338,39 +364,27 @@ export default function ManageSubscriptionsPage({
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PACKAGE PREFERENCE</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#0284C7', backgroundColor: '#EFF6FF', padding: '2px 8px', borderRadius: '8px' }}>Top: 30-Day Gold</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#0284C7', backgroundColor: '#EFF6FF', padding: '2px 8px', borderRadius: '8px' }}>Top: {top && top.n > 0 ? top.title : '—'}</span>
             </div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
-              68%
+              {top ? `${top.pct}%` : '0%'}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Customers choose 30 Days Gold Plan
+              {top && top.n > 0 ? `of active subscribers choose ${top.title}` : 'No active subscriptions on a plan yet'}
             </div>
           </div>
 
           {/* Multi-Bar Graph */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
-              <span style={{ width: '90px', color: 'var(--text-muted)', fontWeight: 600 }}>30 Days Gold</span>
-              <div style={{ flex: 1, backgroundColor: 'var(--bg-main)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ width: '68%', backgroundColor: '#047857', height: '100%' }}></div>
+            {topPlans.map((p, i) => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
+                <span style={{ width: '90px', color: 'var(--text-muted)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
+                <div style={{ flex: 1, backgroundColor: 'var(--bg-main)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${p.pct}%`, backgroundColor: ['#047857', '#0284C7', '#9333EA'][i], height: '100%' }}></div>
+                </div>
+                <span style={{ fontWeight: 800, width: '30px' }}>{p.pct}%</span>
               </div>
-              <span style={{ fontWeight: 800, width: '30px' }}>68%</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
-              <span style={{ width: '90px', color: 'var(--text-muted)', fontWeight: 600 }}>15 Days Pack</span>
-              <div style={{ flex: 1, backgroundColor: 'var(--bg-main)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ width: '22%', backgroundColor: '#0284C7', height: '100%' }}></div>
-              </div>
-              <span style={{ fontWeight: 800, width: '30px' }}>22%</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
-              <span style={{ width: '90px', color: 'var(--text-muted)', fontWeight: 600 }}>90 Days Elite</span>
-              <div style={{ flex: 1, backgroundColor: 'var(--bg-main)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ width: '10%', backgroundColor: '#9333EA', height: '100%' }}></div>
-              </div>
-              <span style={{ fontWeight: 800, width: '30px' }}>10%</span>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -382,15 +396,15 @@ export default function ManageSubscriptionsPage({
               <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#9333EA', backgroundColor: '#F3E8FF', padding: '2px 8px', borderRadius: '8px' }}>MRR Growth</span>
             </div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#047857', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
-              ₹2,84,500
+              ₹{revenue30.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Projected Monthly Subscription Revenue
+              Subscription deliveries, last 30 days (closed days)
             </div>
           </div>
 
           <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', backgroundColor: 'var(--bg-main)', padding: '6px 10px', borderRadius: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <TrendingUp size={15} color="#047857" /> <span>+14.8% increase vs previous month</span>
+            <TrendingUp size={15} color="#047857" /> <span>{growth === null ? 'No earlier 30 days to compare yet' : `${growth >= 0 ? '+' : ''}${growth}% vs previous 30 days`}</span>
           </div>
         </div>
 
@@ -480,7 +494,7 @@ export default function ManageSubscriptionsPage({
                     borderRadius: '6px',
                     border: '1px solid #E5E7EB'
                   }}>
-                    🏢 Hub: {pkg.hubId === 'hub_hosur_main' ? 'Hosur' : pkg.hubId === 'hub_blr_ecity' ? 'Bangalore E-City' : 'All Hubs (Global)'}
+                    🏢 Hub: {pkg.hubId === 'hosur' ? 'Hosur' : pkg.hubId === 'bengaluru' ? 'Bangalore E-City' : 'All Hubs (Global)'}
                   </span>
                   <span style={{
                     fontSize: '0.72rem',
@@ -670,7 +684,16 @@ export default function ManageSubscriptionsPage({
                   <td style={{ padding: '0.75rem 0.85rem' }}>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
-                        onClick={() => showToast(`SMS renewal reminder sent to ${exp.customerName} (${exp.phone})`, 'info')}
+                        disabled={busyId === exp.id}
+                        onClick={async () => {
+                          setBusyId(exp.id);
+                          try {
+                            await sendRenewalReminder(exp.customerUid, exp.productName, exp.expiryDate);
+                            showToast(`Renewal reminder sent to ${exp.customerName} in the app`, 'success');
+                          } catch (err) {
+                            showToast(`Could not send: ${(err as Error).message}`, 'error');
+                          } finally { setBusyId(null); }
+                        }}
                         style={{
                           padding: '0.35rem 0.65rem',
                           borderRadius: '6px',
@@ -685,13 +708,17 @@ export default function ManageSubscriptionsPage({
                           gap: '4px'
                         }}
                       >
-                        <RefreshCw size={12} /> Send SMS
+                        <RefreshCw size={12} /> Send reminder
                       </button>
                       
                       <button
                         onClick={() => {
-                          showToast(`Extended ${exp.customerName}'s plan by 30 days!`, 'success');
-                          setExpiringList((prev: ExpiringSubscription[]) => prev.filter((e: ExpiringSubscription) => e.id !== exp.id));
+                          if (!window.confirm(`Give ${exp.customerName} 30 extra days for free? (Ends ${exp.expiryDate} now.)`)) return;
+                          setBusyId(exp.id);
+                          extendSubscription(hubId, exp.id, exp.endKey, 30)
+                            .then((next) => showToast(`Extended ${exp.customerName}'s plan to ${formatDay(next)}`, 'success'))
+                            .catch((err) => showToast(`Could not extend: ${(err as Error).message}`, 'error'))
+                            .finally(() => setBusyId(null));
                         }}
                         style={{
                           padding: '0.35rem 0.65rem',
@@ -803,8 +830,8 @@ export default function ManageSubscriptionsPage({
                     style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.82rem', outline: 'none', color: 'var(--text-main)' }}
                   >
                     <option value="all">🌐 All Hubs (Global)</option>
-                    <option value="hub_hosur_main">🏢 Hosur Central Hub</option>
-                    <option value="hub_blr_ecity">🏢 Bangalore Electronic City Hub</option>
+                    <option value="hosur">🏢 Hosur Central Hub</option>
+                    <option value="bengaluru">🏢 Bangalore Electronic City Hub</option>
                   </select>
                 </div>
                 <div>
@@ -887,6 +914,7 @@ export default function ManageSubscriptionsPage({
       )}
 
     </div>
+    </DataState>
   );
 }
 

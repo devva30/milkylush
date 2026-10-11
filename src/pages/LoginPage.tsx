@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowRight, Check, MapPin } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import { useHubContext } from '../context/HubContext';
 
 interface LoginPageProps {
   onLoginSuccess: (username: string, hubId: string) => void;
@@ -10,14 +11,15 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, onSelectHub }: LoginPageProps) {
-  const [email, setEmail] = useState('tomadmin@gmail.com');
-  const [password, setPassword] = useState('admin123');
+  const { loginAdmin } = useHubContext();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [btnHover, setBtnHover] = useState(false);
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,29 +40,18 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
     }
 
     setIsLoading(true);
+    const err = await loginAdmin(email, password);
+    setIsLoading(false);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      const cleanEmail = email.trim().toLowerCase();
+    if (err) {
+      setErrorMessage(err);
+      showToast(err, "error");
+      return;
+    }
 
-      if (cleanEmail === 'fail@test.com') {
-        const err = "Account disabled by Super Admin. Contact security support.";
-        setErrorMessage(err);
-        showToast(err, "error");
-        return;
-      }
-
-      if (password.length < 3) {
-        const err = "Incorrect password. Passwords must be at least 3 characters.";
-        setErrorMessage(err);
-        showToast(err, "error");
-        return;
-      }
-
-      const hubName = isHosur ? 'Hosur Central Hub (TN)' : 'Bangalore Electronic City Hub (KA)';
-      showToast(`Welcome back! Logged into ${hubName}`, "success");
-      onLoginSuccess(email, selectedHubId);
-    }, 500);
+    const hubName = isHosur ? 'Hosur Central Hub (TN)' : 'Bangalore Electronic City Hub (KA)';
+    showToast(`Welcome back! Logged into ${hubName}`, "success");
+    onLoginSuccess(email.trim(), selectedHubId);
   };
 
   return (
@@ -169,7 +160,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
               {/* Hosur Branch Card */}
               <div 
                 onClick={() => {
-                  onSelectHub('hub_hosur_main');
+                  onSelectHub('hosur');
                   showToast("Selected Hosur Central Hub (TN)", "info");
                 }}
                 style={{
@@ -216,7 +207,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
               {/* Bangalore Branch Card */}
               <div 
                 onClick={() => {
-                  onSelectHub('hub_blr_ecity');
+                  onSelectHub('bengaluru');
                   showToast("Selected Bangalore E-City Hub (KA)", "info");
                 }}
                 style={{

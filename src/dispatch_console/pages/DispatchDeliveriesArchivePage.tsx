@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { todayKey, formatDay, formatDateTime } from '../../data/dates';
 import { Download, Search, Eye } from 'lucide-react';
 import type { Order, DeliveryAgent, User, Product } from '../../types';
 import FulfillmentSheetView from '../../components/common/FulfillmentSheetView';
@@ -27,7 +28,7 @@ export default function DispatchDeliveriesArchivePage({
   const [activeTab, setActiveTab] = useState<'delivered' | 'cancelled'>('delivered');
   const [selectedFulfillmentOrder, setSelectedFulfillmentOrder] = useState<Order | null>(null);
 
-  const isHosur = selectedHubId === 'hub_hosur_main' || selectedHubId === 'hub_hosur';
+  const isHosur = selectedHubId === 'hosur' || selectedHubId === 'hub_hosur';
   const deliveredOrders = (hubOrders || []).filter(o => o.status === 'delivered');
   const cancelledOrders = (hubOrders || []).filter(o => o.status === 'cancelled');
 
@@ -49,7 +50,7 @@ export default function DispatchDeliveriesArchivePage({
         o.customerName ? `"${o.customerName}"` : (u ? `"${u.name}"` : '"Customer"'),
         agent ? `"${agent.name}"` : '"Unassigned"',
         `"${(o.deliveryAddress || o.address || u?.savedAddresses?.[0] || 'N/A').replace(/"/g, '""')}"`,
-        `"${new Date(o.orderDate || Date.now()).toLocaleString()}"`,
+        `"${o.deliveredAt ? formatDateTime(o.deliveredAt) : formatDay(o.orderDate)}"`,
         o.status,
         `₹${o.totalAmount || 0}`,
       ].join(',');
@@ -57,7 +58,7 @@ export default function DispatchDeliveriesArchivePage({
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `Deliveries_Archive_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Deliveries_Archive_${activeTab}_${todayKey()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -170,7 +171,7 @@ export default function DispatchDeliveriesArchivePage({
                 displayOrders.map(order => {
                   const u = users.find(usr => usr.id === order.userId);
                   const agent = deliveryAgents.find(a => a.id === order.deliveryAgentId);
-                  const customerName = order.customerName || u?.name || 'Siva Moorthy';
+                  const customerName = order.customerName || u?.name || 'Customer';
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
@@ -187,15 +188,15 @@ export default function DispatchDeliveriesArchivePage({
                       </td>
 
                       <td style={{ padding: '1rem 1.25rem', maxWidth: '320px', fontSize: '0.78rem', color: '#334155', lineHeight: '1.4' }}>
-                        {order.deliveryAddress || order.address || '5/251, ezhil nagar,, Begepalli, Hosur, Hosur, Tamil Nadu [GPS: (12.785203, 77.797955)] | Contact: Siva Moorthy (6382482092) | Type: Home | Hub: hub_hosur_main'}
+                        {order.deliveryAddress || order.address || '—'}
                       </td>
 
                       <td style={{ padding: '1rem 1.25rem', fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>
-                        {order.orderDate ? new Date(order.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                        {order.deliveredAt ? formatDateTime(order.deliveredAt) : formatDay(order.orderDate)}
                       </td>
 
                       <td style={{ padding: '1rem 1.25rem', fontSize: '0.8rem', color: '#64748B' }}>
-                        No Photo
+                        {order.hasProofPhoto ? 'Photo attached' : 'No Photo'}
                       </td>
 
                       <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { ArrowLeft, Trash2, Phone, Mail, MapPin, Edit3, ShieldAlert, BadgeCheck, Truck, Save, X, Eye, Camera, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 import type { DeliveryAgent, Order } from '../../types';
+import { setRiderActive, updateRider, type RiderRow } from '../../data/staff';
+import { isHubId, type HubId } from '../../data/hubs';
 import FulfillmentSheetView from '../../components/common/FulfillmentSheetView';
 
 interface DispatchPartnerDetailPageProps {
@@ -30,20 +30,22 @@ export default function DispatchPartnerDetailPage({
   // Editable Profile States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
-  const [inactivationReason, setInactivationReason] = useState(partner?.inactiveReason || 'Vehicle Maintenance under review');
+  const rider = partner as RiderRow & { badgeLevel?: string; recognitionTag?: string; inactiveReason?: string };
+  const hubId: HubId = isHubId(rider?.hubId) ? rider.hubId : 'hosur';
+  const [inactivationReason, setInactivationReason] = useState(rider?.inactiveReason || '');
 
-  // Partner Details Form State
-  const partnerId = partner?.id || '';
-  const [riderId, setRiderId] = useState(partner?.riderId || '#ML-RIDER-8902');
-  const [partnerName, setPartnerName] = useState(partner?.name || 'Delivery Partner');
-  const [partnerPhone, setPartnerPhone] = useState(partner?.phone || '9876543210');
-  const [partnerEmail, setPartnerEmail] = useState(partner?.email || '');
-  const [vehicleNumber, setVehicleNumber] = useState(partner?.vehicleNumber || 'TN 29 AB 4521');
-  const [vehicleType, setVehicleType] = useState(partner?.vehicleType || 'Electric Scooter');
-  const [licenseNumber, setLicenseNumber] = useState(partner?.licenseNumber || 'DL-90823411');
-  const [licenseValidity, setLicenseValidity] = useState(partner?.licenseValidity || 'Valid till 2030');
-  const [recognitionBadge, setRecognitionBadge] = useState(partner?.recognitionBadge || 'Top Performer');
-  const [recognitionTag, setRecognitionTag] = useState(partner?.recognitionTag || 'Top Performer • 100% Bottle Return Rate');
+  // Partner Details Form State — the rider's real data only, no sample values
+  const partnerId = rider?.id || '';
+  const [riderId, setRiderId] = useState(rider?.staffCode || '');
+  const [partnerName, setPartnerName] = useState(rider?.name || '');
+  const [partnerPhone, setPartnerPhone] = useState(rider?.phone || '');
+  const [partnerEmail, setPartnerEmail] = useState(rider?.email || '');
+  const [vehicleNumber, setVehicleNumber] = useState(rider?.vehicleNumber || '');
+  const [vehicleType, setVehicleType] = useState(rider?.vehicleType || '');
+  const [licenseNumber, setLicenseNumber] = useState(rider?.licenseNumber || '');
+  const [licenseValidity, setLicenseValidity] = useState(rider?.licenseValidity || '');
+  const [recognitionBadge, setRecognitionBadge] = useState(rider?.badgeLevel || '');
+  const [recognitionTag, setRecognitionTag] = useState(rider?.recognitionTag || '');
 
   // Robust Filtering: match partner ID, name, email or rider ID
   const partnerOrders = useMemo(() => {
@@ -62,8 +64,8 @@ export default function DispatchPartnerDetailPage({
     });
   }, [hubOrders, partnerName, partnerId]);
 
-  // Display orders (fallback to hub sample orders if partner is freshly assigned)
-  const displayOrders = partnerOrders.length > 0 ? partnerOrders : (hubOrders || []).slice(0, 4);
+  // Only this rider's own drops (never other riders' orders as "samples")
+  const displayOrders = partnerOrders;
 
   const assignedJobsCount = displayOrders.length;
   const completedDropsCount = displayOrders.filter(o => o.status === 'delivered').length;
@@ -79,58 +81,47 @@ export default function DispatchPartnerDetailPage({
   };
 
   const executeStatusUpdate = async (nextStatus: boolean, reason: string) => {
-    setIsActive(nextStatus);
     try {
-      await updateDoc(doc(db, 'delivery_agents', partnerId), {
-        isActive: nextStatus,
-        inactiveReason: reason,
-        updatedAt: new Date().toISOString()
-      });
+      await setRiderActive(hubId, partnerId, nextStatus, reason);
+      setIsActive(nextStatus);
       showToast(
-        nextStatus ? `Re-activated account for ${partnerName}` : `Suspended account for ${partnerName}`,
-        nextStatus ? 'success' : 'error'
+        nextStatus ? `Re-activated account for ${partnerName}` : `Suspended account for ${partnerName}. They can no longer log in.`,
+        nextStatus ? 'success' : 'info'
       );
     } catch (err) {
-      console.log('Local state update for partner status', err);
-      showToast(nextStatus ? 'Account active locally' : `Suspended: ${reason}`, 'info');
+      showToast(`Could not change status: ${(err as Error).message}`, 'error');
     }
   };
 
   const handleSaveProfileEdits = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditModalOpen(false);
     try {
-      await updateDoc(doc(db, 'delivery_agents', partnerId), {
-        riderId,
-        name: partnerName,
-        phone: partnerPhone,
-        email: partnerEmail,
-        assignedVehicle: `${vehicleNumber} (${vehicleType})`,
-        vehicleNumber,
-        vehicleType,
-        drivingLicense: `${licenseNumber} (${licenseValidity})`,
-        licenseNumber,
-        licenseValidity,
-        recognitionBadge,
-        recognitionTag,
-        updatedAt: new Date().toISOString()
+      await updateRider(hubId, partnerId, {
+        name: partnerName.trim(),
+        phone: partnerPhone.trim(),
+        vehicleNumber: vehicleNumber.trim().toUpperCase(),
+        vehicleType: vehicleType.trim(),
+        licenseNumber: licenseNumber.trim().toUpperCase(),
+        licenseValidity: licenseValidity.trim(),
+        badgeLevel: recognitionBadge.trim(),
+        recognitionTag: recognitionTag.trim(),
       });
+      setIsEditModalOpen(false);
       showToast('Updated partner profile details successfully!', 'success');
     } catch (err) {
-      console.log('Local save profile fallback', err);
-      showToast('Profile updated locally!', 'success');
+      showToast(`Could not save profile: ${(err as Error).message}`, 'error');
     }
   };
 
+  // "Remove" deactivates: the login stops working, past deliveries keep their rider.
   const handleDeletePartner = async () => {
-    if (window.confirm(`Are you sure you want to remove ${partnerName} from delivery registry?`)) {
+    if (window.confirm(`Remove ${partnerName}? Their login will stop working. Past deliveries stay in history.`)) {
       try {
-        await deleteDoc(doc(db, 'delivery_agents', partnerId));
-        showToast(`Partner ${partnerName} deleted!`, 'error');
+        await setRiderActive(hubId, partnerId, false, 'Removed from registry');
+        showToast(`Partner ${partnerName} removed.`, 'info');
         onBack();
       } catch (err) {
-        showToast('Deleted partner profile locally', 'info');
-        onBack();
+        showToast(`Could not remove partner: ${(err as Error).message}`, 'error');
       }
     }
   };
@@ -278,7 +269,7 @@ export default function DispatchPartnerDetailPage({
         {/* If Inactive, display Inactivation Reason Notice */}
         {!isActive && (
           <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShieldAlert size={18} /> Inactivation Reason set by Admin: <strong>"{partner?.inactiveReason || inactivationReason}"</strong> (App access blocked for rider)
+            <ShieldAlert size={18} /> Inactivation Reason set by Admin: <strong>"{rider?.inactiveReason || inactivationReason}"</strong> (App access blocked for rider)
           </div>
         )}
 
@@ -401,7 +392,7 @@ export default function DispatchPartnerDetailPage({
                         </span>
                       </td>
                       <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#1E293B' }}>
-                        ₹{o.totalAmount || 190}
+                        ₹{o.totalAmount ?? 0}
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <span style={{

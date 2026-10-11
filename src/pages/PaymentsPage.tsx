@@ -1,11 +1,17 @@
 import { useState, useMemo } from 'react';
 import { CreditCard, Search, Download, CheckCircle2, RefreshCw, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import type { User, Order } from '../types';
+import type { HubId } from '../data/hubs';
+import { formatDay, formatDateTime } from '../data/dates';
+import { useHubPayments, markPaymentChecked, markPaymentRefunded } from '../data/payments';
+import { DateFilter, lastDaysRange, type DateRange } from '../components/common/DateFilter';
+import { DataState, LoadMore } from '../components/common/DataState';
 
 interface PaymentsPageProps {
   selectedHubId: string;
-  users: User[];
-  orders: Order[];
+  /** Unused: the page loads hubs/{hub}/payments itself. */
+  users?: User[];
+  orders?: Order[];
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -17,63 +23,69 @@ export interface PaymentTransaction {
   date: string;
   time: string;
   amount: number;
-  paymentMethod: 'Razorpay UPI' | 'Online Banking' | 'Prepaid Wallet' | 'Cash on Delivery';
-  type: 'Order Payment' | 'Prepaid Topup' | 'Subscription Debit' | 'Refund Credit';
-  status: 'SUCCESS' | 'PENDING' | 'REFUNDED';
+  paymentMethod: string;
+  type: 'Order Payment' | 'Subscription Payment';
+  status: 'SUCCESS' | 'FAILED' | 'REFUNDED';
+  reconciled: boolean;
 }
 
-export default function PaymentsPage({ selectedHubId, users = [], orders = [], showToast }: PaymentsPageProps) {
+export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'orders' | 'topups' | 'refunds'>('all');
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const [filterType, setFilterType] = useState<'all' | 'orders' | 'subscriptions' | 'refunds'>('all');
+  const [range, setRange] = useState<DateRange>(lastDaysRange(7));
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const hubId = selectedHubId as HubId;
+  const isHosur = hubId === 'hosur';
+  const payments = useHubPayments(hubId, range.from, range.to);
 
-  // Real-time derived transactions from live orders & customer balances
-  const liveTransactions: PaymentTransaction[] = useMemo(() => {
-    const txList: PaymentTransaction[] = [];
+  const METHOD: Record<string, string> = { upi: 'Razorpay UPI', card: 'Razorpay Card', netbanking: 'Online Banking', wallet: 'Razorpay Wallet', free: 'Free (₹0)' };
 
-    // Map real orders into payment transactions
-    orders.forEach((o, index) => {
-      const user = users.find(u => u.id === o.userId || u.name === o.userName);
-      const isOnline = index % 2 === 0;
-      txList.push({
-        id: `TXN_${o.id || `ML${1000 + index}`}`,
-        orderId: o.id,
-        customerName: o.userName || user?.name || 'MilkyLush Customer',
-        customerPhone: o.userPhone || user?.phone || '9876543210',
-        date: o.date || new Date().toISOString().split('T')[0],
-        time: o.slot || '06:30 AM',
-        amount: o.totalAmount || 150,
-        paymentMethod: o.paymentMethod ? (o.paymentMethod.toUpperCase().includes('UPI') ? 'Razorpay UPI' : 'Prepaid Wallet') : (isOnline ? 'Razorpay UPI' : 'Prepaid Wallet'),
-        type: o.subscriptionId ? 'Subscription Debit' : 'Order Payment',
-        status: o.status === 'delivered' || o.status === 'packed' || o.status === 'outForDelivery' ? 'SUCCESS' : 'PENDING'
-      });
-    });
+  // One row per Razorpay payment the customer app recorded
+  const liveTransactions: PaymentTransaction[] = useMemo(() => payments.data.map((p) => {
+    const when = formatDateTime(p.createdAt);
+    const [d, t] = when.includes(', ') ? [when.slice(0, when.lastIndexOf(', ')), when.slice(when.lastIndexOf(', ') + 2)] : [when, ''];
+    return {
+      id: p.id,
+      orderId: p.refId,
+      customerName: p.customerId ? `${p.customerName ?? 'Customer'} (${p.customerId})` : (p.customerName ?? 'Customer'),
+      customerPhone: p.customerPhone ?? '—',
+      date: d,
+      time: t,
+      amount: p.amount / 100,
+      paymentMethod: METHOD[p.method ?? ''] ?? (p.method ? p.method.toUpperCase() : 'Razorpay'),
+      type: p.purpose === 'subscription' ? 'Subscription Payment' : 'Order Payment',
+      status: p.status === 'refunded' ? 'REFUNDED' : p.status === 'failed' ? 'FAILED' : 'SUCCESS',
+      reconciled: !!p.reconciled,
+    };
+  }), [payments.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Map topups from users with positive wallet balance
-    users.filter(u => u.walletBalance && u.walletBalance > 0).forEach((u, idx) => {
-      txList.push({
-        id: `TOPUP_W_${u.id.substring(0, 6)}_${idx}`,
-        customerName: u.name,
-        customerPhone: u.phone,
-        date: new Date().toISOString().split('T')[0],
-        time: '08:15 AM',
-        amount: u.walletBalance || 500,
-        paymentMethod: 'Razorpay UPI',
-        type: 'Prepaid Topup',
-        status: 'SUCCESS'
-      });
-    });
+  // Metrics (for the loaded period)
+  const totalDeliveredRevenue = liveTransactions.filter(t => t.status === 'SUCCESS').reduce((sum, t) => sum + t.amount, 0);
+  const totalSubscriptionPayments = liveTransactions.filter(t => t.status === 'SUCCESS' && t.type === 'Subscription Payment').reduce((sum, t) => sum + t.amount, 0);
+  const totalRefunded = liveTransactions.filter(t => t.status === 'REFUNDED').reduce((sum, t) => sum + t.amount, 0);
+  const uncheckedCount = liveTransactions.filter(t => !t.reconciled && t.status !== 'FAILED').length;
 
-    return txList.sort((a, b) => b.date.localeCompare(a.date));
-  }, [orders, users]);
-
-  // Metrics
-  const totalDeliveredRevenue = liveTransactions
-    .filter(t => t.status === 'SUCCESS' && (t.type === 'Order Payment' || t.type === 'Subscription Debit'))
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalWalletBalances = users.reduce((sum, u) => sum + (u.walletBalance || 0), 0);
-  const totalTopups = liveTransactions.filter(t => t.type === 'Prepaid Topup').reduce((sum, t) => sum + t.amount, 0);
+  const handleChecked = async (id: string, checked: boolean) => {
+    setBusyId(id);
+    try {
+      await markPaymentChecked(hubId, id, checked);
+      showToast(checked ? 'Marked as checked against Razorpay.' : 'Check removed.', 'success');
+      payments.retry();
+    } catch (err) {
+      showToast(`Could not update payment: ${(err as Error).message}`, 'error');
+    } finally { setBusyId(null); }
+  };
+  const handleRefunded = async (id: string) => {
+    if (!window.confirm(`Mark ${id} as refunded? Do this only after refunding it in the Razorpay dashboard.`)) return;
+    setBusyId(id);
+    try {
+      await markPaymentRefunded(hubId, id);
+      showToast('Payment marked refunded.', 'info');
+      payments.retry();
+    } catch (err) {
+      showToast(`Could not update payment: ${(err as Error).message}`, 'error');
+    } finally { setBusyId(null); }
+  };
 
   // Filtered List
   const filteredTransactions = useMemo(() => {
@@ -86,16 +98,16 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
       
       if (!matchesSearch) return false;
 
-      if (filterType === 'orders' && t.type !== 'Order Payment' && t.type !== 'Subscription Debit') return false;
-      if (filterType === 'topups' && t.type !== 'Prepaid Topup') return false;
-      if (filterType === 'refunds' && t.type !== 'Refund Credit') return false;
+      if (filterType === 'orders' && t.type !== 'Order Payment') return false;
+      if (filterType === 'subscriptions' && t.type !== 'Subscription Payment') return false;
+      if (filterType === 'refunds' && t.status !== 'REFUNDED') return false;
 
       return true;
     });
   }, [liveTransactions, searchQuery, filterType]);
 
   const handleExportCSV = () => {
-    const headers = ['Txn ID', 'Order ID', 'Customer Name', 'Phone', 'Date', 'Amount', 'Payment Method', 'Type', 'Status'];
+    const headers = ['Razorpay Payment ID', 'Order / Subscription ID', 'Customer Name', 'Phone', 'Date', 'Amount', 'Payment Method', 'Type', 'Status', 'Checked'];
     const rows = filteredTransactions.map(t => [
       `"${t.id}"`,
       `"${t.orderId || '-'}"`,
@@ -105,13 +117,14 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
       t.amount,
       `"${t.paymentMethod}"`,
       `"${t.type}"`,
-      t.status
+      t.status,
+      t.reconciled ? 'Yes' : 'No'
     ].join(','));
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `Payments_Ledger_${isHosur ? 'Hosur' : 'Bangalore'}.csv`);
+    link.setAttribute('download', `Payments_${isHosur ? 'Hosur' : 'Bangalore'}_${range.from}_to_${range.to}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -149,10 +162,10 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
           </div>
           <div>
             <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 800, margin: 0, color: '#064E3B' }}>
-              Payments Ledger &amp; Wallet Cashflow
+              Payments Ledger
             </h2>
             <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: '3px' }}>
-              Real-time payment transactions, customer wallet balances, Razorpay gateways, and revenue audit logs for {isHosur ? 'Hosur Hub' : 'Bangalore Hub'}.
+              Razorpay payments recorded by the customer app for {isHosur ? 'Hosur Hub' : 'Bangalore Hub'}, {formatDay(range.from)} – {formatDay(range.to)}. Check each one against the Razorpay dashboard daily.
             </div>
           </div>
         </div>
@@ -196,7 +209,7 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
             ₹{totalDeliveredRevenue.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Verified fulfilled drops
+            Successful payments in period
           </div>
         </div>
 
@@ -210,13 +223,13 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
           borderBottom: '1px solid var(--border-color)'
         }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            PREPAID WALLET FLOAT
+            SUBSCRIPTION PAYMENTS
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
-            ₹{totalWalletBalances.toLocaleString('en-IN')}
+            ₹{totalSubscriptionPayments.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Customer balance float
+            Plans paid in period
           </div>
         </div>
 
@@ -230,13 +243,13 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
           borderBottom: '1px solid var(--border-color)'
         }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            TOTAL ONLINE TOPUPS
+            REFUNDED
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#8B5CF6', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
-            ₹{totalTopups.toLocaleString('en-IN')}
+            ₹{totalRefunded.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Razorpay & UPI recharges
+            Refunded via Razorpay
           </div>
         </div>
 
@@ -256,7 +269,7 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
             {liveTransactions.length} Txns
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Firestore realtime audit
+            {uncheckedCount} not yet checked
           </div>
         </div>
 
@@ -268,9 +281,9 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: 'All Transactions' },
-            { id: 'orders', label: 'Order & Subscription Debits' },
-            { id: 'topups', label: 'Prepaid Wallet Topups' },
-            { id: 'refunds', label: 'Refunds & Adjustments' },
+            { id: 'orders', label: 'Order Payments' },
+            { id: 'subscriptions', label: 'Subscription Payments' },
+            { id: 'refunds', label: 'Refunds' },
           ].map((f) => (
             <button
               key={f.id}
@@ -289,6 +302,7 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
               {f.label}
             </button>
           ))}
+          <DateFilter value={range} onChange={setRange} presets={['today', 'yesterday', 'last7', 'last30']} allowRange />
         </div>
 
         {/* Search Input */}
@@ -315,6 +329,7 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
       </div>
 
       {/* Realtime Ledger Table */}
+      <DataState loading={payments.loading} error={payments.error} onRetry={payments.retry} loadingLabel="Loading payments…">
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         <div className="table-container" style={{ border: 'none', borderRadius: 0 }}>
           <table className="admin-table" style={{ width: '100%' }}>
@@ -350,15 +365,15 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
                     <span style={{
                       fontSize: '0.72rem',
                       fontWeight: 700,
-                      color: t.type === 'Prepaid Topup' ? '#0284C7' : '#047857',
-                      backgroundColor: t.type === 'Prepaid Topup' ? '#E0F2FE' : '#ECFDF5',
+                      color: t.type === 'Subscription Payment' ? '#0284C7' : '#047857',
+                      backgroundColor: t.type === 'Subscription Payment' ? '#E0F2FE' : '#ECFDF5',
                       padding: '3px 8px',
                       borderRadius: '8px',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px'
                     }}>
-                      {t.type === 'Prepaid Topup' ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
+                      {t.type === 'Subscription Payment' ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
                       {t.type}
                     </span>
                   </td>
@@ -369,7 +384,7 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
                     <span style={{
                       fontSize: '0.72rem',
                       fontWeight: 800,
-                      color: t.status === 'SUCCESS' ? '#047857' : '#D97706',
+                      color: t.status === 'SUCCESS' ? '#047857' : t.status === 'FAILED' ? '#DC2626' : '#D97706',
                       backgroundColor: t.status === 'SUCCESS' ? '#ECFDF5' : '#FEF3C7',
                       border: t.status === 'SUCCESS' ? '1px solid #A7F3D0' : '1px solid #FDE68A',
                       padding: '3px 9px',
@@ -377,6 +392,20 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
                     }}>
                       {t.status}
                     </span>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                      <button disabled={busyId === t.id} onClick={() => handleChecked(t.id, !t.reconciled)}
+                        style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', cursor: 'pointer',
+                          border: '1px solid var(--border-color)', backgroundColor: t.reconciled ? '#ECFDF5' : 'var(--bg-main)', color: t.reconciled ? '#047857' : 'var(--text-muted)' }}>
+                        {t.reconciled ? '✓ Checked' : 'Mark checked'}
+                      </button>
+                      {t.status === 'SUCCESS' && (
+                        <button disabled={busyId === t.id} onClick={() => handleRefunded(t.id)}
+                          style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', cursor: 'pointer',
+                            border: '1px solid #FCA5A5', backgroundColor: '#FEF2F2', color: '#DC2626' }}>
+                          Mark refunded
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -392,6 +421,8 @@ export default function PaymentsPage({ selectedHubId, users = [], orders = [], s
         </div>
       </div>
 
+      <LoadMore hasMore={payments.hasMore} loading={payments.loadingMore} onClick={payments.loadMore} />
+      </DataState>
     </div>
   );
 }

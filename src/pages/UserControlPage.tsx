@@ -1,35 +1,91 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { Search, Plus, Edit2, Trash2, Users, Truck, Shield } from 'lucide-react';
 import type { User } from '../types';
 import { useToast } from '../context/ToastContext';
+import { useHubContext } from '../context/HubContext';
+import type { HubId } from '../data/hubs';
+import { useHubCustomers, findCustomers, isServerSearch, type Customer, type CustomerSummary } from '../data/customers';
+import { useHubRiders } from '../data/staff';
+import { logAudit } from '../utils/auditLogger';
+import { DataState, LoadMore } from '../components/common/DataState';
 
 interface UserControlPageProps {
-  users: User[];
+  /** Unused: the page loads the hub's customers page by page. */
+  users?: User[];
   showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export default function UserControlPage({ users }: UserControlPageProps) {
+export default function UserControlPage(_props: UserControlPageProps) {
   const { showToast } = useToast();
+  const { selectedHubId } = useHubContext();
+  const hubId = selectedHubId as HubId;
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRoleTab, setActiveRoleTab] = useState<'customers' | 'delivery' | 'caterers'>('customers');
-  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'subscription' | 'normal'>('all');
+  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'subscription' | 'normal' | 'deleted'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const customersQuery = useHubCustomers(hubId);
+  const riders = useHubRiders(hubId);
+  const [searchHits, setSearchHits] = useState<Customer[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const displayUsers = users || [];
+  // Phone / HSR-CUS search goes to the database; name search filters the loaded rows
+  useEffect(() => {
+    if (!isServerSearch(searchQuery)) { setSearchHits(null); return; }
+    let alive = true;
+    findCustomers(hubId, searchQuery).then((h) => alive && setSearchHits(h)).catch(() => alive && setSearchHits([]));
+    return () => { alive = false; };
+  }, [hubId, searchQuery]);
 
-  const filteredUsers = displayUsers.filter((u) => {
-    const matchesSearch =
-      (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (u.phone || '').includes(searchQuery) ||
-      (u.email || '').toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (!matchesSearch) return false;
-
-    const isSubscriptionUser = Boolean((u as any).isSubscription || (u as any).activeSubscriptionId || u.walletBalance > 0);
-    if (activeTypeFilter === 'subscription') return isSubscriptionUser;
-    if (activeTypeFilter === 'normal') return !isSubscriptionUser;
+  type Row = Customer & CustomerSummary;
+  const displayUsers = (searchHits ?? customersQuery.data) as Row[];
+  const isSub = (u: Row) => (u.activeSubscriptionCount ?? 0) + (u.pausedSubscriptionCount ?? 0) > 0;
+  const filteredUsers = useMemo(() => displayUsers.filter((u) => {
+    if (!searchHits) {
+      const q = searchQuery.toLowerCase();
+      const matches = (u.name || '').toLowerCase().includes(q) || (u.phone || '').includes(searchQuery)
+        || (u.email || '').toLowerCase().includes(q) || (u.customerId || '').toLowerCase().includes(q);
+      if (!matches) return false;
+    }
+    if (activeTypeFilter === 'deleted') return !!u.blocked;
+    if (u.blocked) return false;
+    if (activeTypeFilter === 'subscription') return isSub(u);
+    if (activeTypeFilter === 'normal') return !isSub(u);
     return true;
-  });
+  }), [displayUsers, searchHits, searchQuery, activeTypeFilter]);
+
+  const handleEdit = async (u: Row) => {
+    const name = window.prompt('Customer name', u.name ?? '');
+    if (name === null) return;
+    const email = window.prompt('Email (leave empty if none)', u.email ?? '');
+    if (email === null) return;
+    if (!name.trim()) { showToast('Name cannot be empty.', 'error'); return; }
+    setBusyId(u.id);
+    try {
+      await updateDoc(doc(db, 'users', u.id), { name: name.trim(), email: email.trim(), updatedAt: serverTimestamp() });
+      await logAudit({ hubId, category: 'User Roles', action: `Edited customer ${u.customerId ?? u.id}: ${name.trim()}`, target: `users/${u.id}` });
+      showToast('Customer updated.', 'success');
+      customersQuery.retry();
+    } catch (err) {
+      showToast(`Could not update: ${(err as Error).message}`, 'error');
+    } finally { setBusyId(null); }
+  };
+
+  // Customers own their phone login, so the admin blocks instead of deleting.
+  const handleBlock = async (u: Row) => {
+    const block = !u.blocked;
+    if (!window.confirm(`${block ? 'Block' : 'Unblock'} ${u.name}? ${block ? 'They will not be able to order or get deliveries.' : ''}`)) return;
+    setBusyId(u.id);
+    try {
+      await updateDoc(doc(db, 'users', u.id), { blocked: block, updatedAt: serverTimestamp() });
+      await logAudit({ hubId, category: 'User Roles', action: `${block ? 'Blocked' : 'Unblocked'} customer ${u.customerId ?? u.id}`, target: `users/${u.id}` });
+      showToast(block ? 'Customer blocked.' : 'Customer unblocked.', block ? 'info' : 'success');
+      customersQuery.retry();
+    } catch (err) {
+      showToast(`Could not update: ${(err as Error).message}`, 'error');
+    } finally { setBusyId(null); }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
@@ -83,7 +139,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
             gap: '8px'
           }}
         >
-          <Users size={16} /> Customers ({displayUsers.length})
+          <Users size={16} /> Customers ({displayUsers.length}{customersQuery.hasMore && !searchHits ? '+' : ''})
         </button>
 
         <button
@@ -102,7 +158,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
             gap: '8px'
           }}
         >
-          <Truck size={16} /> Delivery Persons (0)
+          <Truck size={16} /> Delivery Persons ({riders.data.length})
         </button>
 
         <button
@@ -175,6 +231,21 @@ export default function UserControlPage({ users }: UserControlPageProps) {
           >
             Normal Users
           </button>
+          <button 
+            onClick={() => setActiveTypeFilter('deleted')}
+            style={{
+              padding: '0.45rem 1rem',
+              borderRadius: '8px',
+              border: activeTypeFilter === 'deleted' ? 'none' : '1px solid #FCA5A5',
+              backgroundColor: activeTypeFilter === 'deleted' ? '#DC2626' : '#FEF2F2',
+              color: activeTypeFilter === 'deleted' ? '#FFFFFF' : '#DC2626',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Blocked Accounts
+          </button>
         </div>
 
         {/* Search Bar */}
@@ -182,7 +253,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
           <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
           <input
             type="text"
-            placeholder="Search by name, email, phone..."
+            placeholder="Search by name, phone, HSR-CUS-…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -199,6 +270,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
         </div>
       </div>
 
+      <DataState loading={customersQuery.loading} error={customersQuery.error} onRetry={customersQuery.retry} loadingLabel="Loading customers…">
       {/* Main Table Panel matching Screenshot 2 */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
         <div className="table-container" style={{ border: 'none', borderRadius: '0' }}>
@@ -215,11 +287,12 @@ export default function UserControlPage({ users }: UserControlPageProps) {
             </thead>
             <tbody>
               {filteredUsers.map((u) => {
-                const isSubUser = Boolean((u as any).isSubscription || (u as any).activeSubscriptionId || u.walletBalance > 0);
+                const isSubUser = isSub(u);
                 return (
                   <tr key={u.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                     <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#111827', fontSize: '0.88rem' }}>
                       {u.name}
+                      {u.customerId && <div style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>{u.customerId}</div>}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', color: '#374151' }}>
@@ -227,11 +300,11 @@ export default function UserControlPage({ users }: UserControlPageProps) {
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
-                      {u.email || `${u.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`}
+                      {u.email || '—'}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', maxWidth: '340px', fontSize: '0.78rem', color: '#4B5563', lineHeight: '1.35' }}>
-                      {u.address}
+                      {u.defaultAddressText || '—'}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem' }}>
@@ -243,14 +316,14 @@ export default function UserControlPage({ users }: UserControlPageProps) {
                         padding: '3px 10px',
                         borderRadius: '12px'
                       }}>
-                        {isSubUser ? 'Subscription' : 'Normal User'}
+                        {u.blocked ? 'Blocked' : isSubUser ? 'Subscription' : 'Normal User'}
                       </span>
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <button
-                          onClick={() => showToast(`Edit user details for ${u.name}`, 'info')}
+                          disabled={busyId === u.id} onClick={() => handleEdit(u)} title="Edit name / email"
                           style={{
                             padding: '0.35rem 0.55rem',
                             fontSize: '0.78rem',
@@ -265,7 +338,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
                         </button>
 
                         <button
-                          onClick={() => showToast(`Deleted profile ${u.name}`, 'info')}
+                          disabled={busyId === u.id} onClick={() => handleBlock(u)} title={u.blocked ? 'Unblock customer' : 'Block customer'}
                           style={{
                             padding: '0.35rem 0.55rem',
                             fontSize: '0.78rem',
@@ -303,7 +376,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
-            <span>entries per page (Total: {filteredUsers.length})</span>
+            <span>entries per page (Showing: {filteredUsers.length})</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -313,6 +386,9 @@ export default function UserControlPage({ users }: UserControlPageProps) {
           </div>
         </div>
       </div>
+
+      {!searchHits && <LoadMore hasMore={customersQuery.hasMore} loading={customersQuery.loadingMore} onClick={customersQuery.loadMore} />}
+      </DataState>
 
       {/* Quick Add Customer Modal */}
       {showAddModal && (
@@ -339,7 +415,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
           }}>
             <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, marginBottom: '0.5rem' }}>+ Register New Customer</h3>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1.25rem' }}>
-              Add a new subscriber account to the selected hub directory.
+              Customers sign up in the MilkyLush app with phone OTP, which creates their account and HSR-CUS id. An account made here would not match their login.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
               <div>
@@ -365,7 +441,7 @@ export default function UserControlPage({ users }: UserControlPageProps) {
                 <button 
                   onClick={() => {
                     setShowAddModal(false);
-                    showToast("New customer account registered successfully!", "success");
+                    showToast("Customers register themselves in the MilkyLush app with their phone number (OTP). Use Add Order for phone orders once they have signed up.", "info");
                   }}
                   style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
                 >

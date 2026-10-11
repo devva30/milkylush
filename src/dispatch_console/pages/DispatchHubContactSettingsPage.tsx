@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { PhoneCall, Mail, AlertTriangle, Target, Save, Building2, Plus, Trash2 } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { hubDoc } from '../../data/hubs';
+import { logAudit } from '../../utils/auditLogger';
+import { DataState } from '../../components/common/DataState';
 
 interface DispatchHubContactSettingsPageProps {
   selectedHubId: string;
@@ -41,104 +43,75 @@ export default function DispatchHubContactSettingsPage({
   selectedHubId,
   showToast,
 }: DispatchHubContactSettingsPageProps) {
-  const activeHub = selectedHubId || 'hub_hosur';
+  const activeHub = selectedHubId;
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // Form State per Active Hub
-  const [managerName, setManagerName] = useState<string>('Hosur Hub Manager');
-  const [primaryPhone, setPrimaryPhone] = useState<string>('+919876543210');
-  const [additionalPhones, setAdditionalPhones] = useState<string>('+919123456789');
-  const [primaryEmail, setPrimaryEmail] = useState<string>('support@milkylush.com');
-  const [additionalEmails, setAdditionalEmails] = useState<string>('help@milkylush.com');
-  const [whatsappPhone, setWhatsappPhone] = useState<string>('+919876543210');
-  const [emergencySosPhone, setEmergencySosPhone] = useState<string>('+919876543210');
-  const [dailyDropTarget, setDailyDropTarget] = useState<number>(150);
-  const [bottleReturnTarget, setBottleReturnTarget] = useState<number>(100);
+  // Form State per Active Hub (empty until loaded — no placeholder numbers get saved)
+  const [managerName, setManagerName] = useState<string>('');
+  const [primaryPhone, setPrimaryPhone] = useState<string>('');
+  const [additionalPhones, setAdditionalPhones] = useState<string>('');
+  const [primaryEmail, setPrimaryEmail] = useState<string>('');
+  const [additionalEmails, setAdditionalEmails] = useState<string>('');
+  const [whatsappPhone, setWhatsappPhone] = useState<string>('');
+  const [emergencySosPhone, setEmergencySosPhone] = useState<string>('');
+  const [dailyDropTarget, setDailyDropTarget] = useState<number>(0);
+  const [bottleReturnTarget, setBottleReturnTarget] = useState<number>(0);
   const [faqs, setFaqs] = useState<FAQItem[]>(defaultFaqs);
 
-  // Load existing hub settings from Firestore on mount or activeHub change
+  // hubs/{hubId}/settings/contact — one doc the customer app (Help) and rider app (SOS, FAQs) read
   useEffect(() => {
     async function loadSettings() {
       setIsLoading(true);
+      setLoadError(null);
       try {
-        const docRef = doc(db, 'system_controls', 'hub_settings');
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data() || {};
-          const hubData = data[activeHub] || (activeHub === 'hub_hosur' ? data['hub_hosur'] : data['hub_bengaluru']) || {};
-
-          setManagerName(hubData.managerName || (activeHub.includes('bengaluru') ? 'Bengaluru Hub Manager' : 'Hosur Hub Manager'));
-          setPrimaryPhone(hubData.primaryPhone || hubData.managerPhone || '+919876543210');
-          setAdditionalPhones(hubData.additionalPhones || hubData.extraPhones || '');
-          setPrimaryEmail(hubData.primaryEmail || hubData.supportEmail || 'support@milkylush.com');
-          setAdditionalEmails(hubData.additionalEmails || '');
-          setWhatsappPhone(hubData.whatsappPhone || '+919876543210');
-          setEmergencySosPhone(hubData.emergencySosPhone || '+919876543210');
-          setDailyDropTarget(hubData.dailyDropTarget || (activeHub.includes('bengaluru') ? 200 : 150));
-          setBottleReturnTarget(hubData.bottleReturnTarget || (activeHub.includes('bengaluru') ? 150 : 100));
-          if (Array.isArray(hubData.faqs) && hubData.faqs.length > 0) {
-            setFaqs(hubData.faqs);
-          }
-        } else {
-          // Defaults if document doesn't exist
-          setManagerName(activeHub.includes('bengaluru') ? 'Bengaluru Hub Manager' : 'Hosur Hub Manager');
-          setPrimaryPhone('+919876543210');
-          setAdditionalPhones('');
-          setPrimaryEmail('support@milkylush.com');
-          setAdditionalEmails('');
-          setWhatsappPhone('+919876543210');
-          setEmergencySosPhone('+919876543210');
-          setDailyDropTarget(activeHub.includes('bengaluru') ? 200 : 150);
-          setBottleReturnTarget(activeHub.includes('bengaluru') ? 150 : 100);
-          setFaqs(defaultFaqs);
-        }
+        const data = (await getDoc(hubDoc(activeHub, 'settings', 'contact'))).data() ?? {};
+        setManagerName(data.managerName ?? '');
+        setPrimaryPhone(data.phone ?? '');
+        setAdditionalPhones(data.additionalPhones ?? '');
+        setPrimaryEmail(data.email ?? '');
+        setAdditionalEmails(data.additionalEmails ?? '');
+        setWhatsappPhone(data.whatsapp ?? '');
+        setEmergencySosPhone(data.sosPhone ?? '');
+        setDailyDropTarget(data.dailyDropTarget ?? 0);
+        setBottleReturnTarget(data.bottleReturnTarget ?? 0);
+        setFaqs(Array.isArray(data.riderFaqs) && data.riderFaqs.length > 0 ? data.riderFaqs : defaultFaqs);
       } catch (err) {
-        console.warn('Error loading hub settings:', err);
+        setLoadError((err as Error).message);
       } finally {
         setIsLoading(false);
       }
     }
     loadSettings();
-  }, [activeHub]);
+  }, [activeHub, reloadKey]);
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'system_controls', 'hub_settings');
-      const snap = await getDoc(docRef);
-      const existingData = snap.exists() ? snap.data() : {};
-
-      const updatedHubData = {
-        managerName,
-        managerPhone: primaryPhone,
-        primaryPhone,
-        additionalPhones,
-        supportEmail: primaryEmail,
-        primaryEmail,
-        additionalEmails,
-        whatsappPhone,
-        emergencySosPhone,
-        dailyDropTarget: Number(dailyDropTarget) || 150,
-        bottleReturnTarget: Number(bottleReturnTarget) || 100,
-        faqs,
-        updatedAt: new Date().toISOString(),
+      const contact = {
+        managerName: managerName.trim(),
+        phone: primaryPhone.trim(),
+        additionalPhones: additionalPhones.trim(),
+        email: primaryEmail.trim(),
+        additionalEmails: additionalEmails.trim(),
+        whatsapp: whatsappPhone.trim(),
+        sosPhone: emergencySosPhone.trim(),
+        dailyDropTarget: Number(dailyDropTarget) || 0,
+        bottleReturnTarget: Number(bottleReturnTarget) || 0,
+        riderFaqs: faqs,
       };
-
-      // Isolated update for activeHub key only
-      await setDoc(docRef, {
-        ...existingData,
-        [activeHub]: updatedHubData,
-      }, { merge: true });
-
-      // Also set hub specific document `hub_contacts/{activeHub}` for mobile app querying
-      await setDoc(doc(db, 'hub_contacts', activeHub), updatedHubData, { merge: true });
-
-      setIsSaving(false);
-      showToast(`Saved ${activeHub === 'hub_bengaluru' ? 'Bengaluru Hub' : 'Hosur Hub'} contacts & FAQs!`, 'success');
+      await setDoc(hubDoc(activeHub, 'settings', 'contact'), { ...contact, updatedAt: serverTimestamp() }, { merge: true });
+      await logAudit({
+        hubId: activeHub, category: 'Hub Operations', action: 'Hub contacts, targets & FAQs saved',
+        target: `hubs/${activeHub}/settings/contact`, after: { ...contact, riderFaqs: faqs.length },
+      });
+      showToast(`Saved ${activeHub === 'bengaluru' ? 'Bengaluru Hub' : 'Hosur Hub'} contacts & FAQs!`, 'success');
     } catch (err) {
+      showToast('Failed to save hub settings: ' + (err as Error).message, 'error');
+    } finally {
       setIsSaving(false);
-      showToast('Failed to save hub settings: ' + String(err), 'error');
     }
   };
 
@@ -159,9 +132,10 @@ export default function DispatchHubContactSettingsPage({
     setFaqs(faqs.filter(f => f.id !== id));
   };
 
-  const hubTitle = activeHub === 'hub_bengaluru' ? 'Bengaluru Hub (hub_bengaluru)' : 'Hosur Hub (hub_hosur)';
+  const hubTitle = activeHub === 'bengaluru' ? 'Bengaluru Hub' : 'Hosur Hub';
 
   return (
+    <DataState loading={isLoading} error={loadError} onRetry={() => setReloadKey((k) => k + 1)} loadingLabel="Loading hub contacts…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
       
       {/* Page Header */}
@@ -193,7 +167,7 @@ export default function DispatchHubContactSettingsPage({
             boxShadow: '0 4px 12px rgba(4, 120, 87, 0.25)'
           }}
         >
-          <Save size={16} /> {isSaving ? 'Saving Settings...' : `Save ${activeHub === 'hub_bengaluru' ? 'Bengaluru' : 'Hosur'} Settings`}
+          <Save size={16} /> {isSaving ? 'Saving Settings...' : `Save ${activeHub === 'bengaluru' ? 'Bengaluru' : 'Hosur'} Settings`}
         </button>
       </div>
 
@@ -561,5 +535,6 @@ export default function DispatchHubContactSettingsPage({
       </div>
 
     </div>
+    </DataState>
   );
 }

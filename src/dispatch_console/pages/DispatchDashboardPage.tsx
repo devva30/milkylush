@@ -40,9 +40,33 @@ export default function DispatchDashboardPage({
   const totalRiders = displayAgents.length;
   const onlinePercentage = totalRiders > 0 ? Math.round((onlineRiders / totalRiders) * 100) : 0;
 
-  const successRate = totalDispatchesToday > 0 
-    ? Math.round((deliveredToday / totalDispatchesToday) * 100) 
-    : 100;
+  // Of today's finished drops, how many were delivered (0 when nothing finished yet)
+  const failedToday = displayOrders.filter(o => (o.status as string) === 'failed').length;
+  const finishedToday = deliveredToday + failedToday + cancelledToday;
+  const successRate = finishedToday > 0 ? Math.round((deliveredToday / finishedToday) * 100) : 0;
+
+  // Hourly velocity: when today's drops were delivered (IST)
+  const istHourOf = (iso?: string) => (iso ? Number(new Date(iso).toLocaleString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false })) % 24 : -1);
+  const slots = [
+    { label: '5 AM - 7 AM', color: '#059669', text: '#047857', test: (h: number) => h >= 5 && h < 7 },
+    { label: '7 AM - 9 AM', color: '#3B82F6', text: '#2563EB', test: (h: number) => h >= 7 && h < 9 },
+    { label: '9 AM - 12 PM', color: '#F59E0B', text: '#D97706', test: (h: number) => h >= 9 && h < 12 },
+    { label: 'Other times', color: '#9CA3AF', text: '#6B7280', test: (h: number) => h >= 0 && (h < 5 || h >= 12) },
+  ];
+  const deliveredHours = displayOrders.filter(o => o.status === 'delivered').map(o => istHourOf(o.deliveredAt));
+  const slotPct = slots.map(sl => deliveredHours.length ? Math.round((deliveredHours.filter(sl.test).length / deliveredHours.length) * 100) : 0);
+
+  // Route distribution: today's drops per rider's route
+  const routeCounts = new Map<string, number>();
+  displayOrders.forEach(o => {
+    const key = o.assignedPartner || 'No rider yet';
+    routeCounts.set(key, (routeCounts.get(key) ?? 0) + 1);
+  });
+  const routeShares = Array.from(routeCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name, n]) => ({ name, n, pct: totalDispatchesToday ? Math.round((n / totalDispatchesToday) * 100) : 0 }));
+  const routeColors = ['#047857', '#2563EB', '#D97706', '#9333EA'];
 
   const hubLabel = selectedHubId.includes('bengaluru') || selectedHubId.includes('ecity') 
     ? 'Bengaluru Electronic City Hub' 
@@ -203,30 +227,17 @@ export default function DispatchDashboardPage({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '140px', paddingTop: '1rem', borderBottom: '1px solid #F1F5F9' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857' }}>72%</span>
-              <div style={{ width: '28px', height: '90px', backgroundColor: '#059669', borderRadius: '4px 4px 0 0' }} />
-              <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>5 AM - 7 AM</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#2563EB' }}>20%</span>
-              <div style={{ width: '28px', height: '35px', backgroundColor: '#3B82F6', borderRadius: '4px 4px 0 0' }} />
-              <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>7 AM - 9 AM</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D97706' }}>5%</span>
-              <div style={{ width: '28px', height: '18px', backgroundColor: '#F59E0B', borderRadius: '4px 4px 0 0' }} />
-              <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>9 AM - 12 PM</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280' }}>3%</span>
-              <div style={{ width: '28px', height: '12px', backgroundColor: '#9CA3AF', borderRadius: '4px 4px 0 0' }} />
-              <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>Evening</span>
-            </div>
+            {slots.map((sl, i) => (
+              <div key={sl.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: sl.text }}>{slotPct[i]}%</span>
+                <div style={{ width: '28px', height: `${Math.max(4, Math.round(slotPct[i] * 0.9))}px`, backgroundColor: sl.color, borderRadius: '4px 4px 0 0' }} />
+                <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>{sl.label}</span>
+              </div>
+            ))}
           </div>
+          {deliveredHours.length === 0 && (
+            <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '6px' }}>No drops delivered yet today.</div>
+          )}
         </div>
 
         {/* Graph 2: Fulfillment Ratio Gauge & Success Metric */}
@@ -248,7 +259,7 @@ export default function DispatchDashboardPage({
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 700 }}>
                 <span style={{ color: '#059669' }}>Fulfilled ({deliveredToday})</span>
-                <span style={{ color: '#EF4444' }}>Returned ({cancelledToday})</span>
+                <span style={{ color: '#EF4444' }}>Failed / cancelled ({failedToday + cancelledToday})</span>
               </div>
               <div style={{ width: '100%', height: '10px', backgroundColor: '#FEE2E2', borderRadius: '10px', overflow: 'hidden' }}>
                 <div style={{ width: `${successRate}%`, height: '100%', backgroundColor: '#059669', borderRadius: '10px' }} />
@@ -269,40 +280,25 @@ export default function DispatchDashboardPage({
               <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
                 Zone Distribution
               </h4>
-              <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Route allocation across sectors</div>
+              <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Today's drops by rider route ({selectedHubId.includes('bengaluru') ? 'Bengaluru' : 'Hosur'})</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
-                <span>Sector 1 & Begepalli</span>
-                <span>65%</span>
+            {routeShares.length === 0 && (
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>No drops scheduled today. Generate deliveries to see the split.</div>
+            )}
+            {routeShares.map((r, i) => (
+              <div key={r.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
+                  <span>{r.name} ({r.n} drops)</span>
+                  <span>{r.pct}%</span>
+                </div>
+                <div style={{ width: '100%', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '6px', marginTop: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${r.pct}%`, height: '100%', backgroundColor: routeColors[i] }} />
+                </div>
               </div>
-              <div style={{ width: '100%', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '6px', marginTop: '4px', overflow: 'hidden' }}>
-                <div style={{ width: '65%', height: '100%', backgroundColor: '#047857' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
-                <span>Central Town & Ezhil Nagar</span>
-                <span>25%</span>
-              </div>
-              <div style={{ width: '100%', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '6px', marginTop: '4px', overflow: 'hidden' }}>
-                <div style={{ width: '25%', height: '100%', backgroundColor: '#2563EB' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
-                <span>Border Area & Outskirts</span>
-                <span>10%</span>
-              </div>
-              <div style={{ width: '100%', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '6px', marginTop: '4px', overflow: 'hidden' }}>
-                <div style={{ width: '10%', height: '100%', backgroundColor: '#D97706' }} />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 

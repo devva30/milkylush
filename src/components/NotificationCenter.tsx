@@ -114,32 +114,6 @@ export default function NotificationCenter({
       }
     });
 
-    // Add fallback static alerts if list is small
-    if (list.length === 0) {
-      list.push(
-        {
-          id: 'sys_1',
-          title: '🌱 Eco Glass Bottle Reclamation Alert',
-          message: '14 empty glass bottles queued for doorstep return collection today.',
-          timestamp: '06:00 AM',
-          rawTime: Date.now() - 10000,
-          type: 'system',
-          isRead: readIds.has('sys_1'),
-          targetTab: 'bottle-management',
-        },
-        {
-          id: 'sys_2',
-          title: '⚡ Daily Dispatch Route Optimized',
-          message: 'All Hosur & Bangalore morning delivery routes assigned to active riders.',
-          timestamp: '05:45 AM',
-          rawTime: Date.now() - 20000,
-          type: 'system',
-          isRead: readIds.has('sys_2'),
-          targetTab: 'todays-deliveries',
-        }
-      );
-    }
-
     // Filter out dismissed
     return list
       .filter((n) => !dismissedIds.has(n.id))

@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
+import { SubscriptionDropStats } from '../components/common/SubscriptionDropStats';
 import { Search, Download, ArrowLeft, Calendar as CalendarIcon, Sparkles, X, ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, CheckCircle, PauseCircle, Headphones, Mail, MapPin, Phone, Trash2 } from 'lucide-react';
-import { updateDoc, doc, arrayUnion, deleteField, addDoc, collection } from 'firebase/firestore';
+import { updateDoc, arrayUnion, deleteField, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { hubDoc, type HubId } from '../data/hubs';
+import { useHubSubscriptions, syncDeliveryForSkip } from '../data/subscriptions';
+import { LoadMore } from '../components/common/DataState';
 import { db } from '../firebase';
 import { shiftEndDate } from '../utils/subscriptionDates';
 import type { Subscription, User, Product } from '../types';
@@ -14,7 +18,8 @@ interface DateStatusInfo {
 
 interface SubscriptionsPageProps {
   selectedHubId: string;
-  hubSubscriptions: Subscription[];
+  /** Ignored: the page loads hubs/{hubId}/subscriptions itself. Kept so callers compile. */
+  hubSubscriptions?: Subscription[];
   users?: User[];
   products?: Product[];
   targetSubscriptionId?: string | null;
@@ -303,6 +308,14 @@ const calculatePaidDropEndDate = (
 
     const pausedKeys = new Set(
       (pausedDatesList || []).map((d) => {
+        const clean = String(d).split('T')[0].trim();
+        const parts = clean.split('-');
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const day = parseInt(parts[2], 10);
+          return `${y}-${m}-${day}`;
+        }
         const pd = new Date(d);
         return `${pd.getFullYear()}-${pd.getMonth()}-${pd.getDate()}`;
       })
@@ -369,24 +382,107 @@ const getCalendarDayStatus = (
   const targetDate = new Date(year, monthIndex, dayNum);
   targetDate.setHours(0, 0, 0, 0);
 
-  const startDate = plan.startDate ? new Date(plan.startDate) : new Date(2026, 8, 11);
+  const startDate = plan.startDate ? new Date(plan.startDate) : new Date();
   startDate.setHours(0, 0, 0, 0);
 
-  const calculatedEndDate = plan.calculatedEndDate ? new Date(plan.calculatedEndDate) : new Date(2026, 10, 8);
+  const reqDrops = getDurationDays(plan.planDuration || plan.planDurationDays || '30days');
+  const pausedKeysSet = new Set(
+    (plan.pausedDates || []).map((d: any) => String(d).split('T')[0].trim())
+  );
+  Object.keys(plan.pausedDateReasons || {}).forEach((k) => pausedKeysSet.add(String(k).split('T')[0].trim()));
+
+  let endCalc = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  let countDrops = 0;
+  for (let i = 0; i < 700; i++) {
+    const key = `${endCalc.getFullYear()}-${String(endCalc.getMonth() + 1).padStart(2, '0')}-${String(endCalc.getDate()).padStart(2, '0')}`;
+    const isP = pausedKeysSet.has(key);
+    let isV = false;
+    if (plan.vacationStart && plan.vacationEnd) {
+      const vS = new Date(plan.vacationStart);
+      const vE = new Date(plan.vacationEnd);
+      vS.setHours(0, 0, 0, 0);
+      vE.setHours(23, 59, 59, 999);
+      if (endCalc >= vS && endCalc <= vE) isV = true;
+    }
+    if (!isP && !isV) {
+      let isSch = false;
+      const freq = (plan.frequency || 'everyday').toLowerCase();
+      if (freq === 'daily' || freq === 'everyday') {
+        isSch = true;
+      } else if (freq.includes('alternate')) {
+        const diff = Math.floor((endCalc.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        isSch = diff % 2 === 0;
+      } else if (freq.includes('custom') && (plan.customDays || []).length > 0) {
+        const jsDay = endCalc.getDay();
+        const isoWk = jsDay === 0 ? 7 : jsDay;
+        const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const nameOfWk = dayNames[jsDay];
+        isSch = (plan.customDays || []).some((cd: any) => {
+          const cdStr = String(cd).toUpperCase();
+          return cdStr === nameOfWk || cdStr === String(jsDay) || cdStr === String(isoWk);
+        });
+      } else {
+        isSch = true;
+      }
+      if (isSch) {
+        countDrops++;
+        if (countDrops >= reqDrops) break;
+      }
+    }
+    endCalc.setDate(endCalc.getDate() + 1);
+  }
+
+  const calculatedEndDate = plan.endDate ? new Date(plan.endDate) : (plan.calculatedEndDate ? new Date(plan.calculatedEndDate) : endCalc);
   calculatedEndDate.setHours(23, 59, 59, 999);
 
   if (targetDate.getTime() < startDate.getTime() || targetDate.getTime() > calculatedEndDate.getTime()) {
     return { isScheduled: false, status: 'offDay', label: '-' };
   }
 
-  const dateKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-  const pausedDates = plan.pausedDates || [];
-  const pausedDateReasons = plan.pausedDateReasons || {};
-  const reasonEntry = pausedDateReasons[dateKey];
-  const customerReason = typeof reasonEntry === 'object' ? reasonEntry?.reason : typeof reasonEntry === 'string' ? reasonEntry : undefined;
-  const customerNotes = typeof reasonEntry === 'object' ? reasonEntry?.notes : undefined;
+  const normDateKey = (val?: any): string => {
+    if (!val) return '';
+    const str = String(val).trim();
+    const datePart = str.split('T')[0].split(' ')[0].trim();
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parts[1].padStart(2, '0');
+      const d = parts[2].padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    return str;
+  };
 
-  if (pausedDates.includes(dateKey) || customerReason) {
+  const dateKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+  const isCancelledPlan = String(plan.status || '').toLowerCase() === 'cancelled';
+  if (isCancelledPlan) {
+    return {
+      isScheduled: false,
+      status: 'exception',
+      label: '❌ Plan Cancelled',
+      reason: plan.cancellationReason || 'Cancelled plan',
+    };
+  }
+
+  const pausedDates = (plan.pausedDates || []).map((d: any) => normDateKey(d));
+  const pausedDateReasons = plan.pausedDateReasons || {};
+  
+  let customerReason: string | undefined = undefined;
+  let customerNotes: string | undefined = undefined;
+  Object.entries(pausedDateReasons).forEach(([k, v]: [string, any]) => {
+    if (normDateKey(k) === dateKey) {
+      if (typeof v === 'object' && v) {
+        customerReason = v.reason || v.notes;
+        customerNotes = v.notes;
+      } else if (typeof v === 'string') {
+        customerReason = v;
+      }
+    }
+  });
+
+  const isPausedInArray = pausedDates.includes(dateKey);
+
+  if (isPausedInArray || customerReason) {
     return {
       isScheduled: false,
       status: 'skipped',
@@ -465,13 +561,15 @@ const getSpannedMonths = (plan: any) => {
 
 export default function SubscriptionsPage({
   selectedHubId,
-  hubSubscriptions = [],
   users = [],
   targetSubscriptionId,
-  isLoading = false,
   onNavigateTab,
   showToast,
 }: SubscriptionsPageProps) {
+  const hubId = selectedHubId as HubId;
+  const subsQuery = useHubSubscriptions(hubId);
+  const hubSubscriptions = subsQuery.ui;
+  const isLoading = subsQuery.loading;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
@@ -576,7 +674,7 @@ export default function SubscriptionsPage({
     showToast(`Subscription plan reactivated! Notification sent to ${customer?.name || 'customer'}.`, 'success');
 
     try {
-      await updateDoc(doc(db, 'subscriptions', plan.id), {
+      await updateDoc(hubDoc(hubId, 'subscriptions', plan.id), {
         status: 'active',
         cancellationReason: deleteField(),
         cancellationType: deleteField(),
@@ -598,11 +696,11 @@ export default function SubscriptionsPage({
       const userId = customer?.fullCustomerId || customer?.id || plan.userId;
       if (userId) {
         try {
-          await addDoc(collection(db, 'users', userId, 'notifications'), {
+          await addDoc(collection(db, 'users', userId, 'inbox'), {
             title: 'Subscription Reactivated',
-            message: `Your subscription plan (${plan.productName || 'Milk Plan'}) has been reactivated by admin. Note: ${notes}`,
+            body: `Your subscription plan (${plan.productName || 'Milk Plan'}) has been reactivated by admin. Note: ${notes}`,
             type: 'subscription_reactivated',
-            createdAt: new Date().toISOString(),
+            createdAt: serverTimestamp(),
             read: false,
           });
         } catch (notifErr) {
@@ -659,7 +757,7 @@ export default function SubscriptionsPage({
     showToast(`Subscription plan cancelled. Notification sent to ${customer?.name || 'customer'}.`, 'success');
 
     try {
-      await updateDoc(doc(db, 'subscriptions', plan.id), {
+      await updateDoc(hubDoc(hubId, 'subscriptions', plan.id), {
         status: 'cancelled',
         cancellationReason: fullReason,
         cancellationType: cancelReasonType,
@@ -680,11 +778,11 @@ export default function SubscriptionsPage({
       const userId = customer?.fullCustomerId || customer?.id || plan.userId;
       if (userId) {
         try {
-          await addDoc(collection(db, 'users', userId, 'notifications'), {
+          await addDoc(collection(db, 'users', userId, 'inbox'), {
             title: 'Subscription Plan Cancelled',
-            message: `Your subscription plan (${plan.productName || 'Milk Plan'}) was cancelled by admin. Reason: ${fullReason}`,
+            body: `Your subscription plan (${plan.productName || 'Milk Plan'}) was cancelled by admin. Reason: ${fullReason}`,
             type: 'subscription_cancelled',
-            createdAt: new Date().toISOString(),
+            createdAt: serverTimestamp(),
             read: false,
           });
         } catch (notifErr) {
@@ -739,7 +837,7 @@ export default function SubscriptionsPage({
           }
           return h;
         });
-        await updateDoc(doc(db, 'subscriptions', planId), {
+        await updateDoc(hubDoc(hubId, 'subscriptions', planId), {
           historyLog: updatedHistory
         });
         showToast("History log hidden from customer App view", "success");
@@ -782,7 +880,7 @@ export default function SubscriptionsPage({
           updatePayload[`pausedDateReasons.${dateKey}`] = deleteField();
         }
 
-        await updateDoc(doc(db, 'subscriptions', planId), updatePayload);
+        await updateDoc(hubDoc(hubId, 'subscriptions', planId), updatePayload);
         showToast("History log deleted & delivery schedule restored on Web and App", "success");
       }
     } catch (err) {
@@ -796,7 +894,7 @@ export default function SubscriptionsPage({
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
   const hubCodeName = isHosur ? 'Hosur Main Hub' : 'Bangalore Hub';
 
   // Dynamic Live Customer Registry from Firestore hubSubscriptions + users
@@ -840,7 +938,9 @@ export default function SubscriptionsPage({
           dailyRate,
           frequency: sub.frequency || 'Everyday',
           timing: sub.timing === 'evening' ? 'Evening (5-7 PM)' : 'Morning (6-8 AM)',
-          duration: `${getDurationDays(sub.planDuration)} Days Pack`,
+          duration: `${(sub as any).planDurationDays ?? getDurationDays(sub.planDuration)} Days Pack`,
+          totalDrops: (sub as any).totalDrops as number | undefined,
+          hubId: (sub as any).hubId as string | undefined,
           prepaidPaid: sub.prepaidAmountPaid || dailyQty * dailyRate * getDurationDays(sub.planDuration),
           startDate: sub.startDate,
           endDate: sub.endDate,
@@ -855,7 +955,7 @@ export default function SubscriptionsPage({
           vacationEnd: sub.vacationEnd,
           customDays: sub.customDays || [],
           planDuration: sub.planDuration || '30days',
-          calculatedEndDate: calculatePaidDropEndDate(
+          calculatedEndDate: (sub as any).totalDrops && sub.endDate ? formatDateLabel(sub.endDate) : calculatePaidDropEndDate(
             sub.startDate,
             sub.planDuration,
             sub.frequency,
@@ -1043,7 +1143,7 @@ export default function SubscriptionsPage({
           // A skipped day owes the customer one more delivery day at the end.
           const extendedEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
 
-          await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
+          await updateDoc(hubDoc(hubId, 'subscriptions', activeDateModal.planId), {
             pausedDates: updatedPaused,
             ...(extendedEnd ? { endDate: extendedEnd } : {}),
             [`pausedDateReasons.${dateKey}`]: {
@@ -1066,7 +1166,7 @@ export default function SubscriptionsPage({
           // Un-skipping a day removes the extra day it had bought.
           const shortenedEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
 
-          await updateDoc(doc(db, 'subscriptions', activeDateModal.planId), {
+          await updateDoc(hubDoc(hubId, 'subscriptions', activeDateModal.planId), {
             pausedDates: updatedPaused,
             ...(shortenedEnd ? { endDate: shortenedEnd } : {}),
             [`pausedDateReasons.${dateKey}`]: deleteField(),
@@ -1074,8 +1174,10 @@ export default function SubscriptionsPage({
           });
         }
       }
+      await syncDeliveryForSkip(hubId, activeDateModal.planId, dateKey, statusType !== 'active');
     } catch (dbErr) {
-      console.error('Error updating pausedDates/historyLog in Firestore:', dbErr);
+      showToast(`Could not update the schedule: ${(dbErr as Error).message}`, 'error');
+      return;
     }
 
     // Real-time Audit Log
@@ -1135,7 +1237,7 @@ export default function SubscriptionsPage({
         updatePayload[`pausedDateReasons.${normKey}`] = deleteField();
       }
 
-      await updateDoc(doc(db, 'subscriptions', planId), updatePayload);
+      await updateDoc(hubDoc(hubId, 'subscriptions', planId), updatePayload);
 
       logAdminAuditAction(
         'Tom SuperAdmin',
@@ -1459,64 +1561,8 @@ export default function SubscriptionsPage({
                 </div>
               </div>
 
-              {/* Month Summary Bar (Real-Time Dynamic Metrics) */}
-              {(() => {
-                const nowObj = new Date();
-                const todayMidnight = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate());
-                const pausedSet = new Set((plan.pausedDates || []).map((d: any) => String(d).split('T')[0]));
-                
-                let pastDelivered = 0;
-                let vacationCount = 0;
-                let upcomingCount = 0;
-
-                for (let d = 1; d <= daysInSelectedMonth; d++) {
-                  const checkDate = new Date(calendarYear, calendarMonthIndex, d);
-                  const dateIso = `${calendarYear}-${String(calendarMonthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                  
-                  if (pausedSet.has(dateIso)) {
-                    vacationCount++;
-                  } else if (checkDate < todayMidnight) {
-                    pastDelivered++;
-                  } else {
-                    upcomingCount++;
-                  }
-                }
-
-                return (
-                  <div style={{
-                    backgroundColor: '#F9FAFB',
-                    borderRadius: '12px',
-                    padding: '0.85rem 1.25rem',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-                    gap: '1rem',
-                    textAlign: 'center',
-                    marginBottom: '1.25rem',
-                    border: '1px solid #E5E7EB'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>PLAN DURATION</div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>{daysInSelectedMonth} Days</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>TOTAL DROPS</div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{daysInSelectedMonth} drops</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>DELIVERED PAST</div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0284C7', marginTop: '2px' }}>{pastDelivered} drops</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>VACATION DAYS</div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#D97706', marginTop: '2px' }}>{vacationCount} days</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>UPCOMING ACTIVE</div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{upcomingCount} drops</div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* Plan summary from the subscription and its real deliveries (live) */}
+              <SubscriptionDropStats plan={plan} />
 
               {/* Dynamic Live Calendar Grid */}
               <div style={{ border: '1px solid #E5E7EB', borderRadius: '14px', padding: '1.25rem', backgroundColor: '#FFFFFF' }}>
@@ -1815,6 +1861,22 @@ export default function SubscriptionsPage({
                   actor: 'customer',
                   actorName: cust.name,
                   timestamp: ''
+                });
+              }
+
+              // 5. Merge Plan Cancellation
+              const isPlanCancelled = String(plan.status || '').toLowerCase() === 'cancelled' || plan.cancelledAt || plan.cancellationReason;
+              if (isPlanCancelled && !logs.some((l) => l.type === 'plan_cancelled')) {
+                logs.push({
+                  type: 'plan_cancelled',
+                  date: normalizeDateKey(plan.cancelledAt || plan.updatedAt || plan.startDate),
+                  startDate: normalizeDateKey(plan.cancelledAt || plan.updatedAt || plan.startDate),
+                  endDate: normalizeDateKey(plan.endDate),
+                  reason: plan.cancellationReason ? `Cancelled: "${plan.cancellationReason}"` : 'Subscription Plan Cancelled',
+                  notes: plan.cancellationReason || '',
+                  actor: plan.cancelledBy || 'customer',
+                  actorName: plan.cancelledBy === 'admin' ? 'MilkyLush Support' : cust.name,
+                  timestamp: plan.cancelledAt || ''
                 });
               }
 
@@ -3282,6 +3344,7 @@ export default function SubscriptionsPage({
         </div>
       )}
 
+      <LoadMore hasMore={subsQuery.hasMore} loading={subsQuery.loadingMore} onClick={subsQuery.loadMore} />
     </div>
   );
 }

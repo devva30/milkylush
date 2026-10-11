@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import type { User } from '../types';
 import CommercialSidebar from './CommercialSidebar';
 import Header from '../components/Header';
 import { Toast } from '../components/Toast';
 import { HubModal } from '../components/modals/HubModal';
-import { useMilkyLushData } from '../hooks/useMilkyLushData';
 import { useHubContext } from '../context/HubContext';
 
 import CommercialDashboardPage from './pages/CommercialDashboardPage';
@@ -35,16 +37,21 @@ export default function CommercialConsoleLayout({
   const [isHubModalOpen, setIsHubModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Stream data using custom hook
-  const {
-    products,
-    hubOrders,
-    hubUsers,
-    hubSubscriptions,
-    hubFarmers,
-    hubMilkProcurements,
-    totalRevenue,
-  } = useMilkyLushData(selectedHubId);
+  // Each commercial page loads its own hub data. WhatsApp Marketing (unchanged) still
+  // takes a customer list: this hub's customers, read once when that tab is opened.
+  const isWhatsApp = activeTab === 'whatsapp-campaigns' || activeTab === 'whatsapp-notifications' || activeTab === 'customer-cohorts';
+  const [hubUsers, setHubUsers] = useState<User[]>([]);
+  const [usersLoadedFor, setUsersLoadedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isWhatsApp || usersLoadedFor === selectedHubId) return;
+    let alive = true;
+    getDocs(query(collection(db, 'users'), where('hubId', '==', selectedHubId))).then((snap) => {
+      if (!alive) return;
+      setHubUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as User));
+      setUsersLoadedFor(selectedHubId);
+    }).catch((err) => showToast(`Could not load customers: ${(err as Error).message}`, 'error'));
+    return () => { alive = false; };
+  }, [isWhatsApp, selectedHubId, usersLoadedFor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main, #FDFBF7)', color: 'var(--text-main, #1E293B)' }}>
@@ -78,10 +85,6 @@ export default function CommercialConsoleLayout({
           {activeTab === 'dashboard' && (
             <CommercialDashboardPage
               selectedHubId={selectedHubId}
-              orders={hubOrders}
-              users={hubUsers}
-              products={products}
-              totalRevenue={totalRevenue}
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
@@ -89,9 +92,6 @@ export default function CommercialConsoleLayout({
           {(activeTab === 'profit-loss' || activeTab === 'products-analytics' || activeTab === 'expenses') && (
             <ProfitLossPage
               selectedHubId={selectedHubId}
-              orders={hubOrders}
-              products={products}
-              totalRevenue={totalRevenue}
               viewMode={activeTab as 'profit-loss' | 'products-analytics' | 'expenses'}
             />
           )}
@@ -104,10 +104,6 @@ export default function CommercialConsoleLayout({
             activeTab === 'leaves-report') && (
             <SalesReportsPage
               selectedTab={activeTab as any}
-              orders={hubOrders}
-              users={hubUsers}
-              products={products}
-              subscriptions={hubSubscriptions}
             />
           )}
 
@@ -120,8 +116,6 @@ export default function CommercialConsoleLayout({
             <FarmerProcurementPage
               selectedTab={activeTab as any}
               selectedHubId={selectedHubId}
-              farmers={hubFarmers}
-              milkProcurements={hubMilkProcurements}
               showToast={showToast}
             />
           )}
@@ -129,7 +123,6 @@ export default function CommercialConsoleLayout({
           {(activeTab === 'counter-sales' || activeTab === 'daily-sales-load' || activeTab === 'sales-requirement') && (
             <CounterSalesPage
               selectedTab={activeTab as any}
-              products={products}
               selectedHubId={selectedHubId}
             />
           )}
@@ -137,8 +130,6 @@ export default function CommercialConsoleLayout({
           {(activeTab === 'invoice-details' || activeTab === 'invoice-summary') && (
             <InvoicesBillingPage
               selectedTab={activeTab as any}
-              orders={hubOrders}
-              users={hubUsers}
             />
           )}
 

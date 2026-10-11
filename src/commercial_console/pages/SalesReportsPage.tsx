@@ -1,4 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getDoc, query, where } from 'firebase/firestore';
+import { useHubContext } from '../../context/HubContext';
+import { hubCol, hubDoc, type HubId } from '../../data/hubs';
+import { formatDay, todayKey } from '../../data/dates';
+import { useDeliveriesRange, deliveryToOrder } from '../../data/deliveries';
+import { useHubCustomers, type Customer, type CustomerSummary } from '../../data/customers';
+import { useHubSubscriptions, type SubscriptionDoc } from '../../data/subscriptions';
+import { useHubRoutes } from '../../data/routes';
+import { useLiveQuery } from '../../data/useFirestore';
+import { usePeriodTotals, periodRange, type Period } from '../../data/commercial';
+import { LoadMore } from '../../components/common/DataState';
 import {
   FileText,
   Search,
@@ -16,19 +27,36 @@ import type { Order, UserProfile, Product, Subscription } from '../../types';
 
 interface SalesReportsPageProps {
   selectedTab: 'sales-detail' | 'sales-summary' | 'sold-products' | 'customer-ledger' | 'delivery-charge-report' | 'leaves-report';
-  orders: Order[];
-  users: UserProfile[];
-  products: Product[];
-  subscriptions: Subscription[];
+  /** Unused: each report loads its own data for the chosen period. */
+  orders?: Order[];
+  users?: UserProfile[];
+  products?: Product[];
+  subscriptions?: Subscription[];
 }
 
 export default function SalesReportsPage({
   selectedTab,
-  orders = [],
-  users = [],
-  products = [],
-  subscriptions = [],
 }: SalesReportsPageProps) {
+  const { selectedHubId } = useHubContext();
+  const hubId = selectedHubId as HubId;
+  const [period, setPeriod] = useState<Period>('month');
+  const range = periodRange(period);
+  const totals = usePeriodTotals(hubId, period);
+  // Detail report: delivered drops of the period, 50 per page
+  const delivered = useDeliveriesRange(hubId, range.from, range.to, 'delivered');
+  const orders = useMemo(() => delivered.data.map(deliveryToOrder), [delivered.data]);
+  const customers = useHubCustomers(hubId);
+  const routes = useHubRoutes(hubId);
+  const paused = useHubSubscriptions(hubId, 'paused');
+  // Active subscriptions on a vacation that hasn't ended yet
+  const onVacation = useLiveQuery<SubscriptionDoc>(
+    query(hubCol(hubId, 'subscriptions'), where('status', '==', 'active'), where('vacationEnd', '>=', todayKey())), [hubId]);
+  const [payPerDrop, setPayPerDrop] = useState(0);
+  useEffect(() => {
+    getDoc(hubDoc(hubId, 'settings', 'delivery'))
+      .then((d) => setPayPerDrop(Number(d.data()?.riderPayPerDrop) || 0))
+      .catch(() => setPayPerDrop(0));
+  }, [hubId]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -36,7 +64,7 @@ export default function SalesReportsPage({
     'sales-detail': { title: 'Detail Sales Report', desc: 'Itemized list of every fulfilled order with customer contact, amount & delivery timestamp.' },
     'sales-summary': { title: 'Daily & Monthly Sales Summary', desc: 'Aggregated revenue metrics, order volumes and daily sales averages.' },
     'sold-products': { title: 'Sold Product Report', desc: 'Product velocity, quantities sold per SKU and revenue contribution breakdown.' },
-    'customer-ledger': { title: 'Customer Account Ledger', desc: 'Customer wallet balances, transaction logs, total spent and active drops.' },
+    'customer-ledger': { title: 'Customer Account Ledger', desc: 'Customers with their orders, active subscriptions and total paid.' },
     'delivery-charge-report': { title: 'Delivery Charge Report', desc: 'Delivery fee revenue, hub route charges and rider drop payouts.' },
     'leaves-report': { title: 'Subscription Leaves & Pause Report', desc: 'Active subscription pauses, vacation holds and temporary delivery holds.' },
   };
@@ -56,102 +84,71 @@ export default function SalesReportsPage({
     });
   }, [orders, searchTerm, statusFilter]);
 
-  // Daily Sales Summary Data Aggregation
-  const salesSummaryList = useMemo(() => {
-    const datesMap: Record<string, { date: string; totalOrders: number; subRevenue: number; oneTimeRevenue: number; totalRevenue: number }> = {};
-    
-    // Group orders by date
-    orders.forEach(o => {
-      const d = o.orderDate ? o.orderDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
-      if (!datesMap[d]) {
-        datesMap[d] = { date: d, totalOrders: 0, subRevenue: 0, oneTimeRevenue: 0, totalRevenue: 0 };
-      }
-      const amt = o.totalAmount || 85;
-      datesMap[d].totalOrders += 1;
-      if (o.isSubscriptionDelivery || o.orderType === 'subscription') {
-        datesMap[d].subRevenue += amt;
-      } else {
-        datesMap[d].oneTimeRevenue += amt;
-      }
-      datesMap[d].totalRevenue += amt;
-    });
+  // Daily (or monthly, for this year) sales from closed days
+  const salesSummaryList = useMemo(() => (totals.data?.rows ?? [])
+    .filter((r) => r.stats.deliveriesDone > 0 || r.stats.counterSales > 0)
+    .map((r) => ({
+      date: r.key.length === 7 ? r.key : formatDay(r.key),
+      totalOrders: r.stats.deliveriesDone,
+      subRevenue: (r.stats.subscriptionValue ?? 0) / 100,
+      oneTimeRevenue: ((r.stats.orderValue ?? 0) + (r.stats.counterSales ?? 0)) / 100,
+      totalRevenue: ((r.stats.deliveredValue ?? 0) + (r.stats.counterSales ?? 0)) / 100,
+    }))
+    .reverse(), [totals.data]);
 
-    const list = Object.values(datesMap);
-    return list.sort((a, b) => b.date.localeCompare(a.date));
-  }, [orders]);
-  const deliveryChargeList = useMemo(() => {
-    const routeMap: Record<string, { route: string; rider: string; totalDrops: number; feeCollected: number; riderPayout: number; netMargin: number }> = {};
+  // Per rider: drops delivered, delivery charges collected, payout at settings/delivery.riderPayPerDrop
+  const deliveryChargeList = useMemo(() => (totals.data?.riders ?? []).map((r) => {
+    const route = routes.data.find((rt) => rt.riderUid === r.id);
+    const fee = (r.charges ?? 0) / 100;
+    const payout = (r.drops * payPerDrop) / 100;
+    return { route: route?.name ?? '—', rider: r.name || 'Rider', totalDrops: r.drops, feeCollected: fee, riderPayout: payout, netMargin: fee - payout };
+  }), [totals.data, routes.data, payPerDrop]);
 
-    orders.forEach(o => {
-      const riderName = o.assignedPartner || 'Unassigned Rider';
-      const routeName = o.zoneName || o.hubId || 'Central Delivery Route';
-      const key = `${routeName}_${riderName}`;
+  const soldProductsList = useMemo(() => (totals.data?.products ?? []).map((p) => ({
+    name: p.name, price: p.qty ? Math.round(p.value / p.qty) / 100 : 0, unit: p.unit, soldQty: p.qty, revenue: p.value / 100,
+  })), [totals.data]);
 
-      if (!routeMap[key]) {
-        routeMap[key] = { route: routeName, rider: riderName, totalDrops: 0, feeCollected: 0, riderPayout: 0, netMargin: 0 };
-      }
-      routeMap[key].totalDrops += 1;
-      routeMap[key].feeCollected += 15; // ₹15 delivery fee per drop
-      routeMap[key].riderPayout += 10;   // ₹10 rider commission
-      routeMap[key].netMargin += 5;      // ₹5 hub margin
-    });
+  // Customers: counts kept on each customer doc by the customer app (no order scan)
+  const customerLedgerList = useMemo(() => (customers.data as (Customer & CustomerSummary & { totalPaid?: number })[])
+    .filter((u) => !searchTerm || (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (u.phone || '').includes(searchTerm))
+    .map((u) => ({
+      id: u.id,
+      name: u.customerId ? `${u.name} (${u.customerId})` : (u.name || 'Customer'),
+      phone: u.phone || '—',
+      walletBalance: `${u.orderCount ?? 0} orders · ${u.activeSubscriptionCount ?? 0} subs`,
+      totalSpent: (u.totalPaid ?? 0) / 100,
+    })), [customers.data, searchTerm]);
 
-    const list = Object.values(routeMap);
-    if (list.length === 0) {
-      return [
-        { route: 'Hosur Central Route 1', rider: 'Karthik (Rider #1)', totalDrops: 0, feeCollected: 0, riderPayout: 0, netMargin: 0 },
-      ];
-    }
-    return list;
-  }, [orders]);
-
-  // Real-time Sold Products Data Aggregation
-  const soldProductsList = useMemo(() => {
-    const prodMap: Record<string, { name: string; price: number; unit: string; soldQty: number; revenue: number }> = {};
-
-    products.forEach(p => {
-      prodMap[p.id || p.name] = { name: p.name, price: p.price || 0, unit: p.unit || '1 L', soldQty: 0, revenue: 0 };
-    });
-
-    orders.filter(o => o.status === 'delivered').forEach(o => {
-      if (o.items && o.items.length > 0) {
-        o.items.forEach((item: any) => {
-          const key = item.productId || item.productName || item.product?.name || 'Item';
-          if (!prodMap[key]) {
-            prodMap[key] = { name: item.productName || item.product?.name || 'Milk Product', price: item.price || 50, unit: '1 L', soldQty: 0, revenue: 0 };
-          }
-          const qty = item.quantity || 1;
-          prodMap[key].soldQty += qty;
-          prodMap[key].revenue += (item.price || 50) * qty;
-        });
-      }
-    });
-
-    return Object.values(prodMap).sort((a, b) => b.revenue - a.revenue);
-  }, [orders, products]);
-
-  // Real-time Customer Ledger Aggregation
-  const customerLedgerList = useMemo(() => {
-    return users.map(u => {
-      const userOrders = orders.filter(o => o.userId === u.id || o.userName === u.name);
-      const totalSpent = userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-      return {
-        id: u.id,
-        name: u.name || 'Valued Customer',
-        phone: u.phone || 'N/A',
-        walletBalance: u.walletBalance || 0,
-        totalSpent: totalSpent > 0 ? totalSpent : (u.walletBalance || 0),
-      };
-    });
-  }, [users, orders]);
-
-  // Real-time Subscription Leaves & Holds
-  const pausedSubscriptions = useMemo(() => {
-    return subscriptions.filter(s => s.status === 'paused' || s.status === 'on_hold' || s.isPaused);
-  }, [subscriptions]);
+  // Paused subscriptions and running vacations
+  const pausedSubscriptions = useMemo(() => [
+    ...paused.data.map((d) => ({ id: d.id, customerName: d.customerName, productName: d.productName, pauseStartDate: 'Paused', pauseEndDate: 'until resumed' })),
+    ...onVacation.data.map((d) => ({
+      id: d.id, customerName: d.customerName, productName: d.productName,
+      pauseStartDate: d.vacationStart ? formatDay(d.vacationStart) : '', pauseEndDate: d.vacationEnd ? formatDay(d.vacationEnd) : '',
+    })),
+  ], [paused.data, onVacation.data]);
 
   const handleExportCSV = () => {
-    alert(`Exporting ${info.title} report to CSV!`);
+    const table: (string | number)[][] =
+      selectedTab === 'sales-summary' ? [['Date', 'Drops', 'Subscription ₹', 'One-time + counter ₹', 'Total ₹'],
+        ...salesSummaryList.map((r) => [r.date, r.totalOrders, r.subRevenue, r.oneTimeRevenue, r.totalRevenue])]
+      : selectedTab === 'sold-products' ? [['Product', 'Unit', 'Unit price ₹', 'Units', 'Revenue ₹'],
+        ...soldProductsList.map((p) => [p.name, p.unit, p.price, p.soldQty, p.revenue])]
+      : selectedTab === 'customer-ledger' ? [['Customer', 'Phone', 'Orders / subscriptions', 'Total paid ₹'],
+        ...customerLedgerList.map((c) => [c.name, c.phone, c.walletBalance, c.totalSpent])]
+      : selectedTab === 'delivery-charge-report' ? [['Route', 'Rider', 'Drops', 'Charges ₹', 'Payout ₹', 'Net ₹'],
+        ...deliveryChargeList.map((r) => [r.route, r.rider, r.totalDrops, r.feeCollected, r.riderPayout, r.netMargin])]
+      : selectedTab === 'leaves-report' ? [['Subscriber', 'Product', 'From', 'To'],
+        ...pausedSubscriptions.map((p) => [p.customerName ?? '', p.productName ?? '', p.pauseStartDate, p.pauseEndDate])]
+      : [['Drop', 'Customer', 'Items', 'Status', 'Amount ₹'],
+        ...filteredOrders.map((o) => [o.id, o.customerName ?? '', (o.items ?? []).map((i) => `${i.product?.name} x${i.quantity}`).join('; '), o.status, o.totalAmount ?? 0])];
+    const body = table.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(body));
+    link.setAttribute('download', `${selectedTab}_${hubId}_${range.from}_to_${range.to}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -215,8 +212,8 @@ export default function SalesReportsPage({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Filter size={16} style={{ color: 'var(--text-muted)' }} />
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as Period)}
             style={{
               padding: '0.55rem 0.85rem',
               borderRadius: '10px',
@@ -228,10 +225,10 @@ export default function SalesReportsPage({
               fontWeight: 600,
             }}
           >
-            <option value="all">All Statuses</option>
-            <option value="delivered">Delivered / Completed</option>
-            <option value="packed">Packed &amp; Ready</option>
-            <option value="outForDelivery">Out for Delivery</option>
+            <option value="today">Today</option>
+            <option value="week">Last 7 days</option>
+            <option value="month">This month</option>
+            <option value="year">This year</option>
           </select>
         </div>
       </div>
@@ -253,15 +250,15 @@ export default function SalesReportsPage({
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.slice(0, 15).map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#047857' }}>#{order.id.slice(0, 8)}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#047857' }}>{order.id.slice(11)}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{order.userName || order.customerName || 'Valued Customer'}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.deliveryAddress?.slice(0, 28) || 'Hosur Local Route'}...</div>
+                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{order.customerName || 'Customer'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formatDay(order.orderDate)} · {order.deliveryAddress?.slice(0, 28) || '—'}</div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-main)' }}>
-                      {order.items && order.items.length > 0 ? order.items.map((i: any) => `${i.productName || i.product?.name || 'Milk'} (x${i.quantity || 1})`).join(', ') : 'Milk Subscription Drop'}
+                      {order.items && order.items.length > 0 ? order.items.map((i: any) => `${i.productName || i.product?.name || 'Milk'} (x${i.quantity || 1})`).join(', ') : '—'}
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <span style={{ backgroundColor: order.status === 'delivered' ? '#ECFDF5' : '#FEF3C7', color: order.status === 'delivered' ? '#047857' : '#D97706', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 800 }}>
@@ -269,7 +266,7 @@ export default function SalesReportsPage({
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-main)' }}>
-                      ₹{order.totalAmount || 70}
+                      ₹{order.totalAmount ?? 0}
                     </td>
                   </tr>
                 ))}
@@ -277,6 +274,10 @@ export default function SalesReportsPage({
             </table>
           </div>
         )}
+
+        {selectedTab === 'sales-detail' && <LoadMore hasMore={delivered.hasMore} loading={delivered.loadingMore} onClick={delivered.loadMore} />}
+        {selectedTab === 'customer-ledger' && <LoadMore hasMore={customers.hasMore} loading={customers.loadingMore} onClick={customers.loadMore} />}
+        {(delivered.loading || totals.loading) && <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading report…</div>}
 
         {/* VIEW 2: DAILY & MONTHLY SALES SUMMARY */}
         {selectedTab === 'sales-summary' && (
@@ -366,18 +367,18 @@ export default function SalesReportsPage({
                 <tr style={{ backgroundColor: 'var(--bg-main)', textTransform: 'uppercase', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   <th style={{ padding: '0.75rem 1rem' }}>CUSTOMER NAME</th>
                   <th style={{ padding: '0.75rem 1rem' }}>PHONE NUMBER</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>WALLET BALANCE</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>ORDERS / SUBSCRIPTIONS</th>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>TOTAL SPENT</th>
                 </tr>
               </thead>
               <tbody>
-                {customerLedgerList.slice(0, 15).map((user) => (
+                {customerLedgerList.map((user) => (
                   <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{user.name}</td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{user.phone}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
-                        ₹{user.walletBalance}
+                        {user.walletBalance}
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{user.totalSpent.toLocaleString('en-IN')}</td>
@@ -465,15 +466,15 @@ export default function SalesReportsPage({
                 ) : (
                   pausedSubscriptions.map((sub, idx) => (
                     <tr key={sub.id || idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.customerName || `Subscriber #${idx + 1}`}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#047857', fontWeight: 600 }}>{sub.productName || 'Daily Fresh Milk'}</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.customerName || 'Subscriber'}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: '#047857', fontWeight: 600 }}>{sub.productName || '—'}</td>
                       <td style={{ padding: '0.75rem 1rem' }}>
                         <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem' }}>
                           ON VACATION HOLD
                         </span>
                       </td>
                       <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>
-                        {sub.pauseStartDate || 'Active Hold'} - {sub.pauseEndDate || 'Until resumed'}
+                        {sub.pauseStartDate} - {sub.pauseEndDate}
                       </td>
                     </tr>
                   ))

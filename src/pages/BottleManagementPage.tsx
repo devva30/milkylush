@@ -1,9 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Wine, Download, Search, Truck, RotateCcw, Eye, Calendar, CheckCircle2 } from 'lucide-react';
-import { collection, doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { logAdminAuditAction } from '../utils/auditLogger';
 import type { User, Order, BottleRecordItem } from '../types';
+import type { HubId } from '../data/hubs';
+import { todayKey, addDays, formatDay, formatDateTime } from '../data/dates';
+import { useHubRoutes } from '../data/routes';
+import { useCustomerDeliveries } from '../data/customers';
+import { useBottleCustomers, useBottleTotals, recordBottleReturn, setBottleCounts } from '../data/bottles';
+import { DataState, LoadMore } from '../components/common/DataState';
 
 export interface BottleRecord {
   id: string;
@@ -31,7 +34,8 @@ interface BottleManagementPageProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export default function BottleManagementPage({ selectedHubId, users = [], orders = [], bottleRecords = [], adminUsername, onNavigateTab, showToast }: BottleManagementPageProps) {
+export default function BottleManagementPage({ selectedHubId, onNavigateTab, showToast }: BottleManagementPageProps) {
+  const hubId = selectedHubId as HubId;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'today' | 'overdue'>('all');
   
@@ -44,79 +48,54 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
   const [editReturnedInput, setEditReturnedInput] = useState<number>(0);
   const [editDamagedInput, setEditDamagedInput] = useState<number>(0);
   const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
+  const historyDeliveries = useCustomerDeliveries(hubId, isHistoryModalOpen && selectedRecord ? selectedRecord.id : null);
 
-  // Dynamic live bottle records mapped from real Firestore users and bottleRecords
+  // Customers of this hub with their bottle counts (filtered in the database), 50 per page
+  const customersQ = useBottleCustomers(hubId, statusFilter);
+  const [totalsKey, setTotalsKey] = useState(0);
+  const totals = useBottleTotals(hubId, totalsKey);
+  const routes = useHubRoutes(hubId);
+  const today = todayKey();
+  const weekAgo = addDays(today, -7);
+
   const liveRecords: BottleRecord[] = useMemo(() => {
-    if (users && users.length > 0) {
-      return users.map((u) => {
-        const userOrders = (orders || []).filter(o => o.userId === u.id && o.status === 'delivered');
-        let calculatedIssued = 0;
-        userOrders.forEach(o => {
-          if (o.items && o.items.length > 0) {
-            o.items.forEach(it => {
-              const pName = (it.product?.name || '').toLowerCase();
-              const pUnit = (it.product?.unit || '').toLowerCase();
-              const isGlass = it.product?.isGlassBottle || pName.includes('milk') || pUnit.includes('glass') || pUnit.includes('bottle');
-              if (isGlass) {
-                calculatedIssued += (it.quantity || 1);
-              }
-            });
-          }
-        });
+    const routeById = new Map(routes.data.map((r) => [r.id, r]));
+    return customersQ.data.map((c) => {
+      const atHome = c.bottlesAtHome ?? 0;
+      const returned = c.bottlesReturned ?? 0;
+      const damaged = c.bottlesDamaged ?? 0;
+      const last = c.lastBottleCollectedDate ?? '';
+      const route = c.routeId ? routeById.get(c.routeId) : undefined;
+      const status: BottleRecord['status'] =
+        last === today ? 'Collected Today'
+        : atHome === 0 ? 'Cleared'
+        : (!last || last < weekAgo) ? 'Overdue (> 7 Days)'
+        : 'Pending Return';
+      return {
+        id: c.id,
+        customerId: c.customerId,
+        customerName: c.customerId ? `${c.name} (${c.customerId})` : c.name,
+        phone: c.phone || '—',
+        address: c.defaultAddressText || '—',
+        route: route?.name || 'No route',
+        assignedRider: route?.riderName || 'Unassigned',
+        issuedCount: atHome + returned + damaged,
+        returnedCount: returned,
+        pendingCount: atHome,
+        damagedCount: damaged,
+        lastCollectedDate: last ? formatDay(last) : 'Never',
+        status,
+      };
+    });
+  }, [customersQ.data, routes.data, today, weekAgo]);
+  const records = liveRecords;
+  const refresh = () => { customersQ.retry(); setTotalsKey((k) => k + 1); };
 
-        const returned = u.emptyBottlesReturned || 0;
-        const damaged = u.damagedBottles || 0;
-        const totalIssued = calculatedIssued > 0 ? calculatedIssued : (returned + (u.bottlesAtHome || 0) + damaged);
-        const pending = u.bottlesAtHome ?? Math.max(0, totalIssued - returned - damaged);
-        const cleanAddr = u.address || u.savedAddresses?.[0] || 'Hosur Central Hub Area';
-        const areaRoute = cleanAddr.split(',')[0] || 'Hosur Hub Region';
-
-        return {
-          id: `btl_${u.id}`,
-          customerId: u.id,
-          customerName: u.name || 'Valued Customer',
-          phone: u.phone || 'N/A',
-          address: cleanAddr,
-          route: areaRoute,
-          assignedRider: u.assignedDeliveryAgentName || 'Unassigned Express Rider',
-          issuedCount: totalIssued,
-          returnedCount: returned,
-          pendingCount: pending,
-          damagedCount: damaged,
-          lastCollectedDate: new Date().toISOString().slice(0, 10),
-          status: (pending === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
-        };
-      });
-    }
-
-    if (bottleRecords.length > 0) {
-      return bottleRecords.map(b => ({
-        id: b.id,
-        customerId: b.customerId,
-        customerName: b.customerName,
-        phone: b.phone,
-        address: b.address,
-        route: b.route || b.address.split(',')[0] || 'Hosur Hub Region',
-        assignedRider: b.assignedRider || 'Unassigned Express Rider',
-        issuedCount: b.issuedCount ?? 0,
-        returnedCount: b.returnedCount || 0,
-        pendingCount: b.pendingCount ?? Math.max(0, (b.issuedCount || 0) - (b.returnedCount || 0)),
-        damagedCount: b.damagedCount || 0,
-        lastCollectedDate: b.lastCollectedDate || new Date().toISOString().slice(0, 10),
-        status: (b.pendingCount === 0 ? 'Collected Today' : 'Pending Return') as BottleRecord['status']
-      }));
-    }
-
-    return [];
-  }, [users, orders, bottleRecords]);
-
-  const [recordsState, setRecordsState] = useState<BottleRecord[]>([]);
-  const records = recordsState.length > 0 ? recordsState : liveRecords;
   const [returnQty, setReturnQty] = useState('1');
   const [damagedInputQty, setDamagedInputQty] = useState('0');
   const [remarks, setRemarks] = useState('');
 
-  const isHosur = selectedHubId === 'hub_hosur_main' || selectedHubId === 'hub_hosur';
+  const isHosur = selectedHubId === 'hosur' || selectedHubId === 'hub_hosur';
   const hubName = isHosur ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub';
 
   // Filtered List
@@ -129,8 +108,6 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
         r.assignedRider.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
-      if (statusFilter === 'pending' && r.pendingCount === 0) return false;
-      if (statusFilter === 'today' && r.status !== 'Collected Today') return false;
       if (statusFilter === 'overdue' && r.status !== 'Overdue (> 7 Days)') return false;
 
       return true;
@@ -138,10 +115,11 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
   }, [records, searchQuery, statusFilter]);
 
   // Metric Summaries
-  const totalIssued = records.reduce((acc: number, r: BottleRecord) => acc + r.issuedCount, 0);
-  const totalPending = records.reduce((acc: number, r: BottleRecord) => acc + r.pendingCount, 0);
-  const collectedToday = records.filter((r: BottleRecord) => r.status === 'Collected Today').reduce((acc: number, r: BottleRecord) => acc + r.returnedCount, 0);
-  const totalDamaged = records.reduce((acc: number, r: BottleRecord) => acc + r.damagedCount, 0);
+  // Hub-wide totals (aggregations), not just the loaded page
+  const totalIssued = totals ? totals.atHome + totals.returned + totals.damaged : 0;
+  const totalPending = totals?.atHome ?? 0;
+  const collectedToday = totals?.collectedToday ?? 0;
+  const totalDamaged = totals?.damaged ?? 0;
 
   const handleOpenReturnModal = (rec: BottleRecord) => {
     setSelectedRecord(rec);
@@ -156,54 +134,13 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
     const qty = parseInt(returnQty, 10) || 0;
     const damagedCount = parseInt(damagedInputQty, 10) || 0;
 
-    const newReturned = selectedRecord.returnedCount + qty;
-    const newPending = Math.max(0, selectedRecord.issuedCount - newReturned - (selectedRecord.damagedCount + damagedCount));
-    const newDamaged = selectedRecord.damagedCount + damagedCount;
-
-    const updatedDoc: BottleRecord = {
-      ...selectedRecord,
-      returnedCount: newReturned,
-      pendingCount: newPending,
-      damagedCount: newDamaged,
-      lastCollectedDate: new Date().toISOString().slice(0, 10),
-      status: newPending === 0 ? 'Collected Today' : 'Pending Return',
-    };
-
-    setRecordsState((prev: BottleRecord[]) => {
-      const base = prev.length > 0 ? prev : liveRecords;
-      return base.map((r: BottleRecord) => (r.id === selectedRecord.id ? updatedDoc : r));
-    });
-
     try {
-      const custId = selectedRecord.customerId || selectedRecord.id.replace('btl_', '');
-      await setDoc(doc(db, 'users', custId), {
-        emptyBottlesReturned: newReturned,
-        bottlesAtHome: newPending,
-        damagedBottles: newDamaged,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-
-      await setDoc(doc(collection(db, 'bottle_tracking'), selectedRecord.id), {
-        ...updatedDoc,
-        remarks: remarks || '',
-        updatedAt: new Date().toISOString(),
-        hubId: selectedHubId
-      });
-
-      await logAdminAuditAction(
-        adminUsername || 'Super Admin',
-        'admin@milkylush.com',
-        'Super Admin',
-        'Hub Operations',
-        `Recorded return of ${qty} bottle(s) (${damagedCount} damaged) for ${selectedRecord.customerName}`,
-        `Bottle Tracking #${selectedRecord.id}`,
-        { qty, damagedCount, remarks, customer: selectedRecord.customerName },
-        selectedHubId
-      );
+      await recordBottleReturn(hubId, selectedRecord.id, selectedRecord.customerName, qty, damagedCount, remarks.trim());
+      refresh();
     } catch (e) {
-      console.error('Error persisting bottle record:', e);
+      showToast(`Could not save the return: ${(e as Error).message}`, 'error');
+      return;
     }
-
     showToast(`Recorded return of ${qty} bottle(s)${damagedCount > 0 ? ` (${damagedCount} damaged)` : ''} for ${selectedRecord.customerName}!`, 'success');
     setIsReturnModalOpen(false);
   };
@@ -460,6 +397,9 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
               </tr>
             </thead>
             <tbody>
+              {customersQ.loading && (
+                <tr><td colSpan={9} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading customers…</td></tr>
+              )}
               {filteredRecords.map((r) => (
                 <tr key={r.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '0.85rem 1rem' }}>
@@ -565,6 +505,9 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
           </table>
         </div>
       </div>
+      <DataState loading={false} error={customersQ.error} onRetry={customersQ.retry}>
+        <LoadMore hasMore={customersQ.hasMore} loading={customersQ.loadingMore} onClick={customersQ.loadMore} />
+      </DataState>
 
       {/* RECORD BOTTLE RETURN MODAL POP-UP */}
       {isReturnModalOpen && selectedRecord && (
@@ -781,27 +724,16 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
                   onClick={async () => {
                     setIsSavingEdit(true);
                     try {
-                      const custId = selectedRecord.customerId || selectedRecord.id.replace('btl_', '');
-                      const newPending = Math.max(0, selectedRecord.issuedCount - editReturnedInput - editDamagedInput);
-                      const updatedDoc: BottleRecord = {
+                      const newPending = await setBottleCounts(hubId, selectedRecord.id, selectedRecord.customerName,
+                        selectedRecord.issuedCount, editReturnedInput, editDamagedInput);
+                      setSelectedRecord({
                         ...selectedRecord,
                         returnedCount: editReturnedInput,
                         damagedCount: editDamagedInput,
                         pendingCount: newPending,
-                        status: newPending === 0 ? 'Collected Today' : 'Pending Return'
-                      };
-                      setSelectedRecord(updatedDoc);
-                      setRecordsState((prev) => {
-                        const base = prev.length > 0 ? prev : liveRecords;
-                        return base.map(r => r.id === selectedRecord.id ? updatedDoc : r);
                       });
-                      await setDoc(doc(db, 'users', custId), {
-                        emptyBottlesReturned: editReturnedInput,
-                        damagedBottles: editDamagedInput,
-                        bottlesAtHome: newPending,
-                        updatedAt: new Date().toISOString()
-                      }, { merge: true });
-                      showToast(`Updated bottle counters for ${selectedRecord.customerName} in Firestore!`, 'success');
+                      refresh();
+                      showToast(`Updated bottle counts for ${selectedRecord.customerName}.`, 'success');
                     } catch (err) {
                       showToast('Failed to update bottle counters: ' + String(err), 'error');
                     } finally {
@@ -834,26 +766,21 @@ export default function BottleManagementPage({ selectedHubId, users = [], orders
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {/* Map customer's orders or generate detailed audit records */}
               {(() => {
-                const userOrders = orders.filter(o => 
-                  (o.userName && o.userName.toLowerCase() === selectedRecord.customerName.toLowerCase()) ||
-                  (o.userPhone && o.userPhone === selectedRecord.phone)
-                );
+                const displayEvents = historyDeliveries.data.map((d) => ({
+                  id: d.id,
+                  date: formatDay(d.date),
+                  time: d.deliveredAt ? formatDateTime(d.deliveredAt).split(', ').pop() : d.status.replace(/_/g, ' '),
+                  items: d.items.map((i) => `${i.name} (${i.unit}) x${i.qty}`).join(', '),
+                  bottlesIssued: d.bottlesDue ?? 0,
+                  bottlesReturned: d.bottlesCollected ?? 0,
+                  pendingBalance: Math.max(0, (d.bottlesDue ?? 0) - (d.bottlesCollected ?? 0)),
+                  rider: d.riderName || 'Unassigned',
+                  status: d.status === 'delivered' ? 'Delivered' : d.status === 'failed' ? `Failed${d.failReason ? `: ${d.failReason}` : ''}` : d.status.replace(/_/g, ' '),
+                }));
 
-                const displayEvents = userOrders.length > 0 ? userOrders.map(o => {
-                  const issued = o.items ? o.items.reduce((acc, i) => acc + (i.quantity || 1), 0) : 2;
-                  const returned = o.status === 'delivered' ? issued : 0;
-                  return {
-                    id: o.id,
-                    date: o.date || o.orderDate || new Date().toISOString().split('T')[0],
-                    time: o.slot || 'Morning 06:15 AM',
-                    items: o.items ? o.items.map(i => `${i.productName || i.product?.name || 'Milk'} (${i.volume || i.product?.unit || '500ml'}) x${i.quantity || 1}`).join(', ') : 'A2 Vedic Milk (500ml) x2',
-                    bottlesIssued: issued,
-                    bottlesReturned: returned,
-                    pendingBalance: Math.max(0, issued - returned),
-                    rider: selectedRecord.assignedRider,
-                    status: o.status === 'delivered' ? 'Delivered & Empty Returned' : 'Out for Delivery'
-                  };
-                }) : [];
+                if (historyDeliveries.loading) {
+                  return <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>Loading delivery history…</div>;
+                }
 
                 if (displayEvents.length === 0) {
                   return (

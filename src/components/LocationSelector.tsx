@@ -42,8 +42,8 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     onSelectHub(hubId);
   };
 
-  const hosurHub = hubs.find(h => h.id === 'hub_hosur_main') || {
-    id: 'hub_hosur_main',
+  const hosurHub = hubs.find(h => h.id === 'hosur') || {
+    id: 'hosur',
     name: 'Hosur - Central Hub',
     cityName: 'Hosur',
     state: 'Tamil Nadu',
@@ -51,8 +51,8 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     isActive: true
   };
 
-  const bangaloreHub = hubs.find(h => h.id === 'hub_blr_ecity') || {
-    id: 'hub_blr_ecity',
+  const bangaloreHub = hubs.find(h => h.id === 'bengaluru') || {
+    id: 'bengaluru',
     name: 'Bangalore - Electronic City Hub',
     cityName: 'Bangalore',
     state: 'Karnataka',

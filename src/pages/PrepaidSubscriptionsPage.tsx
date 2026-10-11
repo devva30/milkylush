@@ -1,17 +1,26 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Clock, Search } from 'lucide-react';
-import { updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { useHubContext } from '../context/HubContext';
+import type { HubId } from '../data/hubs';
+import { todayKey, addDays, istDayStart, formatDay, formatDateTime } from '../data/dates';
+import { useUpcomingSubscriptions, setSubscriptionStart } from '../data/subscriptions';
+import { logAudit } from '../utils/auditLogger';
 import type { Subscription, PrepaidPackage } from '../types';
 
 interface PrepaidSubscriptionsPageProps {
-  subscriptions: Subscription[];
+  /** Unused: the page loads this hub's upcoming subscriptions itself. */
+  subscriptions?: Subscription[];
   prepaidPackages?: PrepaidPackage[];
   isLoading?: boolean;
   showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = false, showToast }: PrepaidSubscriptionsPageProps) {
+export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscriptionsPageProps) {
+  const { selectedHubId } = useHubContext();
+  const hubId = selectedHubId as HubId;
+  const upcoming = useUpcomingSubscriptions(hubId);
+  const subscriptions = upcoming.ui;
+  const isLoading = upcoming.loading;
   const [searchQuery, setSearchQuery] = useState('');
   const [timeframeFilter, setTimeframeFilter] = useState<'all' | '7days' | '15days' | '30days'>('all');
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'daily' | 'alternateDays'>('all');
@@ -19,102 +28,30 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
   const [editingStartDate, setEditingStartDate] = useState<string>('');
   const [isSavingDate, setIsSavingDate] = useState<boolean>(false);
 
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
+  // All day maths on IST yyyy-MM-dd keys
+  const today = todayKey();
+  const todayDate = istDayStart(today);
+  const keyOf = (v?: string) => (v ? v.slice(0, 10) : '');
 
-  // Helper to format date strings cleanly (e.g. 11 Sep 2026)
-  const formatDateLabel = (dateStr?: string) => {
-    if (!dateStr) return 'N/A';
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch (e) {
-      return dateStr;
-    }
+  const formatDateLabel = (dateStr?: string) => (dateStr ? formatDay(keyOf(dateStr)) : 'N/A');
+
+  const formatSubscribedTime = (sub: Subscription) => (sub?.createdAt ? formatDateTime(sub.createdAt) : 'N/A');
+
+  // First day that isn't skipped, from the start date
+  const effectiveStartKey = (sub: Subscription): string => {
+    const paused = new Set((sub.pausedDates || []).map(keyOf));
+    let k = keyOf(sub.startDate) || today;
+    for (let i = 0; i < 365 && paused.has(k); i++) k = addDays(k, 1);
+    return k;
   };
+  const getEffectiveStartDate = (sub: Subscription): Date => istDayStart(effectiveStartKey(sub));
 
-  // Helper to format exact subscription timestamp with time in 24-hour format (e.g. 06 Oct 2026, 18:30)
-  const formatSubscribedTime = (sub: Subscription) => {
-    if (!sub) return 'N/A';
-    const raw = sub.createdAt || (sub as any).subscribedAt || (sub as any).timestamp || (sub as any).createdAtIso || sub.startDate;
-    if (!raw) return 'N/A';
-    try {
-      let d: Date | null = null;
-      if (typeof raw === 'object' && raw !== null) {
-        if (typeof (raw as any).toDate === 'function') {
-          d = (raw as any).toDate();
-        } else if (typeof (raw as any).seconds === 'number') {
-          d = new Date((raw as any).seconds * 1000);
-        } else if (typeof (raw as any)._seconds === 'number') {
-          d = new Date((raw as any)._seconds * 1000);
-        }
-      }
-      if (!d) {
-        const str = String(raw).trim();
-        if (/^\d+$/.test(str)) {
-          d = new Date(Number(str));
-        } else {
-          d = new Date(str);
-        }
-      }
-      if (!d || isNaN(d.getTime())) return 'N/A';
-      const dateFormatted = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      const timeFormatted = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-      return `${dateFormatted}, ${timeFormatted}`;
-    } catch (e) {
-      return 'N/A';
-    }
-  };
+  const isStartDateSkipped = (sub: Subscription): boolean =>
+    !!sub.startDate && (sub.pausedDates || []).map(keyOf).includes(keyOf(sub.startDate));
 
-  // Helper to compute effective dispatch start date taking skipped/paused dates into account
-  const getEffectiveStartDate = (sub: Subscription): Date => {
-    const baseStart = sub.startDate ? new Date(sub.startDate) : new Date();
-    baseStart.setHours(0, 0, 0, 0);
-
-    const pausedSet = new Set(
-      (sub.pausedDates || []).map((d) => {
-        const pd = new Date(d);
-        return `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')}`;
-      })
-    );
-
-    let curr = new Date(baseStart);
-    for (let i = 0; i < 365; i++) {
-      const key = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
-      if (!pausedSet.has(key)) {
-        return curr;
-      }
-      curr.setDate(curr.getDate() + 1);
-    }
-    return baseStart;
-  };
-
-  // Helper to check if start date is currently skipped
-  const isStartDateSkipped = (sub: Subscription): boolean => {
-    if (!sub.startDate) return false;
-    const sDate = new Date(sub.startDate);
-    const key = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}-${String(sDate.getDate()).padStart(2, '0')}`;
-    const pausedSet = new Set(
-      (sub.pausedDates || []).map((d) => {
-        const pd = new Date(d);
-        return `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')}`;
-      })
-    );
-    return pausedSet.has(key);
-  };
-
-  // Compute days until effective start helper
   const getDaysUntilStart = (sub: Subscription) => {
-    try {
-      const effectiveStart = getEffectiveStartDate(sub);
-      effectiveStart.setHours(0, 0, 0, 0);
-      const diffTime = effectiveStart.getTime() - todayDate.getTime();
-      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return days < 0 ? 0 : days;
-    } catch (e) {
-      return 0;
-    }
+    const diff = Math.round((istDayStart(effectiveStartKey(sub)).getTime() - todayDate.getTime()) / 86400000);
+    return diff < 0 ? 0 : diff;
   };
 
   // Filter live prepaid subscriptions: ONLY show future-scheduled upcoming subscriptions (effectiveStart > todayDate)
@@ -122,11 +59,10 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
     return subscriptions
       .filter((s) => {
         if (!s.startDate) return false;
-        const effectiveStart = getEffectiveStartDate(s);
-        return effectiveStart.getTime() > todayDate.getTime() || (s.status as string) === 'upcoming';
+        return effectiveStartKey(s) > today;
       })
       .sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
-  }, [subscriptions, todayDate]);
+  }, [subscriptions, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filtered List
   const filteredSubs = useMemo(() => {
@@ -206,7 +142,7 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#1E40AF', fontWeight: 700, backgroundColor: '#DBEAFE', padding: '6px 12px', borderRadius: '10px' }}>
-          <Clock size={15} /> System Date: <strong>{todayDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</strong>
+          <Clock size={15} /> System Date: <strong>{formatDay(today)}</strong>
         </div>
       </div>
 
@@ -451,7 +387,7 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
                         </div>
                         {isSkipped && (
                           <div style={{ fontSize: '0.71rem', fontWeight: 800, color: '#D97706', marginTop: '3px', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', padding: '2px 6px', borderRadius: '6px', width: 'fit-content' }}>
-                            ⏸️ Start Skipped (Dispatch: {formatDateLabel(effectiveDate.toISOString())})
+                            ⏸️ Start Skipped (Dispatch: {formatDateLabel(effectiveStartKey(s))})
                           </div>
                         )}
                       </td>
@@ -554,7 +490,7 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
               <div><strong>Delivery Address:</strong> {selectedSub.deliveryAddress || 'Hosur Main Route'}</div>
               <div><strong>Prepaid Advance Paid:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>₹{selectedSub.prepaidAmountPaid}</span></div>
               <div><strong>Scheduled Start Date:</strong> {formatDateLabel(selectedSub.startDate)}</div>
-              <div><strong>Calculated End Date:</strong> {formatDateLabel(selectedSub.endDate || '2026-11-08')}</div>
+              <div><strong>Calculated End Date:</strong> {selectedSub.endDate ? formatDateLabel(selectedSub.endDate) : '—'}</div>
               <div><strong>Frequency:</strong> {selectedSub.frequency}</div>
               <div><strong>Countdown:</strong> <span style={{ color: '#D97706', fontWeight: 800 }}>Starts in {getDaysUntilStart(selectedSub)} days</span></div>
               
@@ -605,16 +541,19 @@ export default function PrepaidSubscriptionsPage({ subscriptions, isLoading = fa
                   }
                   setIsSavingDate(true);
                   try {
-                    const isoDateStr = new Date(targetDate).toISOString();
-                    await updateDoc(doc(db, 'subscriptions', selectedSub.id), {
-                      startDate: isoDateStr
-                    });
-                    if (showToast) showToast(`Updated start date to ${formatDateLabel(isoDateStr)}!`, 'success');
+                    if (targetDate <= today) {
+                      if (showToast) showToast('Pick a date after today.', 'error');
+                      setIsSavingDate(false);
+                      return;
+                    }
+                    await setSubscriptionStart(hubId, selectedSub.id, targetDate);
+                    await logAudit({ hubId, category: 'Hub Operations', action: `Moved start of ${selectedSub.id} to ${targetDate}`, target: `hubs/${hubId}/subscriptions/${selectedSub.id}` });
+                    if (showToast) showToast(`Updated start date to ${formatDateLabel(targetDate)}!`, 'success');
                     setSelectedSub(null);
                     setEditingStartDate('');
                   } catch (err) {
                     console.error('Failed to update start date:', err);
-                    if (showToast) showToast('Failed to update start date in database.', 'error');
+                    if (showToast) showToast(`Failed to update start date: ${(err as Error).message}`, 'error');
                   } finally {
                     setIsSavingDate(false);
                   }

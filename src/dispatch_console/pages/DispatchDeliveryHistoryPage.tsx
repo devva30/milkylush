@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react';
+import { ProofPhotoBox } from '../../components/common/ProofPhotoBox';
+import { todayKey, formatDay, formatDateTime } from '../../data/dates';
 import { CheckCircle2, Search, Download, ArrowLeft, ExternalLink, Phone, Calendar, MapPin, Printer } from 'lucide-react';
 import type { Order, User, DeliveryAgent } from '../../types';
 import { formatAddressDetails, getGoogleMapsUrl } from '../../utils/addressFormatter';
@@ -10,18 +12,10 @@ interface DispatchDeliveryHistoryPageProps {
   selectedHubId: string;
 }
 
-const safeParseDate = (dateStr?: string): Date => {
-  if (!dateStr) return new Date();
-  const d = new Date(dateStr);
-  if (!isNaN(d.getTime())) return d;
-  return new Date();
-};
-
+// IST; a bare day key (no time known yet) shows only the day.
 const formatDateWithTime = (dateStr?: string): string => {
-  const d = safeParseDate(dateStr);
-  const dateFormatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const timeFormatted = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  return `${dateFormatted}, ${timeFormatted}`;
+  if (!dateStr) return '—';
+  return /^d{4}-d{2}-d{2}$/.test(dateStr) ? formatDay(dateStr) : formatDateTime(dateStr);
 };
 
 export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], deliveryAgents, selectedHubId }: DispatchDeliveryHistoryPageProps) {
@@ -89,7 +83,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
       const agent = deliveryAgents.find((a) => a.id === o.deliveryAgentId);
       return [
         `"${o.id}"`,
-        `"${formatDateWithTime(o.orderDate)}"`,
+        `"${formatDateWithTime(o.deliveredAt || o.orderDate)}"`,
         o.customerName ? `"${o.customerName}"` : (u ? `"${u.name}"` : '"Customer"'),
         `"${(o.deliveryAddress || o.address || 'Doorstep').replace(/"/g, '""')}"`,
         o.isSubscriptionDelivery || o.orderType === 'subscription' ? 'Subscription' : 'One-Time',
@@ -100,7 +94,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `Delivery_History_${selectedHubId}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Delivery_History_${selectedHubId}_${todayKey()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -194,7 +188,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                 Delivery receipt &amp; proof #{o.id}
               </h2>
               <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '2px' }}>
-                Delivered {formatDateWithTime(o.orderDate)} · {isSubOrder ? 'Subscription drop' : 'One-time order'}
+                Delivered {formatDateWithTime(o.deliveredAt || o.orderDate)} · {isSubOrder ? 'Subscription drop' : 'One-time order'}
               </div>
             </div>
           </div>
@@ -253,54 +247,15 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                 Doorstep photo proof
               </h3>
               
-              <div 
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '240px',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  backgroundColor: '#F3F4F6',
-                  border: '1px solid #E5E7EB'
-                }}
-              >
-                <img
-                  src={proofUrl || 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800&auto=format&fit=crop&q=80'}
-                  alt="Doorstep Delivery Proof"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                
-                {/* GPS Verified Badge Overlaid Directly on Bottom of Photo */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  padding: '1.5rem 1rem 0.85rem 1rem',
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: '#FFFFFF',
-                    color: '#15803D',
-                    padding: '0.35rem 0.85rem',
-                    borderRadius: '9999px',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                  }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
-                    GPS verified · within 28m of address
-                  </div>
-                </div>
-              </div>
+              <ProofPhotoBox
+                hubId={(o as any).hubId ?? ''}
+                deliveryId={o.id}
+                hasProofPhoto={(o as any).hasProofPhoto}
+                riderNote={(o as any).riderNote}
+              />
               
               <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.65rem' }}>
-                Captured {formatDateWithTime(o.orderDate)} by {agent?.name || 'rider'}
+                Captured {formatDateWithTime(o.deliveredAt || o.orderDate)} by {agent?.name || 'rider'}
               </div>
             </div>
 
@@ -374,7 +329,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                       </div>
                     </div>
                     <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
-                      ₹{item.quantity * (item.product?.price || 110)}
+                      ₹{item.quantity * (item.product?.price ?? 0)}
                     </div>
                   </div>
                 ))
@@ -396,7 +351,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                     </div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
-                    ₹{o.totalAmount || 110}
+                    ₹{o.totalAmount ?? 0}
                   </div>
                 </div>
               )}
@@ -404,7 +359,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
               <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
                   <span>This drop's value</span>
-                  <span style={{ fontWeight: 800, color: '#111827' }}>₹{o.totalAmount || 110}</span>
+                  <span style={{ fontWeight: 800, color: '#111827' }}>₹{o.totalAmount ?? 0}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
                   <span>Delivery charge</span>
@@ -586,14 +541,14 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                     {agent?.name || 'Rider'}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    Rider ID: RID-0442 · Hosur Central Hub
+                    Rider ID: {(agent as any)?.staffCode || '—'} · {(o as any).hubId === 'bengaluru' ? 'Bengaluru Hub' : 'Hosur Hub'}
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-main, #0F172A)', fontWeight: 600 }}>
                 <Phone size={14} style={{ color: 'var(--text-muted, #64748B)' }} />
-                {agent?.phone || '89899889898'}
+                {agent?.phone || '—'}
               </div>
 
             </div>
@@ -612,7 +567,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                   logs.push({
                     tag: 'ordered',
                     title: 'Order Registered & Hub Queued',
-                    subtitle: `Logged ${formatDateWithTime(o.orderDate)} · Customer: ${customerName}`,
+                    subtitle: `Logged ${formatDateWithTime(o.deliveredAt || o.orderDate)} · Customer: ${customerName}`,
                     bg: '#ECFDF5',
                     color: '#047857',
                     border: '#A7F3D0'
@@ -649,7 +604,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                         ? `Cancelled by Rider (${agent?.name || 'Rider'})` 
                         : 'Delivery Status Updated',
                     subtitle: isDelivered 
-                      ? `Doorstep photo & GPS verified at ${formatDateWithTime(o.orderDate)}` 
+                      ? `Doorstep photo & GPS verified at ${formatDateWithTime(o.deliveredAt || o.orderDate)}` 
                       : isCancelled 
                         ? `Reason: "${(o as any).cancellationReason || 'Customer unreachable / Delivery issue'}"` 
                         : 'Completed dropoff',
@@ -905,7 +860,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                         )}
                       </td>
 
-                      <td style={{ fontSize: '0.8rem', color: '#475569', padding: '0.85rem 1rem' }}>{formatDateWithTime(o.orderDate)}</td>
+                      <td style={{ fontSize: '0.8rem', color: '#475569', padding: '0.85rem 1rem' }}>{formatDateWithTime(o.deliveredAt || o.orderDate)}</td>
                       <td style={{ fontWeight: 700, color: '#1E293B', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{customerName}</td>
                       <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#475569' }}>{agent?.name || 'Express Rider'}</td>
                       <td style={{ fontSize: '0.8rem', color: '#475569', padding: '0.85rem 1rem', maxWidth: '260px' }}>

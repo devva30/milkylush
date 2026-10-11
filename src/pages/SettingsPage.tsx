@@ -15,12 +15,13 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({ theme, onToggleTheme, showToast }: SettingsPageProps) {
+  const { selectedHubId, allowedHubIds, staff } = useHubContext();
   const [adminProfile, setAdminProfile] = useState({
-    name: 'Tom Admin',
-    email: 'tomadmin@gmail.com',
-    role: 'Administrator',
-    securityLevel: 'Root Owner Access',
-    connectionStatus: 'Active Firestore Snapshots'
+    name: staff?.name || '',
+    email: staff?.email || '',
+    role: staff?.role === 'super_admin' ? 'Super Admin' : 'Hub Admin',
+    securityLevel: staff?.role === 'super_admin' ? 'All hubs' : (staff?.hubIds ?? []).join(', '),
+    connectionStatus: 'Firebase Auth session'
   });
 
   const [fcmKey, setFcmKey] = useState(() => localStorage.getItem('fcm_server_key') || '');
@@ -39,18 +40,17 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
     setShowKeysMap((prev) => ({ ...prev, [fieldId]: !prev[fieldId] }));
   };
 
-  const { selectedHubId } = useHubContext();
   const [savedKeys, setSavedKeys] = useState<RazorpaySettings | null>(null);
   const [draftKeys, setDraftKeys] = useState<RazorpaySettings | null>(null);
   const [savingHub, setSavingHub] = useState<string | null>(null);
 
   useEffect(() => {
-    const hubIds = Array.from(new Set(['hub_hosur_main', 'hub_bangalore_main', 'hub_blr_ecity', selectedHubId]));
+    const hubIds = allowedHubIds;
     getRazorpaySettings(hubIds).then((loaded) => {
       setSavedKeys(loaded);
       setDraftKeys(loaded);
     });
-  }, [selectedHubId]);
+  }, [allowedHubIds.join(',')]);
 
   const editHubKey = (hubId: string, patch: Partial<RazorpaySettings[string]>) =>
     setDraftKeys((current) => (current ? { ...current, [hubId]: { ...(current[hubId] || { enabled: false, keyId: '' }), ...patch } } : current));
@@ -276,7 +276,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
           <Key size={20} style={{ color: '#047857' }} /> Razorpay Payment Key Configuration
         </h3>
         <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
-          Manage Razorpay payment key for <strong>{selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Electronic City Hub'}</strong>. Keys are securely hidden by default; click the <Eye size={13} style={{ display: 'inline', margin: '0 2px' }} /> icon to reveal and edit. Switch active hub in top bar to manage another location.
+          Manage Razorpay payment key for <strong>{selectedHubId === 'hosur' ? 'Hosur Hub' : 'Bangalore Electronic City Hub'}</strong>. Keys are securely hidden by default; click the <Eye size={13} style={{ display: 'inline', margin: '0 2px' }} /> icon to reveal and edit. Switch active hub in top bar to manage another location.
         </p>
 
         <div style={{ marginTop: '0.5rem', padding: '0.65rem 0.85rem', borderRadius: '10px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.78rem', color: '#92400E' }}>
@@ -289,8 +289,8 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
 
         {draftKeys && savedKeys && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.25rem' }}>
-            {[selectedHubId === 'hub_hosur_main' ? 'hub_hosur_main' : 'hub_blr_ecity'].map((hubId) => {
-              const defaultKey = hubId === 'hub_hosur_main' ? 'rzp_test_TVUJtWno7iUXYw' : 'rzp_test_Rt3Ppu4aqXwsO6';
+            {[selectedHubId].map((hubId) => {
+              const defaultKey = '';
               const draft = draftKeys[hubId] || { enabled: true, keyId: defaultKey };
               const live = savedKeys[hubId] || { enabled: true, keyId: defaultKey };
               const draftKeyId = draft?.keyId || '';
@@ -298,7 +298,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
               const check = describeKeyId(draftKeyId);
               const changed = draftKeyId.trim() !== liveKeyId || Boolean(draft?.enabled) !== Boolean(live?.enabled);
               const busy = savingHub === hubId;
-              const hubDisplayName = HUBS[hubId]?.name || (hubId === 'hub_blr_ecity' ? 'Bangalore Electronic City Hub' : hubId);
+              const hubDisplayName = HUBS[hubId]?.name || (hubId === 'bengaluru' ? 'Bangalore Electronic City Hub' : hubId);
 
               const isKeyVisible = showKeysMap[`rzp_${hubId}`] === true;
 

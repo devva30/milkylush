@@ -1,19 +1,29 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Search, ArrowLeft, Calendar, Users as UsersIcon, Printer, X, Download, Edit2 } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useLiveDoc } from '../data/useFirestore';
 import type { Order, User, Product, DeliveryAgent } from '../types';
+import type { HubId } from '../data/hubs';
+import { hubDoc } from '../data/hubs';
+import {
+  useDeliveriesRange, deliveryToOrder, setDeliveryStatus, reassignDelivery, DB_STATUS, type DeliveryStatus, type DeliveryDoc,
+} from '../data/deliveries';
+import { DateFilter, lastDaysRange, type DateRange } from '../components/common/DateFilter';
+import { DataState, LoadMore } from '../components/common/DataState';
+import { logAudit } from '../utils/auditLogger';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 
 interface OrdersPageProps {
   selectedHubId: string;
-  orders: Order[];
-  users: User[];
-  products: Product[];
+  /** Ignored: the page reads hubs/{hubId}/deliveries for the chosen dates. Kept so callers compile. */
+  orders?: Order[];
+  users?: User[];
+  products?: Product[];
   deliveryAgents: DeliveryAgent[];
   targetOrderId?: string | null;
   onOpenAddOrderModal?: () => void;
-  onUpdateOrderStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateOrderStatus?: (orderId: string, status: Order['status']) => void;
   onUpdateOrderDriver?: (orderId: string, agentId: string) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onNavigateTab?: (tab: string, targetId?: string) => void;
@@ -42,32 +52,72 @@ const safeParseDate = (dateStr?: string): Date => {
 
 export default function OrdersPage({
   selectedHubId,
-  orders,
-  users,
-  products = [],
   deliveryAgents = [],
   targetOrderId,
   onOpenAddOrderModal,
-  onUpdateOrderStatus,
-  onUpdateOrderDriver,
   showToast,
   onNavigateTab,
 }: OrdersPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'subscription' | 'onetime' | 'freesample'>('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [customDate, setCustomDate] = useState('');
+  const hubId = selectedHubId as HubId;
+  // Bill header: hub address (Service Areas), GSTIN + phone (hub contact), FSSAI (Mobile Control)
+  const hubInfo = useLiveDoc<{ address?: string }>(doc(db, 'hubs', hubId), [hubId]);
+  const hubContact = useLiveDoc<{ gstin?: string; phone?: string }>(hubDoc(hubId, 'settings', 'contact'), [hubId]);
+  const appConfig = useLiveDoc<{ fssaiNumber?: string; supportEmail?: string }>(doc(db, 'config', 'app'), []);
+  const [range, setRange] = useState<DateRange>(lastDaysRange(7));
+  const serverStatus: DeliveryStatus | undefined =
+    statusFilter === 'all' ? undefined : DB_STATUS[statusFilter];
+  const deliveriesQuery = useDeliveriesRange(hubId, range.from, range.to, serverStatus);
+  const orders = useMemo(() => deliveriesQuery.data.map(deliveryToOrder), [deliveriesQuery.data]);
+  const users = useMemo(() => {
+    const m = new Map<string, User>();
+    deliveriesQuery.data.forEach((d) => m.set(d.customerUid, {
+      id: d.customerUid, name: d.customerName, phone: d.customerPhone, savedAddresses: [d.addressText],
+    } as unknown as User));
+    return Array.from(m.values());
+  }, [deliveriesQuery.data]);
+
+  const onUpdateOrderStatus = async (id: string, status: Order['status']) => {
+    const next = DB_STATUS[status as string];
+    if (!next) return;
+    try {
+      await setDeliveryStatus(hubId, id, next);
+      showToast(`${id} -> ${next.replace(/_/g, ' ')}`, 'success');
+    } catch (err) {
+      showToast(`Could not update: ${(err as Error).message}`, 'error');
+    }
+  };
+  const onUpdateOrderDriver = async (id: string, agentId: string) => {
+    const agent = deliveryAgents.find((a) => a.id === agentId);
+    try {
+      await reassignDelivery(hubId, id, agent ? { uid: agent.id, name: agent.name } : null);
+      showToast(agent ? `Assigned ${agent.name}` : 'Rider removed', 'success');
+    } catch (err) {
+      showToast(`Could not reassign: ${(err as Error).message}`, 'error');
+    }
+  };
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<Order | null>(null);
 
   useEffect(() => {
-    if (targetOrderId && orders.length > 0) {
-      const found = orders.find(o => o.id === targetOrderId || targetOrderId.includes(o.id) || o.id.includes(targetOrderId));
-      if (found) {
-        setSelectedOrderDetail(found);
-      }
+    if (!targetOrderId) return;
+    const cleanTarget = targetOrderId.trim().toLowerCase();
+    const found = orders.find(o => {
+      const oid = o.id.toLowerCase();
+      return oid === cleanTarget || cleanTarget.includes(oid) || oid.includes(cleanTarget);
+    });
+    if (found) {
+      setSelectedOrderDetail(found);
+    } else {
+      getDoc(doc(db, 'hubs', hubId, 'deliveries', targetOrderId)).then((snap) => {
+        if (snap.exists()) {
+          const orderData = deliveryToOrder({ id: snap.id, ...(snap.data() as DeliveryDoc) });
+          setSelectedOrderDetail(orderData);
+        }
+      }).catch(() => {});
     }
-  }, [targetOrderId, orders]);
+  }, [targetOrderId, orders, hubId]);
   const [cancellationReason, setCancellationReason] = useState('');
 
   // Invoice Print Modal State
@@ -88,8 +138,8 @@ export default function OrdersPage({
   const pageSize = 10;
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const isHosur = selectedHubId === 'hub_hosur_main';
-  const hubCodeName = isHosur ? 'hub_hosur_main' : 'hub_blr_ecity';
+  const isHosur = selectedHubId === 'hosur';
+  const hubCodeName = isHosur ? 'hosur' : 'bengaluru';
 
   const activeOrders = orders;
 
@@ -128,17 +178,10 @@ export default function OrdersPage({
       if (typeFilter === 'onetime' && (isSub || isFS)) return false;
       if (typeFilter === 'freesample' && !isFS) return false;
 
-      // Date Filter & Custom Date Picker Evaluation
-      const targetDateISO = customDate ? customDate : dateFilter === 'today' ? todayISO : dateFilter === 'yesterday' ? yesterdayISO : '';
-
-      if (targetDateISO) {
-        const itemISO = safeParseDate(o.orderDate).toISOString().slice(0, 10);
-        if (itemISO !== targetDateISO) return false;
-      }
 
       return true;
     });
-  }, [activeOrders, users, searchQuery, statusFilter, typeFilter, dateFilter, customDate]);
+  }, [activeOrders, users, searchQuery, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const paginatedOrders = useMemo(() => {
@@ -195,7 +238,7 @@ export default function OrdersPage({
 
     const getItemDisplayName = (item: any) => {
       if (!item?.product?.name || item.product.name.toLowerCase() === 'dummy') {
-        return products?.[0]?.name || 'Premium A2 Desi Cow Milk';
+        return item?.product?.name || 'Item';
       }
       return item.product.name;
     };
@@ -274,9 +317,9 @@ export default function OrdersPage({
                 MilkyLush Technologies Pvt. Ltd.
               </div>
               <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '2px', lineHeight: '1.4' }}>
-                Plot 42, Dairy Industrial Hub, Hosur, Tamil Nadu - 635109<br />
-                GSTIN: <strong>33AABCM1234F1Z9</strong> | FSSAI Lic: <strong>12422003000543</strong><br />
-                Support: +91 98765 43210 | www.milkylush.com
+                {hubInfo.data?.address || '—'}<br />
+                GSTIN: <strong>{hubContact.data?.gstin || 'not set'}</strong> | FSSAI Lic: <strong>{appConfig.data?.fssaiNumber || 'not set'}</strong><br />
+                Support: {hubContact.data?.phone || '—'} | www.milkylush.com
               </div>
             </div>
 
@@ -394,7 +437,7 @@ export default function OrdersPage({
       <FulfillmentSheetView
         order={selectedOrderDetail}
         users={users}
-        products={products}
+        deliveryHubId={hubId}
         deliveryAgents={deliveryAgents}
         selectedHubId={selectedHubId}
         onClose={() => setSelectedOrderDetail(null)}
@@ -403,7 +446,7 @@ export default function OrdersPage({
           setSelectedOrderDetail((prev) => prev ? { ...prev, status } : null);
         }}
         onUpdateOrderDriver={(orderId, agentId) => {
-          if (onUpdateOrderDriver) onUpdateOrderDriver(orderId, agentId);
+          onUpdateOrderDriver(orderId, agentId);
           setSelectedOrderDetail((prev) => prev ? { ...prev, deliveryAgentId: agentId } : null);
         }}
         showToast={showToast}
@@ -414,6 +457,7 @@ export default function OrdersPage({
 
   // Main Table View
   return (
+    <DataState loading={deliveriesQuery.loading} error={deliveriesQuery.error} onRetry={deliveriesQuery.retry} loadingLabel="Loading orders…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       
       {/* 4 Metric Cards */}
@@ -515,45 +559,8 @@ export default function OrdersPage({
 
         {/* Date Presets & Date Picker */}
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {[
-            { id: 'all', label: 'All Time' },
-            { id: 'today', label: 'Today' },
-            { id: 'yesterday', label: 'Yesterday' },
-          ].map((p) => (
-            <button
-              key={p.id}
-              onClick={() => { setDateFilter(p.id); setCustomDate(''); }}
-              style={{
-                padding: '0.38rem 0.65rem',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                backgroundColor: dateFilter === p.id && !customDate ? '#0284C7' : 'var(--bg-main)',
-                color: dateFilter === p.id && !customDate ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                cursor: 'pointer'
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
+          <DateFilter value={range} onChange={(r) => { setRange(r); setCurrentPage(1); }} presets={['today', 'yesterday', 'last7', 'last30']} allowRange />
 
-          <input
-            type="date"
-            value={customDate}
-            onChange={(e) => { setCustomDate(e.target.value); setDateFilter('all'); }}
-            style={{
-              padding: '0.35rem 0.55rem',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              backgroundColor: customDate ? '#ECFDF5' : 'var(--bg-main)',
-              color: customDate ? '#047857' : 'var(--text-main)',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          />
 
           <button
             onClick={handleExportCSV}
@@ -783,7 +790,7 @@ export default function OrdersPage({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>House / Door No.</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>House / Door No.</label>
                   <input
                     type="text"
                     value={editHouseNo}
@@ -793,7 +800,7 @@ export default function OrdersPage({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>Street / Road</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Street / Road</label>
                   <input
                     type="text"
                     value={editStreet}
@@ -805,7 +812,7 @@ export default function OrdersPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>Area / Locality</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Area / Locality</label>
                 <input
                   type="text"
                   value={editArea}
@@ -817,7 +824,7 @@ export default function OrdersPage({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>City</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>City</label>
                   <select
                     value={editCity}
                     onChange={(e) => {
@@ -833,7 +840,7 @@ export default function OrdersPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>State</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>State</label>
                   <input
                     type="text"
                     value={editState}
@@ -843,7 +850,7 @@ export default function OrdersPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', mb: '4px' }}>PIN Code</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PIN Code</label>
                   <input
                     type="text"
                     value={editPin}
@@ -868,11 +875,15 @@ export default function OrdersPage({
                   setIsUpdatingAddress(true);
                   try {
                     const formattedAddress = `${editHouseNo ? editHouseNo + ', ' : ''}${editStreet ? editStreet + ', ' : ''}${editArea ? editArea + ', ' : ''}${editCity}, ${editState} - ${editPin}`;
-                    await updateDoc(doc(db, 'orders', editingAddressOrder.id), {
-                      deliveryAddress: formattedAddress,
-                      address: formattedAddress,
-                      updatedAt: new Date().toISOString(),
+                    await updateDoc(hubDoc(hubId, 'deliveries', editingAddressOrder.id), {
+                      addressText: formattedAddress,
+                      'address.line1': [editHouseNo, editStreet].filter(Boolean).join(', '),
+                      'address.area': editArea,
+                      'address.city': editCity,
+                      'address.pincode': editPin,
+                      updatedAt: serverTimestamp(),
                     });
+                    await logAudit({ hubId, category: 'Hub Operations', action: `Edited address of ${editingAddressOrder.id}`, target: `hubs/${hubId}/deliveries/${editingAddressOrder.id}` });
                     showToast(`Updated address for order ${editingAddressOrder.id}! 📍`, 'success');
                     setEditingAddressOrder(null);
                   } catch (err) {
@@ -890,6 +901,8 @@ export default function OrdersPage({
           </div>
         </div>
       )}
+      <LoadMore hasMore={deliveriesQuery.hasMore} loading={deliveriesQuery.loadingMore} onClick={deliveriesQuery.loadMore} />
     </div>
+    </DataState>
   );
 }

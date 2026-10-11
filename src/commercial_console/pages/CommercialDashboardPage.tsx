@@ -1,4 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { collection, count, getAggregateFromServer, query, where } from 'firebase/firestore';
+import { db } from '../../firebase';
+import type { HubId } from '../../data/hubs';
+import { usePeriodTotals, procurementTotals, loadExpenses, periodRange } from '../../data/commercial';
+import { PageLoader, ErrorState } from '../../components/common/DataState';
 import {
   TrendingUp,
   DollarSign,
@@ -16,38 +21,49 @@ import type { Order, UserProfile, Product } from '../../types';
 
 interface CommercialDashboardPageProps {
   selectedHubId: string;
-  orders: Order[];
-  users: UserProfile[];
-  products: Product[];
-  totalRevenue: number;
+  /** Unused: the page loads this month's closed-day totals itself. */
+  orders?: Order[];
+  users?: UserProfile[];
+  products?: Product[];
+  totalRevenue?: number;
   onNavigateTab: (tab: string) => void;
 }
 
 export default function CommercialDashboardPage({
   selectedHubId,
-  orders,
-  users,
-  products,
-  totalRevenue,
   onNavigateTab,
 }: CommercialDashboardPageProps) {
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const hubId = selectedHubId as HubId;
+  const month = usePeriodTotals(hubId, 'month');
+  const [extra, setExtra] = useState<{ litres: number; procurement: number; expenses: number; customers: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const { from, to } = periodRange('month');
+    Promise.all([
+      procurementTotals(hubId, from, to),
+      loadExpenses(hubId, [to.slice(0, 7)]),
+      getAggregateFromServer(query(collection(db, 'users'), where('hubId', '==', hubId)), { n: count() }),
+    ]).then(([p, e, c]) => alive && setExtra({
+      litres: p.litres, procurement: p.amount,
+      expenses: e.packaging + e.logistics + e.payroll + e.utilities + e.marketing,
+      customers: c.data().n,
+    })).catch(() => alive && setExtra({ litres: 0, procurement: 0, expenses: 0, customers: 0 }));
+    return () => { alive = false; };
+  }, [hubId]);
+  const isHosur = selectedHubId === 'hosur';
   const hubName = isHosur ? 'Hosur Central Hub' : 'Bangalore Hub';
 
-  // Calculate Key Commercial Metrics dynamically
-  const completedOrders = orders.filter((o) => o.status === 'delivered');
-  const totalGrossRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), totalRevenue || 0);
-  const totalFarmerProcurementCost = totalGrossRevenue * 0.45;
-  const totalDeliveryCost = completedOrders.length * 15;
-  const estimatedNetProfit = totalGrossRevenue > 0 ? totalGrossRevenue - (totalFarmerProcurementCost + totalDeliveryCost) : 0;
-  
-  // Dynamic milk liters calculation from order items
-  const totalMilkLiters = completedOrders.reduce((sum, o) => {
-    if (o.items && o.items.length > 0) {
-      return sum + o.items.reduce((iSum, item) => iSum + (item.quantity || 1), 0);
-    }
-    return sum + 1;
-  }, 0);
+  if (month.error) return <ErrorState message={`Could not load totals: ${month.error}`} onRetry={month.retry} />;
+  if (!month.data || !extra) return <PageLoader label="Loading this month's figures…" />;
+
+  // This month, from closed days: sales = delivered drops + counter sales; costs = milk bought + expenses
+  const t = month.data.sum;
+  const totalGrossRevenue = ((t.deliveredValue ?? 0) + (t.counterSales ?? 0)) / 100;
+  const totalFarmerProcurementCost = extra.procurement / 100;
+  const totalDeliveryCost = extra.expenses / 100;
+  const estimatedNetProfit = totalGrossRevenue - (totalFarmerProcurementCost + totalDeliveryCost);
+  const totalMilkLiters = Math.round(extra.litres);
+  const topProducts = month.data.products.slice(0, 5);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -131,7 +147,7 @@ export default function CommercialDashboardPage({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#166534', marginTop: '6px', fontWeight: 700 }}>
             <ArrowUpRight size={14} />
-            <span>+14.2% from last week</span>
+            <span>This month (closed days + counter sales)</span>
           </div>
         </div>
 
@@ -155,7 +171,7 @@ export default function CommercialDashboardPage({
             ₹{estimatedNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#059669', marginTop: '6px', fontWeight: 700 }}>
-            <span>Net Margin: {totalGrossRevenue > 0 ? ((estimatedNetProfit / totalGrossRevenue) * 100).toFixed(1) : '32'}%</span>
+            <span>Net Margin: {totalGrossRevenue > 0 ? ((estimatedNetProfit / totalGrossRevenue) * 100).toFixed(1) : '0.0'}%</span>
           </div>
         </div>
 
@@ -200,7 +216,7 @@ export default function CommercialDashboardPage({
             </div>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1E293B' }}>
-            {users.length} Recipient Alerts
+            {extra.customers} Recipient Alerts
           </div>
           <div style={{ fontSize: '0.78rem', color: '#166534', marginTop: '6px', fontWeight: 700 }}>
             98.4% Delivery Success Rate
@@ -289,8 +305,11 @@ export default function CommercialDashboardPage({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            {products.slice(0, 5).map((prod, idx) => {
-              const estShare = 100 - idx * 18;
+            {topProducts.length === 0 && (
+              <div style={{ fontSize: '0.82rem', color: '#64748B', padding: '0.75rem 0' }}>No closed days this month yet. Press "Close day" on Today's Deliveries after each delivery day.</div>
+            )}
+            {topProducts.map((prod, idx) => {
+              const estShare = prod.qty;
               return (
                 <div key={prod.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #F1F5F9' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -299,12 +318,12 @@ export default function CommercialDashboardPage({
                     </div>
                     <div>
                       <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E293B' }}>{prod.name}</div>
-                      <div style={{ fontSize: '0.76rem', color: '#64748B' }}>₹{prod.price} per {prod.unit || 'pack'}</div>
+                      <div style={{ fontSize: '0.76rem', color: '#64748B' }}>₹{(prod.qty ? prod.value / prod.qty / 100 : 0).toFixed(2)} per {prod.unit || 'pack'}</div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#166534' }}>
-                      ₹{(prod.price * estShare).toLocaleString()}
+                      ₹{(prod.value / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
                       {estShare} units sold

@@ -3,45 +3,52 @@ import {
   Plus, Search, Edit2, Trash2, 
   ChevronUp, ChevronDown, RefreshCw
 } from 'lucide-react';
-import { collection, getDocs, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import type { Product } from '../types';
+import type { HubId } from '../data/hubs';
+import {
+  useHubProducts, saveProduct, setProductStock, deleteProduct, sellingPrice as getDiscountedPrice,
+} from '../data/products';
+import { DataState } from '../components/common/DataState';
 
 interface ProductsPageProps {
   selectedHubId?: string;
-  products: Product[];
-  onOpenAddProduct: () => void;
-  onOpenEditProduct: (product: Product) => void;
-  onToggleStock: (productId: string, currentStock: boolean) => void;
-  onDeleteProduct: (productId: string) => void;
-  onSaveProduct?: (product: Partial<Product>) => void;
+  /** Ignored: the page loads hubs/{hubId}/products itself. Kept so existing callers compile. */
+  products?: Product[];
+  onOpenAddProduct?: () => void;
+  onOpenEditProduct?: (product: Product) => void;
+  onToggleStock?: unknown;
+  onDeleteProduct?: unknown;
+  onSaveProduct?: unknown;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-function getDiscountedPrice(price: number, offerTag?: string): number {
-  if (!offerTag || !offerTag.trim()) return price;
-  const tag = offerTag.trim();
-  const pctMatch = tag.match(/(\d+)\s*%/);
-  if (pctMatch) {
-    const pct = parseFloat(pctMatch[1]);
-    if (pct > 0) return Math.round(price * (1 - pct / 100));
-  }
-  const flatMatch = tag.match(/(?:₹|rs\.?|flat)?\s*(\d+)\s*(?:off|discount)?/i);
-  if (flatMatch) {
-    const amt = parseFloat(flatMatch[1]);
-    if (amt > 0 && amt < price) return Math.round(price - amt);
-  }
-  return price;
-}
-
 export default function ProductsPage({
-  selectedHubId = 'hub_hosur_main',
-  products,
-  onToggleStock,
-  onDeleteProduct,
-  onSaveProduct,
+  selectedHubId = 'hosur',
   showToast,
 }: ProductsPageProps) {
+  const hubId = selectedHubId as HubId;
+  const productsQuery = useHubProducts(hubId);
+  const products = productsQuery.data;
+  const [busy, setBusy] = useState(false);
+
+  // All writes go through the data layer (readable ID, paise, catalogue refresh, audit log).
+  const run = async (label: string, action: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await action();
+      showToast(label, 'success');
+    } catch (err) {
+      showToast(`Could not save: ${(err as Error).message}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const onSaveProduct = (p: Partial<Product>) =>
+    run(`Saved "${p.name}" for ${hubId === 'hosur' ? 'Hosur' : 'Bengaluru'}`, () => saveProduct(hubId, p));
+  const onToggleStock = (productId: string, inStock: boolean) =>
+    run(`Stock updated for ${productId}`, () => setProductStock(hubId, productId, inStock));
+  const onDeleteProduct = (productId: string) =>
+    run(`Deleted ${productId}`, () => deleteProduct(hubId, productId));
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -113,7 +120,7 @@ export default function ProductsPage({
     setIsCreatingNew(true);
     setEditingProduct(null);
     setFormData({
-      id: `prod_${Date.now()}`,
+      id: '', // empty → the data layer issues the next HSR-PRD-#### ID
       name: '',
       description: '',
       category: 'Milk',
@@ -537,7 +544,7 @@ export default function ProductsPage({
               fontSize: '0.82rem',
               fontWeight: 800
             }}>
-              <span>📍 Locked to {selectedHubId === 'hub_hosur_main' ? 'Hosur Central Hub (hub_hosur_main)' : 'Bangalore Electronic City Hub (hub_blr_ecity)'}</span>
+              <span>📍 Locked to {selectedHubId === 'hosur' ? 'Hosur Central Hub (hub_hosur_main)' : 'Bangalore Electronic City Hub (hub_blr_ecity)'}</span>
             </div>
           </div>
 
@@ -639,6 +646,7 @@ export default function ProductsPage({
   });
 
   return (
+    <DataState loading={productsQuery.loading} error={productsQuery.error} onRetry={productsQuery.retry} loadingLabel="Loading products…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       
       {/* Header Bar matching Screenshot 2 */}
@@ -1005,5 +1013,6 @@ export default function ProductsPage({
       )}
 
     </div>
+    </DataState>
   );
 }

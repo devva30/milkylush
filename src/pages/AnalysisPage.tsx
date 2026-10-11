@@ -1,75 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, Users, Calendar, IndianRupee } from 'lucide-react';
 import type { Order, Subscription, Product, User } from '../types';
+import type { HubId } from '../data/hubs';
+import { useHubProducts } from '../data/products';
+import { loadAnalysis, type AnalysisData } from '../data/stats';
+import { PageLoader, ErrorState } from '../components/common/DataState';
 
 interface AnalysisPageProps {
   selectedHubId: string;
-  orders: Order[];
-  subscriptions: Subscription[];
-  products: Product[];
-  users: User[];
-  totalRevenue: number;
+  /** Unused: the page loads its own numbers. Kept so callers compile. */
+  orders?: Order[];
+  subscriptions?: Subscription[];
+  products?: Product[];
+  users?: User[];
+  totalRevenue?: number;
 }
 
 export default function AnalysisPage({
   selectedHubId,
-  orders,
-  subscriptions,
-  products,
-  users,
-  totalRevenue,
 }: AnalysisPageProps) {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('month');
-  const isHosur = selectedHubId === 'hub_hosur_main';
+  const isHosur = selectedHubId === 'hosur';
 
-  const activeSubsCount = subscriptions.filter((s) => s.status === 'active').length;
-  const pausedSubsCount = subscriptions.filter((s) => s.status === 'paused').length;
+  const hubId = selectedHubId as HubId;
+  const products = useHubProducts(hubId).data;
+  const [data, setData] = useState<AnalysisData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
-  // Dynamic calculations based on selected timeRange (week / month / year)
-  const getMetricsForTimeRange = () => {
-    if (timeRange === 'week') {
-      const weekRev = Math.round(totalRevenue * 0.28);
-      const weekOrders = Math.max(1, Math.round(orders.length * 0.35));
-      return {
-        revenue: weekRev,
-        ordersCount: weekOrders,
-        periodLabel: 'Last 7 Days',
-        trendText: '▲ 7-Day Performance',
-      };
-    }
-    if (timeRange === 'year') {
-      const yearRev = Math.round(totalRevenue * 8.5);
-      const yearOrders = Math.max(orders.length, Math.round(orders.length * 9.2));
-      return {
-        revenue: yearRev,
-        ordersCount: yearOrders,
-        periodLabel: 'Last 12 Months',
-        trendText: '▲ Annual Cashflow',
-      };
-    }
-    return {
-      revenue: totalRevenue,
-      ordersCount: orders.length,
-      periodLabel: 'Last 30 Days',
-      trendText: '▲ Live Cashflow',
-    };
+  useEffect(() => {
+    let alive = true;
+    setData(null);
+    setError(null);
+    loadAnalysis(hubId, timeRange)
+      .then((d) => alive && setData(d))
+      .catch((err) => alive && setError((err as Error).message));
+    return () => { alive = false; };
+  }, [hubId, timeRange, tick]);
+
+  if (error) return <ErrorState message={`Could not load analysis: ${error}`} onRetry={() => setTick((t) => t + 1)} />;
+  if (!data) return <PageLoader label="Loading analysis…" />;
+
+  const activeSubsCount = data.subsActive;
+  const pausedSubsCount = data.subsPaused;
+  const subscriptions = { length: data.subsTotal };
+  const users = { length: data.customers };
+  // Revenue = captured payments, drops = delivered, from the closed days of the period
+  const metrics = {
+    revenue: Math.round(data.revenue),
+    ordersCount: data.drops,
+    periodLabel: timeRange === 'week' ? 'Last 7 Days' : timeRange === 'year' ? 'This Year' : 'Last 30 Days',
+    trendText: '▲ Closed days',
   };
-
-  const metrics = getMetricsForTimeRange();
-
-  // Real-Time Prepaid Package counts from live subscriptions
-  const plan15Count = subscriptions.filter(s => (s.prepaidPlanId && s.prepaidPlanId.includes('15')) || (s.prepaidDays === 15)).length;
-  const plan30Count = subscriptions.filter(s => (s.prepaidPlanId && s.prepaidPlanId.includes('30')) || (s.prepaidDays === 30) || (!s.prepaidPlanId && !s.prepaidDays)).length;
-  const plan90Count = subscriptions.filter(s => (s.prepaidPlanId && s.prepaidPlanId.includes('90')) || (s.prepaidDays === 90)).length;
-
+  const plan15Count = data.plan15;
+  const plan30Count = data.plan30;
+  const plan90Count = data.plan90;
   const totalActiveSubs = Math.max(1, activeSubsCount);
-  const avgSubDailyValue = subscriptions.reduce((acc, s) => acc + (s.productPrice || 110) * (s.quantity || 1), 0) / Math.max(1, subscriptions.length);
-  const est7DayRenewals = Math.round(totalActiveSubs * 0.35);
-  const est7DayValue = Math.round(est7DayRenewals * avgSubDailyValue * 7);
-  const est15DayRenewals = Math.round(totalActiveSubs * 0.70);
-  const est15DayValue = Math.round(est15DayRenewals * avgSubDailyValue * 15);
-  const est30DayRenewals = totalActiveSubs;
-  const est30DayValue = Math.round(est30DayRenewals * avgSubDailyValue * 30);
+  // Renewals = active subscriptions whose end date falls in the window; value = what they paid last time
+  const [r7, r15, r30] = data.renew;
+  const est7DayRenewals = r7.count;
+  const est7DayValue = Math.round(r7.value);
+  const est15DayRenewals = r15.count;
+  const est15DayValue = Math.round(r15.value);
+  const est30DayRenewals = r30.count;
+  const est30DayValue = Math.round(r30.value);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>

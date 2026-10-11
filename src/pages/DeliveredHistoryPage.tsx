@@ -1,8 +1,46 @@
 import { useState, useMemo } from 'react';
+import { ProofPhotoBox } from '../components/common/ProofPhotoBox';
+import { useProofPhoto } from '../data/proofPhotos';
+import type { HubId } from '../data/hubs';
 import { CheckCircle2, Search, Download, ArrowLeft, ExternalLink, Phone, Calendar, Printer, User as UserIcon, MapPin, Camera } from 'lucide-react';
 import type { Order, User, DeliveryAgent } from '../types';
 import { useToast } from '../context/ToastContext';
 import { formatAddressDetails, getGoogleMapsUrl } from '../utils/addressFormatter';
+import { matchesDatePreset, matchesCustomDateRange } from '../utils/dateFilterUtils';
+
+function ProofPhotoTableCell({ order, onSelect }: { order: Order; onSelect: (o: Order) => void }) {
+  const hubId = (order as any).hubId ?? 'hosur';
+  const hasProof = (order as any).hasProofPhoto ?? true;
+  const photo = useProofPhoto(hasProof ? (hubId as HubId) : null, order.id);
+  const rawProof = order.proofImageUrl || (order as any).dropoffPhotoUrl || (order as any).deliveryProofUrl || (order as any).proofUrl || '';
+  const url = photo.data?.dataUrl || (typeof rawProof === 'string' && (rawProof.startsWith('http') || rawProof.startsWith('data:')) ? rawProof : '');
+  const isCancelled = order.status === 'cancelled';
+  const cancelReason = (order as any).cancellationReason || (order as any).cancelReason;
+
+  if (url) {
+    return (
+      <div onClick={() => onSelect(order)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <img src={url} alt="Proof" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #047857' }} />
+        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857' }}>View Photo ✓</span>
+      </div>
+    );
+  }
+
+  if (isCancelled) {
+    return (
+      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#DC2626' }}>
+        {cancelReason ? `✕ ${cancelReason}` : '✕ Cancelled'}
+      </span>
+    );
+  }
+
+  return (
+    <div onClick={() => onSelect(order)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+      <Camera size={15} style={{ color: '#047857' }} />
+      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#047857' }}>View Details</span>
+    </div>
+  );
+}
 
 interface DeliveredHistoryPageProps {
   orders: Order[];
@@ -88,19 +126,10 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
       if (statusFilter === 'cancelled' && o.status !== 'cancelled') return false;
 
       // 4. Time Range Filter
-      if (timePreset !== 'all' || customDate) {
-        const orderDate = safeParseDate(o.orderDate);
-        const refDate = customDate ? safeParseDate(customDate) : new Date();
-        const windowMs =
-          timePreset === 'today' ? 24 * 60 * 60 * 1000 :
-          timePreset === 'yesterday' ? 48 * 60 * 60 * 1000 :
-          timePreset === 'week' ? 7 * 24 * 60 * 60 * 1000 :
-          30 * 24 * 60 * 60 * 1000;
-
-        const orderTime = orderDate.getTime();
-        const refTime = refDate.getTime();
-
-        if (refTime - orderTime < 0 || refTime - orderTime > windowMs) return false;
+      if (customDate) {
+        if (!matchesCustomDateRange(o.orderDate, customDate, customDate)) return false;
+      } else if (timePreset !== 'all') {
+        if (!matchesDatePreset(o.orderDate, timePreset)) return false;
       }
 
       return true;
@@ -156,34 +185,10 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
     const agent = deliveryAgents.find((a) => a.id === o.deliveryAgentId);
     const customerName = u?.name || o.customerName || 'Customer Recipient';
     const customerPhone = u?.phone || o.customerPhone || 'N/A';
-    let addressText = o.address || o.deliveryAddress || '';
-    const isExplicitValid = addressText && addressText.length > 5 && !addressText.startsWith('Doorstep') && !addressText.startsWith('Hub Area');
-    if (!isExplicitValid && u) {
-      if (u.savedAddresses && u.savedAddresses.length > 0) {
-        const activeIdx = u.activeAddressIndex ?? (u.savedAddresses.length - 1);
-        const activeAddr = u.savedAddresses[activeIdx];
-        if (activeAddr && activeAddr.length > 5) {
-          const isAddrHosur = activeAddr.toLowerCase().includes('hosur') || activeAddr.toLowerCase().includes('tamil nadu') || activeAddr.toLowerCase().includes('tn');
-          if (isHosur === isAddrHosur || u.savedAddresses.length === 1) {
-            addressText = activeAddr;
-          }
-        }
-        if (!addressText) {
-          const matched = u.savedAddresses.find(a => {
-            const isH = a.toLowerCase().includes('hosur') || a.toLowerCase().includes('tamil nadu') || a.toLowerCase().includes('tn');
-            return isHosur ? isH : !isH;
-          });
-          addressText = matched || u.savedAddresses[0];
-        }
-      } else if (u.address && u.address.length > 5) {
-        addressText = u.address;
-      }
-    }
-    if (!addressText || addressText.startsWith('Doorstep')) {
-      addressText = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
-    }
+    // Real values only: the delivery carries its own address and subscription id.
+    const addressText = o.address || o.deliveryAddress || u?.savedAddresses?.[0] || '—';
     const isSubOrder = o.isSubscriptionDelivery || o.orderType === 'subscription' || (o.items || []).some(i => i.isSubscription);
-    const subscriptionId = (o as any).subscriptionId || `sub_${o.id.replace(/[^0-9]/g, '') || '91307'}`;
+    const subscriptionId = (o as any).subscriptionId || '';
 
     return (
       <div
@@ -325,53 +330,13 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                     Doorstep photo proof
                   </h3>
                   
-                  <div 
-                    onClick={() => proofUrl && setZoomPhoto(proofUrl)}
-                    style={{
-                      position: 'relative',
-                      width: '100%',
-                      height: '240px',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      backgroundColor: '#F3F4F6',
-                      cursor: proofUrl ? 'pointer' : 'default',
-                      border: '1px solid #E5E7EB'
-                    }}
-                  >
-                    <img
-                      src={proofUrl || 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800&auto=format&fit=crop&q=80'}
-                      alt="Doorstep Delivery Proof"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                    
-                    {/* GPS Verified Badge Overlaid Directly on Bottom of Photo */}
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      padding: '1.5rem 1rem 0.85rem 1rem',
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        backgroundColor: '#FFFFFF',
-                        color: '#15803D',
-                        padding: '0.35rem 0.85rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                      }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
-                        GPS verified · within 28m of address
-                      </div>
-                    </div>
-                  </div>
+                  <ProofPhotoBox
+                    hubId={(o as any).hubId ?? ''}
+                    deliveryId={o.id}
+                    hasProofPhoto={(o as any).hasProofPhoto}
+                    riderNote={(o as any).riderNote}
+                    onZoom={setZoomPhoto}
+                  />
                   
                   <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.65rem' }}>
                     Captured {formatDateWithTime(o.orderDate)} by {agent?.name || 'rider'}
@@ -450,7 +415,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                       </div>
                     </div>
                     <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
-                      ₹{item.quantity * (item.product?.price || 110)}
+                      ₹{item.quantity * (item.product?.price ?? 0)}
                     </div>
                   </div>
                 ))
@@ -472,7 +437,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                     </div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
-                    ₹{o.totalAmount || 110}
+                    ₹{o.totalAmount ?? 0}
                   </div>
                 </div>
               )}
@@ -480,7 +445,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
               <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
                   <span>This drop's value</span>
-                  <span style={{ fontWeight: 800, color: '#111827' }}>₹{o.totalAmount || 110}</span>
+                  <span style={{ fontWeight: 800, color: '#111827' }}>₹{o.totalAmount ?? 0}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
                   <span>Delivery charge</span>
@@ -684,14 +649,14 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                     {agent?.name || 'Rider'}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
-                    Rider ID: RID-0442 · Hosur Central Hub
+                    Rider ID: {(agent as any)?.staffCode || '—'} · {(o as any).hubId === 'bengaluru' ? 'Bengaluru Hub' : 'Hosur Hub'}
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-main, #0F172A)', fontWeight: 600 }}>
                 <Phone size={14} style={{ color: 'var(--text-muted, #64748B)' }} />
-                {agent?.phone || '89899889898'}
+                {agent?.phone || '—'}
               </div>
 
             </div>
@@ -972,6 +937,52 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
             ))}
           </div>
 
+          {/* Date Presets & Custom Date Picker */}
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>Date:</span>
+            {[
+              { id: 'all', label: 'All Dates' },
+              { id: 'today', label: 'Today' },
+              { id: 'yesterday', label: 'Yesterday' },
+              { id: 'week', label: 'This Week' },
+              { id: 'month', label: 'This Month' }
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => { setTimePreset(p.id as any); setCustomDate(''); }}
+                style={{
+                  padding: '0.38rem 0.65rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #CBD5E1)',
+                  backgroundColor: timePreset === p.id && !customDate ? '#0284C7' : 'var(--bg-card, #FFFFFF)',
+                  color: timePreset === p.id && !customDate ? '#FFFFFF' : 'var(--text-main, #475569)',
+                  fontWeight: 700,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => { setCustomDate(e.target.value); setTimePreset('all'); }}
+              style={{
+                padding: '0.35rem 0.55rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #CBD5E1)',
+                backgroundColor: customDate ? '#ECFDF5' : 'var(--bg-card, #FFFFFF)',
+                color: customDate ? '#047857' : 'var(--text-main, #475569)',
+                fontWeight: 700,
+                fontSize: '0.76rem',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            />
+          </div>
+
         </div>
 
       </div>
@@ -1039,25 +1050,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
                       {/* Photo Proof Cell */}
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        {proofUrl ? (
-                          <div
-                            onClick={() => setSelectedOrder(o)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-                          >
-                            <img
-                              src={proofUrl}
-                              alt="Proof"
-                              style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #047857' }}
-                            />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857' }}>View Photo ✓</span>
-                          </div>
-                        ) : isCancelled ? (
-                          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#DC2626' }}>
-                            {cancelReason ? `✕ ${cancelReason}` : '✕ Cancelled'}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94A3B8)' }}>📷 No Photo</span>
-                        )}
+                        <ProofPhotoTableCell order={o} onSelect={setSelectedOrder} />
                       </td>
 
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted, #475569)', padding: '0.85rem 1rem' }}>{formatDateWithTime(o.orderDate)}</td>

@@ -90,14 +90,14 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <ShieldCheck size={18} style={{ color: '#047857' }} />
                 <div>
-                  <div style={{ fontWeight: 800, color: '#1E293B' }}>{selectedAgent.name} ({selectedAgent.phone || '9876543210'})</div>
+                  <div style={{ fontWeight: 800, color: '#1E293B' }}>{selectedAgent.name} ({selectedAgent.phone || '—'})</div>
                   <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Assigned Zone: {selectedAgent.assignedZone || selectedHubId}</div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <a
-                  href={`tel:${selectedAgent.phone || '9876543210'}`}
+                  href={`tel:${selectedAgent.phone || ''}`}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: '#047857', color: '#FFFFFF', padding: '4px 12px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '0.76rem' }}
                 >
                   <Phone size={13} /> Call Rider

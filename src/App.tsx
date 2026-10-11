@@ -1,7 +1,11 @@
-import { useState } from 'react';
-import { setDoc, doc, deleteDoc, updateDoc, collection } from 'firebase/firestore';
-import { db } from './firebase';
-import type { Product } from './types';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { WifiOff, RefreshCw } from 'lucide-react';
+import { PageLoader } from './components/common/DataState';
+import { DeliveriesRangeShell } from './components/common/DeliveriesRangeShell';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import type { HubId } from './data/hubs';
+import { useHubProducts } from './data/products';
+import { useRecentActivity } from './data/activity';
 
 import { HubContextProvider, useHubContext } from './context/HubContext';
 import { useMilkyLushData } from './hooks/useMilkyLushData';
@@ -12,40 +16,41 @@ import { Toast } from './components/Toast';
 import { HubModal } from './components/modals/HubModal';
 import { AddOrderModal } from './components/modals/AddOrderModal';
 
-import DispatchConsoleLayout from './dispatch_console/DispatchConsoleLayout';
-import CommercialConsoleLayout from './commercial_console/CommercialConsoleLayout';
+const DispatchConsoleLayout = lazy(() => import('./dispatch_console/DispatchConsoleLayout'));
+const CommercialConsoleLayout = lazy(() => import('./commercial_console/CommercialConsoleLayout'));
 
 // Dedicated Modular Pages
 import LoginPage from './pages/LoginPage';
-import PortalGatewayPage from './pages/PortalGatewayPage';
-import DashboardPage from './pages/DashboardPage';
-import TodaysDeliveriesPage from './pages/TodaysDeliveriesPage';
-import AllDeliveriesPage from './pages/AllDeliveriesPage';
-import AnalysisPage from './pages/AnalysisPage';
-import OrdersPage from './pages/OrdersPage';
-import SubscriptionsPage from './pages/SubscriptionsPage';
-import CustomersPage from './pages/CustomersPage';
-import ServiceAreasPage from './pages/ServiceAreasPage';
-import ProductsPage from './pages/ProductsPage';
-import DeliveryManagementPage from './pages/DeliveryManagementPage';
-import UserControlPage from './pages/UserControlPage';
-import PaymentsPage from './pages/PaymentsPage';
-import MobileControlPage from './pages/MobileControlPage';
-import ReferEarnPage from './pages/ReferEarnPage';
-import FreeSamplesPage from './pages/FreeSamplesPage';
-import PrepaidSubscriptionsPage from './pages/PrepaidSubscriptionsPage';
-import ManageSubscriptionsPage from './pages/ManageSubscriptionsPage';
-import AuditLogsPage from './pages/AuditLogsPage';
-import DeliveredHistoryPage from './pages/DeliveredHistoryPage';
-import AdminAccessPage from './pages/AdminAccessPage';
-import SettingsPage from './pages/SettingsPage';
-import BottleManagementPage from './pages/BottleManagementPage';
-import QualityReportsPage from './pages/QualityReportsPage';
+const PortalGatewayPage = lazy(() => import('./pages/PortalGatewayPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TodaysDeliveriesPage = lazy(() => import('./pages/TodaysDeliveriesPage'));
+const AllDeliveriesPage = lazy(() => import('./pages/AllDeliveriesPage'));
+const AnalysisPage = lazy(() => import('./pages/AnalysisPage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const SubscriptionsPage = lazy(() => import('./pages/SubscriptionsPage'));
+const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const ServiceAreasPage = lazy(() => import('./pages/ServiceAreasPage'));
+const ProductsPage = lazy(() => import('./pages/ProductsPage'));
+const DeliveryManagementPage = lazy(() => import('./pages/DeliveryManagementPage'));
+const UserControlPage = lazy(() => import('./pages/UserControlPage'));
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage'));
+const MobileControlPage = lazy(() => import('./pages/MobileControlPage'));
+const ReferEarnPage = lazy(() => import('./pages/ReferEarnPage'));
+const PromoCodesPage = lazy(() => import('./pages/PromoCodesPage'));
+const FreeSamplesPage = lazy(() => import('./pages/FreeSamplesPage'));
+const PrepaidSubscriptionsPage = lazy(() => import('./pages/PrepaidSubscriptionsPage'));
+const ManageSubscriptionsPage = lazy(() => import('./pages/ManageSubscriptionsPage'));
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
+const DeliveredHistoryPage = lazy(() => import('./pages/DeliveredHistoryPage'));
+const AdminAccessPage = lazy(() => import('./pages/AdminAccessPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const BottleManagementPage = lazy(() => import('./pages/BottleManagementPage'));
+const QualityReportsPage = lazy(() => import('./pages/QualityReportsPage'));
 
-import type { Order } from './types';
 
 function AppContent() {
   const {
+    isAuthReady,
     isAdminLoggedIn,
     selectedHubId,
     setSelectedHubId,
@@ -54,7 +59,6 @@ function AppContent() {
     adminUsername,
     theme,
     toggleTheme,
-    loginAdmin,
     logoutAdmin,
   } = useHubContext();
 
@@ -85,220 +89,41 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Stream data from custom hook
-  const {
-    products,
-    banners: _banners,
-    onboardingSlides,
-    deliverySettings,
-    hubOrders,
-    hubUsers,
-    hubSubscriptions,
-    hubDeliveryAgents,
-    hubBanners,
-    hubProducts,
-    hubPrepaidPackages,
-    prepaidPackages: _prepaidPackages,
-    adminAuditLogs,
-    bottleRecords,
-    totalRevenue,
-    loading,
-  } = useMilkyLushData(selectedHubId);
+  // Riders of the hub + the customers listener that sends the WhatsApp welcome (unchanged).
+  // Every page reads its own hub data from src/data/*.
+  const { hubUsers, hubDeliveryAgents } = useMilkyLushData(selectedHubId);
+  // Header bell + portal counters: latest orders / subscriptions and the hub's products
+  const activity = useRecentActivity(selectedHubId as HubId);
+  const hubProductsCount = useHubProducts(selectedHubId as HubId).data.length;
 
-  // Firestore Mutations
-  const handleSaveOrder = async (newOrder: Order) => {
-    try {
-      await setDoc(doc(db, 'orders', newOrder.id), newOrder);
-      showToast(`Created order ${newOrder.id} successfully!`, 'success');
-    } catch (err) {
-      showToast(`Error creating order: ${err}`, 'error');
-    }
-  };
-
-  const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
-    try {
-      await updateDoc(doc(db, 'orders', orderId), { status });
-      showToast(`Updated order ${orderId} to ${status}`, 'success');
-    } catch (err) {
-      showToast(`Error updating order: ${err}`, 'error');
-    }
-  };
-
-  const handleUpdateOrderDriver = async (orderId: string, agentId: string) => {
-    try {
-      const agent = hubDeliveryAgents.find((a: DeliveryAgent) => a.id === agentId);
-      
-      const updateData = {
-        deliveryAgentId: agentId || '',
-        assignedRiderId: agentId || '',
-        assignedPartner: agent ? agent.name : '',
-        assignedRider: agent ? agent.name : '',
-        assignedAgentName: agent ? agent.name : '',
-        assignedRiderEmail: agent ? agent.email : '',
-        updatedAt: new Date().toISOString(),
-      };
-
-      const cleanId = orderId.replace(/^SUB[_-]/, '').replace(/^DISPATCH[_-]/, '');
-
-      // Check direct subscriptions match
-      const matchingSub = hubSubscriptions.find(s => s.id === orderId || s.id === cleanId || orderId.includes(s.id) || s.id.includes(cleanId));
-      if (matchingSub) {
-        await updateDoc(doc(db, 'subscriptions', matchingSub.id), updateData);
-        showToast(`Assigned ${agent ? agent.name : 'rider'} to subscription "${matchingSub.productName || matchingSub.id}"`, 'success');
-        return;
-      }
-
-      // Check direct orders match
-      const matchingOrder = hubOrders.find(o => o.id === orderId || o.id === cleanId || orderId.includes(o.id) || o.id.includes(cleanId));
-      if (matchingOrder) {
-        await updateDoc(doc(db, 'orders', matchingOrder.id), updateData);
-        showToast(`Assigned ${agent ? agent.name : 'rider'} to order "${matchingOrder.id}"`, 'success');
-        return;
-      }
-
-      // Fallback try doc directly in orders or subscriptions
-      try {
-        await updateDoc(doc(db, 'orders', cleanId), updateData);
-        showToast(`Assigned ${agent ? agent.name : 'rider'} to order ${cleanId}`, 'success');
-      } catch (err1) {
-        try {
-          await updateDoc(doc(db, 'subscriptions', cleanId), updateData);
-          showToast(`Assigned ${agent ? agent.name : 'rider'} to subscription ${cleanId}`, 'success');
-        } catch (err2) {
-          console.error("Failed to find order/subscription doc:", err2);
-          showToast(`Unable to update driver for ${orderId}`, 'error');
-        }
-      }
-    } catch (err) {
-      showToast(`Error assigning driver: ${err}`, 'error');
-    }
-  };
-
-  const handleToggleProductStock = async (productId: string, currentStock: boolean) => {
-    try {
-      await updateDoc(doc(db, 'products', productId), { inStock: !currentStock });
-      showToast(`Stock updated for product ${productId}`, 'success');
-    } catch (err) {
-      showToast(`Error updating stock: ${err}`, 'error');
-    }
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    try {
-      await deleteDoc(doc(db, 'products', productId));
-      showToast('Product deleted from Firestore.', 'info');
-    } catch (err) {
-      showToast(`Error deleting product: ${err}`, 'error');
-    }
-  };
-
-  const handleSaveProduct = async (product: Partial<Product>) => {
-    try {
-      const targetHubs = (product as any).hubIds && (product as any).hubIds.length > 0
-        ? (product as any).hubIds
-        : [selectedHubId];
-      if (product.id) {
-        await setDoc(doc(db, 'products', product.id), { ...product, hubIds: targetHubs }, { merge: true });
-        showToast(`Saved product specs for ${product.name}`, 'success');
-      } else {
-        const newRef = doc(collection(db, 'products'));
-        await setDoc(newRef, { ...product, id: newRef.id, hubIds: targetHubs });
-        showToast('Created new product specs!', 'success');
-      }
-    } catch (err) {
-      showToast(`Error saving product: ${err}`, 'error');
-    }
-  };
-
-  const handleSaveServiceArea = async (address: string, lat: string, lng: string, radius: string) => {
-    try {
-      const parsedRadius = parseFloat(radius) || (selectedHubId.includes('hosur') ? 15.0 : 5.0);
-      const parsedLat = parseFloat(lat) || (selectedHubId.includes('hosur') ? 12.742253 : 12.867697);
-      const parsedLng = parseFloat(lng) || (selectedHubId.includes('hosur') ? 77.824213 : 77.666721);
-
-      const data = {
-        address,
-        hubLatitude: parsedLat,
-        hubLongitude: parsedLng,
-        radiusKm: parsedRadius,
-        hubId: selectedHubId,
-        updatedAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, 'settings', `delivery_${selectedHubId}`), data, { merge: true });
-      await setDoc(doc(db, 'settings', 'delivery'), data, { merge: true });
-      await setDoc(doc(db, 'hubs', selectedHubId), {
-        name: selectedHubId === 'hub_hosur_main' ? 'Hosur Central Hub' : 'Bangalore Electronic City Hub',
-        latitude: parsedLat,
-        longitude: parsedLng,
-        radiusKm: parsedRadius,
-        address,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-
-      showToast(`Updated service area settings & hub radius (${parsedRadius} KM) for ${selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Hub'} in Firestore!`, 'success');
-    } catch (err) {
-      showToast(`Error saving service area: ${err}`, 'error');
-    }
-  };
-
-  const handleSaveBanner = async (banner: Partial<import('./types').Banner>) => {
-    try {
-      const bannerId = banner.id || `ban_${Date.now()}`;
-      const targetHubIds = (banner as any).hubIds && (banner as any).hubIds.length > 0
-        ? (banner as any).hubIds
-        : [selectedHubId];
-      await setDoc(doc(db, 'banners', bannerId), {
-        ...banner,
-        id: bannerId,
-        hubIds: targetHubIds,
-        active: banner.active ?? true,
-      }, { merge: true });
-      showToast(`Saved banner live to Firestore for ${selectedHubId === 'hub_hosur_main' ? 'Hosur Hub' : 'Bangalore Hub'}!`, 'success');
-    } catch (err) {
-      showToast(`Error saving banner: ${err}`, 'error');
-    }
-  };
-
-  const handleSaveOnboardingSlide = async (slide: Partial<import('./types').OnboardingSlide>) => {
-    try {
-      const slideId = slide.id || `onb_${Date.now()}`;
-      await setDoc(doc(db, 'onboarding', slideId), { ...slide, id: slideId }, { merge: true });
-      showToast('Saved onboarding slide in Firestore!', 'success');
-    } catch (err) {
-      showToast(`Error saving onboarding slide: ${err}`, 'error');
-    }
-  };
-
-  const handleDeleteBanner = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'banners', id));
-      showToast('Banner deleted.', 'info');
-    } catch (err) {
-      showToast(`Error deleting banner: ${err}`, 'error');
-    }
-  };
-
-  const handleDeleteOnboardingSlide = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'onboarding', id));
-      showToast('Onboarding slide deleted.', 'info');
-    } catch (err) {
-      showToast(`Error deleting onboarding slide: ${err}`, 'error');
-    }
-  };
+  // 0. Waiting for Firebase to restore (or not) the previous session
+  if (!isAuthReady) {
+    return <PageLoader label="Checking your login…" />;
+  }
 
   // 1. Unauthenticated Login Screen
   if (!isAdminLoggedIn) {
     return (
       <LoginPage
-        onLoginSuccess={(username, hubId) => {
-          loginAdmin(username, hubId);
+        onLoginSuccess={() => {
           setSelectedConsole(null);
           setActiveTab('portal-gateway');
         }}
@@ -312,57 +137,64 @@ function AppContent() {
   // 2. Portal Gateway Landing Screen
   if (!selectedConsole || activeTab === 'portal-gateway') {
     return (
-      <PortalGatewayPage
-        selectedHubId={selectedHubId}
-        onSelectHub={setSelectedHubId}
-        onSelectConsole={(mode) => {
-          setSelectedConsole(mode === 'admin-access' ? 'catalog' : mode);
-          if (mode === 'admin-access') {
-            setActiveTab('admin-access');
-          } else {
-            setActiveTab('dashboard');
-          }
-        }}
-        onLogout={logoutAdmin}
-        showToast={showToast}
-        ordersCount={hubOrders.length}
-        productsCount={products.length}
-        deliveryAgentsCount={hubDeliveryAgents.length}
-      />
+      <ErrorBoundary fallbackTitle="Portal Gateway Error">
+        <Suspense fallback={<PageLoader />}>
+          <PortalGatewayPage
+            selectedHubId={selectedHubId}
+            onSelectHub={setSelectedHubId}
+            onSelectConsole={(mode) => {
+              setSelectedConsole(mode === 'admin-access' ? 'catalog' : mode);
+              if (mode === 'admin-access') {
+                setActiveTab('admin-access');
+              } else {
+                setActiveTab('dashboard');
+              }
+            }}
+            onLogout={logoutAdmin}
+            showToast={showToast}
+            ordersCount={activity.openOrders}
+            productsCount={hubProductsCount}
+            deliveryAgentsCount={hubDeliveryAgents.length}
+          />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
   // 3. Dedicated Delivery & Dispatch Console Layout
   if (selectedConsole === 'delivery') {
     return (
-      <DispatchConsoleLayout
-        selectedHubId={selectedHubId}
-        onSelectHub={setSelectedHubId}
-        onExitConsole={() => setSelectedConsole(null)}
-        showToast={showToast}
-        hubDeliveryAgents={hubDeliveryAgents}
-        hubOrders={hubOrders}
-        hubUsers={hubUsers}
-        products={products}
-        deliverySettings={deliverySettings}
-        onSaveServiceArea={handleSaveServiceArea}
-        onUpdateOrderStatus={handleUpdateOrderStatus}
-        onUpdateOrderDriver={handleUpdateOrderDriver}
-        adminUsername={adminUsername || 'Tomadmin@gmail.com'}
-      />
+      <ErrorBoundary fallbackTitle="Dispatch Console Error">
+        <Suspense fallback={<PageLoader />}>
+          <DispatchConsoleLayout
+            selectedHubId={selectedHubId}
+            onSelectHub={setSelectedHubId}
+            onExitConsole={() => setSelectedConsole(null)}
+            showToast={showToast}
+            hubDeliveryAgents={hubDeliveryAgents}
+            hubOrders={[]}
+            hubUsers={hubUsers}
+            adminUsername={adminUsername || 'Tomadmin@gmail.com'}
+          />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
   // 4. Dedicated Commercial, Marketing & Procurement Console Layout
   if (selectedConsole === 'commercial') {
     return (
-      <CommercialConsoleLayout
-        selectedHubId={selectedHubId}
-        onSelectHub={setSelectedHubId}
-        onExitConsole={() => setSelectedConsole(null)}
-        showToast={showToast}
-        adminUsername={adminUsername || 'tomadmin@gmail.com'}
-      />
+      <ErrorBoundary fallbackTitle="Commercial Console Error">
+        <Suspense fallback={<PageLoader />}>
+          <CommercialConsoleLayout
+            selectedHubId={selectedHubId}
+            onSelectHub={setSelectedHubId}
+            onExitConsole={() => setSelectedConsole(null)}
+            showToast={showToast}
+            adminUsername={adminUsername || 'tomadmin@gmail.com'}
+          />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
@@ -393,238 +225,225 @@ function AppContent() {
           onLogout={logoutAdmin}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          orders={hubOrders}
-          subscriptions={hubSubscriptions}
+          orders={activity.orders}
+          subscriptions={activity.subscriptions}
           onNavigateTab={handleNavigateTab}
         />
 
+        {!isOnline && (
+          <div style={{
+            backgroundColor: '#FEF2F2',
+            borderBottom: '1px solid #FCA5A5',
+            color: '#991B1B',
+            padding: '0.65rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            fontFamily: "'Poppins', sans-serif"
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <WifiOff size={16} /> No internet connection detected. Please check your network to sync live updates.
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                padding: '0.3rem 0.7rem', borderRadius: '6px',
+                backgroundColor: '#DC2626', color: '#FFFFFF',
+                border: 'none', fontWeight: 700, fontSize: '0.76rem', cursor: 'pointer'
+              }}
+            >
+              <RefreshCw size={13} /> Retry Connection
+            </button>
+          </div>
+        )}
+
         <main style={{ flex: 1, padding: '1.75rem', boxSizing: 'border-box' }}>
-          {activeTab === 'dashboard' && (
-            <DashboardPage
-              selectedHubId={selectedHubId}
-              adminUsername={adminUsername}
-              hubOrders={hubOrders}
-              hubUsers={hubUsers}
-              hubSubscriptions={hubSubscriptions}
-              hubDeliveryAgents={hubDeliveryAgents}
-              products={products}
-              totalRevenue={totalRevenue}
-              onNavigateTab={handleNavigateTab}
-            />
-          )}
+          <ErrorBoundary fallbackTitle="Portal Tab Error">
+            <Suspense fallback={<PageLoader />}>
+              {activeTab === 'dashboard' && (
+                <DashboardPage
+                  selectedHubId={selectedHubId}
+                  adminUsername={adminUsername}
+                  hubDeliveryAgents={hubDeliveryAgents}
+                  onNavigateTab={handleNavigateTab}
+                />
+              )}
 
-          {activeTab === 'todays-deliveries' && (
-            <TodaysDeliveriesPage
-              selectedHubId={selectedHubId}
-              orders={hubOrders}
-              subscriptions={hubSubscriptions}
-              users={hubUsers}
-              products={products}
-              deliveryAgents={hubDeliveryAgents}
-              isLoading={loading}
-              onOpenAddOrderModal={() => setIsAddOrderModalOpen(true)}
-              onUpdateOrderStatus={handleUpdateOrderStatus}
-              onUpdateOrderDriver={handleUpdateOrderDriver}
-              showToast={showToast}
-              onNavigateTab={handleNavigateTab}
-            />
-          )}
+              {activeTab === 'todays-deliveries' && (
+                <TodaysDeliveriesPage
+                  selectedHubId={selectedHubId}
+                  deliveryAgents={hubDeliveryAgents}
+                  onOpenAddOrderModal={() => setIsAddOrderModalOpen(true)}
+                  showToast={showToast}
+                  onNavigateTab={handleNavigateTab}
+                />
+              )}
 
-          {activeTab === 'all-deliveries' && (
-            <AllDeliveriesPage
-              selectedHubId={selectedHubId}
-              orders={hubOrders}
-              subscriptions={hubSubscriptions}
-              users={hubUsers}
-              products={products}
-              deliveryAgents={hubDeliveryAgents}
-              onUpdateOrderStatus={handleUpdateOrderStatus}
-              onUpdateOrderDriver={handleUpdateOrderDriver}
-              showToast={showToast}
-              onNavigateTab={handleNavigateTab}
-            />
-          )}
+              {activeTab === 'all-deliveries' && (
+                <DeliveriesRangeShell hubId={selectedHubId} deliveryAgents={hubDeliveryAgents} showToast={showToast} defaultDays={60}>
+                  {(d) => (
+                    <AllDeliveriesPage
+                      selectedHubId={selectedHubId}
+                      orders={d.orders}
+                      subscriptions={[]}
+                      users={d.users}
+                      deliveryAgents={hubDeliveryAgents}
+                      onUpdateOrderStatus={d.onUpdateOrderStatus}
+                      onUpdateOrderDriver={d.onUpdateOrderDriver}
+                      showToast={showToast}
+                      onNavigateTab={handleNavigateTab}
+                    />
+                  )}
+                </DeliveriesRangeShell>
+              )}
 
-          {activeTab === 'analysis' && (
-            <AnalysisPage
-              selectedHubId={selectedHubId}
-              orders={hubOrders}
-              subscriptions={hubSubscriptions}
-              products={products}
-              users={hubUsers}
-              totalRevenue={totalRevenue}
-            />
-          )}
+              {activeTab === 'analysis' && (
+                <AnalysisPage selectedHubId={selectedHubId} />
+              )}
 
-          {activeTab === 'orders' && (
-            <OrdersPage
-              selectedHubId={selectedHubId}
-              orders={hubOrders}
-              users={hubUsers}
-              products={products}
-              deliveryAgents={hubDeliveryAgents}
-              targetOrderId={targetOrderId}
-              onOpenAddOrderModal={() => setIsAddOrderModalOpen(true)}
-              onUpdateOrderStatus={handleUpdateOrderStatus}
-              onUpdateOrderDriver={handleUpdateOrderDriver}
-              showToast={showToast}
-              onNavigateTab={handleNavigateTab}
-            />
-          )}
+              {activeTab === 'orders' && (
+                <OrdersPage
+                  selectedHubId={selectedHubId}
+                  deliveryAgents={hubDeliveryAgents}
+                  targetOrderId={targetOrderId}
+                  onOpenAddOrderModal={() => setIsAddOrderModalOpen(true)}
+                  showToast={showToast}
+                  onNavigateTab={handleNavigateTab}
+                />
+              )}
 
-          {activeTab === 'subscriptions' && (
-            <SubscriptionsPage
-              selectedHubId={selectedHubId}
-              hubSubscriptions={hubSubscriptions}
-              users={hubUsers}
-              products={products}
-              targetSubscriptionId={targetSubscriptionId}
-              isLoading={loading}
-              onNavigateTab={handleNavigateTab}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'subscriptions' && (
+                <SubscriptionsPage
+                  selectedHubId={selectedHubId}
+                  targetSubscriptionId={targetSubscriptionId}
+                  onNavigateTab={handleNavigateTab}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'customers' && (
-            <CustomersPage
-              hubUsers={hubUsers}
-              orders={hubOrders}
-              subscriptions={hubSubscriptions}
-              targetCustomerId={targetCustomerId}
-              onNavigateTab={handleNavigateTab}
-            />
-          )}
+              {activeTab === 'customers' && (
+                <CustomersPage
+                  targetCustomerId={targetCustomerId}
+                  onNavigateTab={handleNavigateTab}
+                />
+              )}
 
-          {activeTab === 'service-area' && (
-            <ServiceAreasPage
-              selectedHubId={selectedHubId}
-              deliverySettings={deliverySettings}
-              onSaveSettings={handleSaveServiceArea}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'service-area' && (
+                <ServiceAreasPage
+                  selectedHubId={selectedHubId}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'products' && (
-            <ProductsPage
-              selectedHubId={selectedHubId}
-              products={hubProducts}
-              onOpenAddProduct={() => showToast('Opened add product modal', 'info')}
-              onOpenEditProduct={(prod) => showToast(`Opened edit product for ${prod.name}`, 'info')}
-              onToggleStock={handleToggleProductStock}
-              onDeleteProduct={handleDeleteProduct}
-              onSaveProduct={handleSaveProduct}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'products' && (
+                <ProductsPage
+                  selectedHubId={selectedHubId}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'delivery' && (
-            <DeliveryManagementPage
-              hubDeliveryAgents={hubDeliveryAgents}
-              hubOrders={hubOrders}
-              selectedHubId={selectedHubId}
-            />
-          )}
+              {activeTab === 'delivery' && (
+                <DeliveryManagementPage
+                  hubDeliveryAgents={hubDeliveryAgents}
+                  selectedHubId={selectedHubId}
+                />
+              )}
 
-          {activeTab === 'user-control' && (
-            <UserControlPage users={hubUsers} showToast={showToast} />
-          )}
+              {activeTab === 'user-control' && (
+                <UserControlPage showToast={showToast} />
+              )}
 
-          {activeTab === 'payments' && (
-            <PaymentsPage
-              selectedHubId={selectedHubId}
-              users={hubUsers}
-              orders={hubOrders}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'payments' && (
+                <PaymentsPage
+                  selectedHubId={selectedHubId}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'mobile-control' && (
-            <MobileControlPage
-              selectedHubId={selectedHubId}
-              banners={hubBanners}
-              onboardingSlides={onboardingSlides}
-              onSaveBanner={handleSaveBanner}
-              onSaveOnboardingSlide={handleSaveOnboardingSlide}
-              onDeleteBanner={handleDeleteBanner}
-              onDeleteOnboardingSlide={handleDeleteOnboardingSlide}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'mobile-control' && (
+                <MobileControlPage
+                  selectedHubId={selectedHubId}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'refer-earn' && (
-            <ReferEarnPage users={hubUsers} products={products} showToast={showToast} />
-          )}
+              {activeTab === 'refer-earn' && (
+                <ReferEarnPage />
+              )}
 
-          {activeTab === 'free-samples' && (
-            <FreeSamplesPage
-              selectedHubId={selectedHubId}
-              users={hubUsers}
-              products={products}
-              deliveryAgents={hubDeliveryAgents}
-              onUpdateOrderStatus={handleUpdateOrderStatus}
-              onUpdateOrderDriver={handleUpdateOrderDriver}
-              onNavigateTab={handleNavigateTab}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'promo-codes' && (
+                <PromoCodesPage />
+              )}
 
-          {activeTab === 'prepaid-subscriptions' && (
-            <PrepaidSubscriptionsPage subscriptions={hubSubscriptions} prepaidPackages={hubPrepaidPackages} isLoading={loading} showToast={showToast} />
-          )}
+              {activeTab === 'free-samples' && (
+                <FreeSamplesPage
+                  selectedHubId={selectedHubId}
+                  deliveryAgents={hubDeliveryAgents}
+                  onNavigateTab={handleNavigateTab}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'manage-subscriptions' && (
-            <ManageSubscriptionsPage
-              selectedHubId={selectedHubId}
-              subscriptions={hubSubscriptions}
-              prepaidPackages={hubPrepaidPackages}
-              products={products}
-              adminUsername={adminUsername}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'prepaid-subscriptions' && (
+                <PrepaidSubscriptionsPage showToast={showToast} />
+              )}
 
-          {activeTab === 'bottle-management' && (
-            <BottleManagementPage
-              selectedHubId={selectedHubId}
-              users={hubUsers}
-              orders={hubOrders}
-              bottleRecords={bottleRecords}
-              adminUsername={adminUsername}
-              onNavigateTab={handleNavigateTab}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'manage-subscriptions' && (
+                <ManageSubscriptionsPage
+                  selectedHubId={selectedHubId}
+                  adminUsername={adminUsername}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'audit-logs' && (
-            <AuditLogsPage selectedHubId={selectedHubId} auditLogs={adminAuditLogs} />
-          )}
+              {activeTab === 'bottle-management' && (
+                <BottleManagementPage
+                  selectedHubId={selectedHubId}
+                  adminUsername={adminUsername}
+                  onNavigateTab={handleNavigateTab}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'delivered-history' && (
-            <DeliveredHistoryPage
-              orders={hubOrders}
-              users={hubUsers}
-              deliveryAgents={hubDeliveryAgents}
-            />
-          )}
+              {activeTab === 'audit-logs' && (
+                <AuditLogsPage selectedHubId={selectedHubId} />
+              )}
 
-          {activeTab === 'admin-access' && (
-            <AdminAccessPage
-              adminUsername={adminUsername}
-              selectedHubId={selectedHubId}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'delivered-history' && (
+                <DeliveriesRangeShell hubId={selectedHubId} deliveryAgents={hubDeliveryAgents} showToast={showToast} defaultDays={30}>
+                  {(d) => (
+                    <DeliveredHistoryPage
+                      orders={d.orders}
+                      users={d.users}
+                      deliveryAgents={hubDeliveryAgents}
+                    />
+                  )}
+                </DeliveriesRangeShell>
+              )}
 
-          {activeTab === 'quality-reports' && (
-            <QualityReportsPage
-              selectedHubId={selectedHubId}
-              showToast={showToast}
-            />
-          )}
+              {activeTab === 'admin-access' && (
+                <AdminAccessPage
+                  adminUsername={adminUsername}
+                  selectedHubId={selectedHubId}
+                  showToast={showToast}
+                />
+              )}
 
-          {activeTab === 'settings' && (
-            <SettingsPage theme={theme} onToggleTheme={toggleTheme} showToast={showToast} />
-          )}
+              {activeTab === 'quality-reports' && (
+                <QualityReportsPage
+                  selectedHubId={selectedHubId}
+                  showToast={showToast}
+                />
+              )}
+
+              {activeTab === 'settings' && (
+                <SettingsPage theme={theme} onToggleTheme={toggleTheme} showToast={showToast} />
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
 
@@ -639,11 +458,8 @@ function AppContent() {
       <AddOrderModal
         isOpen={isAddOrderModalOpen}
         onClose={() => setIsAddOrderModalOpen(false)}
-        users={hubUsers}
-        products={products}
         deliveryAgents={hubDeliveryAgents}
         selectedHubId={selectedHubId}
-        onSaveOrder={handleSaveOrder}
         showToast={showToast}
       />
     </div>
@@ -652,8 +468,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <HubContextProvider>
-      <AppContent />
-    </HubContextProvider>
+    <ErrorBoundary fallbackTitle="Portal System Error">
+      <HubContextProvider>
+        <AppContent />
+      </HubContextProvider>
+    </ErrorBoundary>
   );
 }

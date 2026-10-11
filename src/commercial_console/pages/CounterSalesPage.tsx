@@ -1,4 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getDoc, query, where } from 'firebase/firestore';
+import { hubCol, hubDoc, type HubId } from '../../data/hubs';
+import { addDays, formatDay, todayKey } from '../../data/dates';
+import { useHubProducts, sellingPrice } from '../../data/products';
+import { useLiveQuery } from '../../data/useFirestore';
+import type { DeliveryDoc } from '../../data/deliveries';
+import { useHubRoutes } from '../../data/routes';
+import { createCounterSale } from '../../data/commercial';
 import {
   ShoppingBag,
   Plus,
@@ -13,11 +21,66 @@ import type { Product } from '../../types';
 
 interface CounterSalesPageProps {
   selectedTab: 'counter-sales' | 'daily-sales-load' | 'sales-requirement';
-  products: Product[];
+  /** Unused: the hub's in-stock products are loaded here. */
+  products?: Product[];
   selectedHubId: string;
 }
 
-export default function CounterSalesPage({ selectedTab, products, selectedHubId }: CounterSalesPageProps) {
+export default function CounterSalesPage({ selectedTab, selectedHubId }: CounterSalesPageProps) {
+  const hubId = selectedHubId as HubId;
+  const catalog = useHubProducts(hubId).data;
+  // Counter sells at the same selling price the app shows
+  const products = useMemo(() => catalog.filter((p) => p.inStock).map((p) => ({ ...p, price: sellingPrice(p.price, p.offerTag) })), [catalog]);
+  const [saving, setSaving] = useState(false);
+
+  // Load sheet = today's drops; requirement = tomorrow's drops (after Generate)
+  const today = todayKey();
+  const tomorrow = addDays(today, 1);
+  const loadDate = selectedTab === 'daily-sales-load' ? today : selectedTab === 'sales-requirement' ? tomorrow : null;
+  const drops = useLiveQuery<DeliveryDoc>(
+    loadDate ? query(hubCol(hubId, 'deliveries'), where('date', '==', loadDate)) : null, [hubId, loadDate]);
+  const routes = useHubRoutes(hubId);
+  const [loadSettings, setLoadSettings] = useState({ bottlesPerCrate: 12, counterBufferPercent: 10 });
+  useEffect(() => {
+    getDoc(hubDoc(hubId, 'settings', 'delivery')).then((d) => setLoadSettings({
+      bottlesPerCrate: Number(d.data()?.bottlesPerCrate) || 12,
+      counterBufferPercent: Number(d.data()?.counterBufferPercent ?? 10),
+    })).catch(() => undefined);
+  }, [hubId]);
+
+  const loadRows = useMemo(() => {
+    const byRider = new Map<string, { route: string; rider: string; bottles: number; total: number; out: number; done: number }>();
+    drops.data.filter((d) => d.status !== 'skipped' && d.status !== 'cancelled').forEach((d) => {
+      const key = d.riderUid ?? 'none';
+      const route = routes.data.find((r) => r.id === d.routeId || r.riderUid === d.riderUid);
+      const row = byRider.get(key) ?? { route: route?.name ?? 'No route', rider: d.riderName ?? 'Unassigned', bottles: 0, total: 0, out: 0, done: 0 };
+      row.bottles += d.items.reduce((n, i) => n + i.qty, 0);
+      row.total++;
+      if (d.status === 'out_for_delivery') row.out++;
+      if (d.status === 'delivered' || d.status === 'failed') row.done++;
+      byRider.set(key, row);
+    });
+    return Array.from(byRider.values()).map((r) => ({
+      route: r.route,
+      rider: r.rider,
+      bottles: `${r.bottles} units`,
+      crates: `${Math.ceil(r.bottles / loadSettings.bottlesPerCrate)} Crates`,
+      status: r.done === r.total ? 'Route completed' : r.out > 0 || r.done > 0 ? 'Out for delivery' : 'To load',
+    }));
+  }, [drops.data, routes.data, loadSettings]);
+
+  const requirementRows = useMemo(() => {
+    const byProduct = new Map<string, { name: string; unit: string; qty: number }>();
+    drops.data.filter((d) => d.status === 'scheduled').forEach((d) => d.items.forEach((i) => {
+      const row = byProduct.get(i.productId) ?? { name: i.name, unit: i.unit, qty: 0 };
+      row.qty += i.qty;
+      byProduct.set(i.productId, row);
+    }));
+    return Array.from(byProduct.entries()).map(([id, r]) => {
+      const buffer = Math.ceil((r.qty * loadSettings.counterBufferPercent) / 100);
+      return { id, name: `${r.name} (${r.unit})`, qty: r.qty, buffer, total: r.qty + buffer };
+    }).sort((a, b) => b.qty - a.qty);
+  }, [drops.data, loadSettings]);
   const [cart, setCart] = useState<Array<{ product: Product; qty: number }>>([]);
   const [paymentMode, setPaymentMode] = useState<'cash' | 'upi'>('upi');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -84,7 +147,7 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
                 >
                   <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', marginBottom: '4px' }}>{prod.name}</div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#166534' }}>₹{prod.price}</div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '2px' }}>{prod.unit || '1 L'}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '2px' }}>{prod.unit || '—'}</div>
                 </div>
               ))}
             </div>
@@ -111,7 +174,7 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
                         <div style={{ fontSize: '0.75rem', color: '#64748B' }}>₹{item.product.price} x {item.qty}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 800, color: '#166534', fontSize: '0.9rem' }}>₹{item.product.price * item.qty}</span>
+                        <span style={{ fontWeight: 800, color: '#166534', fontSize: '0.9rem' }}>₹{(item.product.price * item.qty).toFixed(2)}</span>
                         <button type="button" onClick={() => removeFromCart(item.product.id)} style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer' }}>
                           <Trash2 size={16} />
                         </button>
@@ -162,9 +225,22 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
 
                   <button
                     type="button"
-                    onClick={() => {
-                      alert(`Counter sale processed! ₹${cartTotal} received via ${paymentMode.toUpperCase()}. Receipt printed.`);
-                      setCart([]);
+                    disabled={saving}
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        await createCounterSale(hubId, cart.map((i) => ({
+                          productId: i.product.id, name: i.product.name, unit: i.product.unit ?? '', price: Math.round(i.product.price * 100), qty: i.qty,
+                        })), paymentMode, customerPhone);
+                        window.print();
+                        alert(`Counter sale saved: ₹${cartTotal.toFixed(2)} via ${paymentMode.toUpperCase()}.`);
+                        setCart([]);
+                        setCustomerPhone('');
+                      } catch (err) {
+                        alert(`Could not save the sale: ${(err as Error).message}`);
+                      } finally {
+                        setSaving(false);
+                      }
                     }}
                     style={{
                       width: '100%',
@@ -195,7 +271,7 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
       {selectedTab === 'daily-sales-load' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
           <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
-            Daily Dispatch Route Vehicle Loading Manifest
+            Daily Dispatch Route Vehicle Loading Manifest · {formatDay(today)}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
@@ -209,11 +285,11 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
               </tr>
             </thead>
             <tbody>
-              {[
-                { route: 'Route A - Hosur Town', rider: 'Murugan (TN-HSR-01)', bottles: '145 Bottles', crates: '12 Crates', status: 'Loaded & Dispatched' },
-                { route: 'Route B - Bagalur Road', rider: 'Kumar (TN-HSR-02)', bottles: '180 Bottles', crates: '15 Crates', status: 'Loaded & Dispatched' },
-                { route: 'Route C - Shoolagiri', rider: 'Ramesh (TN-HSR-03)', bottles: '120 Bottles', crates: '10 Crates', status: 'Loading in Progress' },
-              ].map((r) => (
+              {loadRows.length === 0 && (
+                <tr><td colSpan={5} style={{ padding: '1rem', textAlign: 'center', color: '#64748B' }}>{drops.loading ? 'Loading…' : `No drops for ${formatDay(today)}. Generate deliveries first.`}</td></tr>
+              )}
+              {[...loadRows
+].map((r) => (
                 <tr key={r.route} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{r.route}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{r.rider}</td>
@@ -234,7 +310,7 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
       {selectedTab === 'sales-requirement' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
           <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
-            Tomorrow's Projected Sales Requirement &amp; Stock Demand
+            Tomorrow's Projected Sales Requirement &amp; Stock Demand · {formatDay(tomorrow)}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
@@ -247,12 +323,15 @@ export default function CounterSalesPage({ selectedTab, products, selectedHubId 
               </tr>
             </thead>
             <tbody>
-              {products.map((p, idx) => (
+              {requirementRows.length === 0 && (
+                <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: '#64748B' }}>{drops.loading ? 'Loading…' : `No drops generated for ${formatDay(tomorrow)} yet. Generate deliveries for tomorrow first.`}</td></tr>
+              )}
+              {requirementRows.map((p) => (
                 <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{p.name}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{120 - idx * 15} units</td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>20 units buffer</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>{140 - idx * 15} units</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{p.qty} units</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{p.buffer} units buffer ({loadSettings.counterBufferPercent}%)</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>{p.total} units</td>
                 </tr>
               ))}
             </tbody>

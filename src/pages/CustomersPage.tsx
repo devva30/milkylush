@@ -1,4 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useHubContext } from '../context/HubContext';
+import {
+  useHubCustomers, customerToRow, useCustomerAddresses, withGps, useCustomerSubscriptions, useCustomerDeliveries,
+  addCustomerAddress, deleteCustomerAddress, addressText,
+} from '../data/customers';
+import { DataState, LoadMore } from '../components/common/DataState';
 import { 
   Search, Plus, Download, MapPin, ArrowLeft, ChevronLeft, ChevronRight,
   User as UserIcon, Phone, Mail, CreditCard, Package, Calendar,
@@ -17,21 +23,28 @@ interface CustomerExtended extends User {
 }
 
 interface CustomersPageProps {
-  hubUsers: User[];
+  /** Ignored: the page loads customers page by page. Kept so callers compile. */
+  hubUsers?: User[];
   orders?: Order[];
   subscriptions?: Subscription[];
   targetCustomerId?: string | null;
   onNavigateTab: (tabName: string, targetId?: string) => void;
 }
 
-export default function CustomersPage({ hubUsers, orders = [], subscriptions = [], targetCustomerId, onNavigateTab }: CustomersPageProps) {
+export default function CustomersPage({ targetCustomerId, onNavigateTab }: CustomersPageProps) {
   const { showToast } = useToast();
+  const { selectedHubId: hubId } = useHubContext();
+  const customersQuery = useHubCustomers(hubId);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<'all' | 'active' | 'inactive' | 'vacation' | 'skipped'>('all');
   const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'subscription' | 'onetime' | 'both' | 'new'>('all');
   const [activeFreeSampleFilter, setActiveFreeSampleFilter] = useState<'all' | 'new_customers' | 'claimed' | 'not_claimed'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerExtended | null>(null);
+  const openUid = selectedCustomer?.id ?? null;
+  const custAddresses = useCustomerAddresses(openUid);
+  const custSubs = useCustomerSubscriptions(hubId, openUid);
+  const custDeliveries = useCustomerDeliveries(hubId, openUid);
   const [customerAddresses, setCustomerAddresses] = useState<Record<string, string[]>>({});
 
   // Structured Add Address Form State (matching App fields exactly)
@@ -87,44 +100,9 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Merge real hubUsers with customer classification
-  const demoUsers: CustomerExtended[] = useMemo(() => {
-    if (hubUsers.length > 0) {
-      return hubUsers.map((u) => {
-        const userSubs = subscriptions.filter((s) => s.userId === u.id || s.customerName === u.name);
-        const userOrders = orders.filter((o) => o.userId === u.id);
-        const hasSub = userSubs.length > 0;
-        const hasOrder = userOrders.length > 0;
-
-        let typeVal: CustomerExtended['customerType'] = 'new';
-        if (hasSub && hasOrder) typeVal = 'both';
-        else if (hasSub) typeVal = 'subscription';
-        else if (hasOrder) typeVal = 'onetime';
-        else typeVal = 'new';
-
-        let statusVal: CustomerExtended['status'] = 'active';
-        if (hasSub) {
-          const isPaused = userSubs.every((s) => s.status === 'paused');
-          if (isPaused) statusVal = 'vacation';
-        } else if (!hasOrder) {
-          statusVal = 'inactive';
-        }
-
-        const userSampleOrders = userOrders.filter(
-          (o) => o.isFreeSample === true || o.id.startsWith('FS_') || (o as any).paymentMethod === 'DIRECT_FREE_SAMPLE'
-        );
-        const claimed = u.hasClaimedFreeSample === true || userSampleOrders.length > 0;
-
-        return {
-          ...u,
-          status: statusVal,
-          customerType: typeVal,
-          hasClaimedFreeSample: claimed,
-        };
-      });
-    }
-    return [];
-  }, [hubUsers, subscriptions, orders]);
+  const demoUsers: CustomerExtended[] = useMemo(
+    () => customersQuery.data.map((c) => customerToRow(c) as unknown as CustomerExtended),
+    [customersQuery.data]);
 
   useEffect(() => {
     if (targetCustomerId && demoUsers.length > 0) {
@@ -181,39 +159,9 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
 
   // Render Redesigned Customer Profile Details Sub-View
   if (selectedCustomer) {
-    const userSubs = subscriptions.filter(s =>
-      s.userId === selectedCustomer.id ||
-      (selectedCustomer.email && s.userId === selectedCustomer.email) ||
-      (selectedCustomer.phone && s.userId === selectedCustomer.phone) ||
-      s.userName?.toLowerCase() === selectedCustomer.name.toLowerCase()
-    );
-    const userOrders = orders.filter(o =>
-      o.userId === selectedCustomer.id ||
-      (selectedCustomer.email && o.userId === selectedCustomer.email) ||
-      (selectedCustomer.phone && o.userId === selectedCustomer.phone) ||
-      (selectedCustomer.email && (o as any).customerEmail === selectedCustomer.email) ||
-      (selectedCustomer.phone && (o as any).customerPhone === selectedCustomer.phone)
-    );
-
-    const matchingUserDocs = hubUsers.filter(u =>
-      u.id === selectedCustomer.id ||
-      (u.email && selectedCustomer.email && u.email.toLowerCase() === selectedCustomer.email.toLowerCase()) ||
-      (u.phone && selectedCustomer.phone && u.phone.replaceAll('+91', '').trim() === selectedCustomer.phone.replaceAll('+91', '').trim())
-    );
-
-    const rawAddressesList = [
-      ...matchingUserDocs.flatMap(u => u.savedAddresses || []),
-      ...matchingUserDocs.map(u => u.address).filter(Boolean),
-      ...matchingUserDocs.map(u => (u as any).activeAddress).filter(Boolean),
-      ...(selectedCustomer.savedAddresses || []),
-      ...(selectedCustomer.address ? [selectedCustomer.address] : []),
-      ...((selectedCustomer as any).activeAddress ? [(selectedCustomer as any).activeAddress] : []),
-      ...userOrders.map(o => o.address || o.deliveryAddress).filter(Boolean),
-      ...userSubs.map(s => s.address || s.deliveryAddress).filter(Boolean),
-    ].filter(a => a && a.trim().length > 3 && a.toLowerCase() !== 'no address added');
-
-    const addresses = Array.from(new Set(rawAddressesList));
-
+    const userSubs = custSubs.ui;
+    const userOrders = custDeliveries.ui;
+    const addresses = custAddresses.data.map((a) => withGps(addressText(a), a.location));
     const displaySubs = userSubs;
     const displayOrders = userOrders;
 
@@ -224,41 +172,17 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
       }
       setIsSavingAddress(true);
       try {
-        const targetHubId = addCity.includes('Hosur') ? 'hub_hosur_main' : 'hub_blr_ecity';
-        const addressParts: string[] = [];
-        if (addHouseNo.trim()) addressParts.push(addHouseNo.trim());
-        if (addStreet.trim()) addressParts.push(addStreet.trim());
-        if (addBuilding.trim()) addressParts.push(addBuilding.trim());
-        if (addFloor.trim()) addressParts.push(addFloor.trim());
-        if (addArea.trim()) addressParts.push(addArea.trim());
-        if (addLandmark.trim()) addressParts.push(`Landmark: ${addLandmark.trim()}`);
-        if (addPin.trim()) addressParts.push(`PIN: ${addPin.trim()}`);
-        addressParts.push(addCity);
-
-        const mainAddressText = addressParts.join(', ');
-        const rName = addReceiverName.trim() || selectedCustomer.name;
-        const rPhone = addReceiverPhone.trim() || selectedCustomer.phone;
-        const fullAddressString = `${mainAddressText} | Contact: ${rName} (${rPhone}) | Type: ${addAddressType} | Hub: ${targetHubId}`;
-
-        const currentSaved = selectedCustomer.savedAddresses && selectedCustomer.savedAddresses.length > 0
-          ? selectedCustomer.savedAddresses
-          : (selectedCustomer.address ? [selectedCustomer.address] : []);
-
-        const updatedSaved = [...currentSaved, fullAddressString];
-
-        await updateDoc(doc(db, 'users', selectedCustomer.id), {
-          savedAddresses: updatedSaved,
-          activeAddress: updatedSaved[0],
-          address: updatedSaved[0],
-          activeHubId: targetHubId,
+        await addCustomerAddress(hubId, selectedCustomer.id, {
+          label: addAddressType,
+          line1: [addHouseNo.trim(), addStreet.trim()].filter(Boolean).join(', '),
+          line2: [addBuilding.trim(), addFloor.trim()].filter(Boolean).join(', '),
+          landmark: addLandmark.trim(),
+          area: addArea.trim(),
+          city: addCity,
+          pincode: addPin.trim(),
+          receiverName: addReceiverName.trim() || selectedCustomer.name,
+          receiverPhone: addReceiverPhone.trim() || selectedCustomer.phone,
         });
-
-        setSelectedCustomer({
-          ...selectedCustomer,
-          savedAddresses: updatedSaved,
-          address: updatedSaved[0],
-        });
-
         setAddArea('');
         setAddHouseNo('');
         setAddStreet('');
@@ -269,7 +193,7 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         setAddReceiverName('');
         setAddReceiverPhone('');
         setShowAddAddressForm(false);
-        showToast("Address saved to customer registry in Firestore! 📍", "success");
+        showToast("Address saved for the customer.", "success");
       } catch (err) {
         showToast(`Failed to save address: ${err}`, "error");
       } finally {
@@ -278,28 +202,13 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
     };
 
     const handleDeleteAddress = async (index: number) => {
+      const target = custAddresses.data[index];
+      if (!target) return;
       try {
-        const currentSaved = selectedCustomer.savedAddresses && selectedCustomer.savedAddresses.length > 0
-          ? selectedCustomer.savedAddresses
-          : (selectedCustomer.address ? [selectedCustomer.address] : []);
-
-        const updatedSaved = currentSaved.filter((_, i) => i !== index);
-
-        await updateDoc(doc(db, 'users', selectedCustomer.id), {
-          savedAddresses: updatedSaved,
-          activeAddress: updatedSaved.length > 0 ? updatedSaved[0] : '',
-          address: updatedSaved.length > 0 ? updatedSaved[0] : '',
-        });
-
-        setSelectedCustomer({
-          ...selectedCustomer,
-          savedAddresses: updatedSaved,
-          address: updatedSaved.length > 0 ? updatedSaved[0] : '',
-        });
-
-        showToast("Address removed from customer registry in Firestore!", "info");
+        await deleteCustomerAddress(hubId, selectedCustomer.id, target.id);
+        showToast("Address removed.", "info");
       } catch (err) {
-        showToast(`Failed to delete address: ${err}`, "error");
+        showToast(`Failed to delete address: ${(err as Error).message}`, "error");
       }
     };
 
@@ -634,11 +543,33 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
                           boxSizing: 'border-box'
                         }}
                       >
-                        <ExternalLink size={14} /> Open exact pin in Google Maps →
+                        <ExternalLink size={14} /> {formatted.gpsCoords ? `Open exact pin in Google Maps (${formatted.gpsCoords}) →` : 'Open address in Google Maps (no GPS pin) →'}
                       </a>
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Assigned Rider Profile Section */}
+              <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', borderRadius: '12px', backgroundColor: (selectedCustomer as any).riderName || (selectedCustomer as any).routeId ? '#ECFDF5' : '#FFFBEB', border: (selectedCustomer as any).riderName || (selectedCustomer as any).routeId ? '1px solid #A7F3D0' : '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <UserIcon size={18} style={{ color: (selectedCustomer as any).riderName || (selectedCustomer as any).routeId ? '#047857' : '#D97706' }} />
+                  <div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>ASSIGNED RIDER / DELIVERY PERSON</div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>
+                      {(selectedCustomer as any).riderName
+                        ? `${(selectedCustomer as any).riderName} (${(selectedCustomer as any).riderPhone || 'Assigned'})`
+                        : (selectedCustomer as any).routeId
+                        ? `Assigned to Route: ${(selectedCustomer as any).routeId}`
+                        : 'No Rider Assigned Yet'}
+                    </div>
+                  </div>
+                </div>
+                {!((selectedCustomer as any).riderName || (selectedCustomer as any).routeId) && (
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D97706', backgroundColor: '#FEF3C7', padding: '3px 8px', borderRadius: '8px' }}>
+                    UNASSIGNED
+                  </span>
+                )}
               </div>
 
               {/* Add Address Form Toggle & Structured Form */}
@@ -906,6 +837,7 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
   }
 
   return (
+    <DataState loading={customersQuery.loading} error={customersQuery.error} onRetry={customersQuery.retry} loadingLabel="Loading customers…">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       
       {/* Header Bar */}
@@ -1613,6 +1545,8 @@ export default function CustomersPage({ hubUsers, orders = [], subscriptions = [
         </div>
       )}
 
+      <LoadMore hasMore={customersQuery.hasMore} loading={customersQuery.loadingMore} onClick={customersQuery.loadMore} />
     </div>
+    </DataState>
   );
 }
