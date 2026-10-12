@@ -159,7 +159,7 @@ export default function DispatchConsoleLayout({
           )}
 
           {activeTab === 'dispatch-board' && (
-            <DeliveriesRangeShell {...shell} defaultDays={7}>{(d) => (
+            <DeliveriesRangeShell {...shell} defaultDays="recent">{(d) => (
             <DispatchActiveBoardPage
               hubOrders={d.orders}
               hubDeliveryAgents={hubDeliveryAgents}

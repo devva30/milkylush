@@ -5,6 +5,7 @@ import {
   getRazorpaySettings,
   saveRazorpayForHub,
   describeKeyId,
+  sanitizeRazorpayKeyId,
   type RazorpaySettings,
 } from '../services/paymentSettingsService';
 
@@ -52,8 +53,17 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
     });
   }, [selectedHubId]);
 
-  const editHubKey = (hubId: string, patch: Partial<RazorpaySettings[string]>) =>
-    setDraftKeys((current) => (current ? { ...current, [hubId]: { ...(current[hubId] || { enabled: false, keyId: '' }), ...patch } } : current));
+  const editHubKey = (hubId: string, patch: Partial<RazorpaySettings[string]>) => {
+    let cleanPatch = { ...patch };
+    if (typeof cleanPatch.keyId === 'string') {
+      const sanitized = sanitizeRazorpayKeyId(cleanPatch.keyId);
+      if (sanitized.strippedSecret) {
+        cleanPatch.keyId = sanitized.keyId;
+        showToast('Secret key detected and safely discarded. Using public Key ID.', 'info');
+      }
+    }
+    setDraftKeys((current) => (current ? { ...current, [hubId]: { ...(current[hubId] || { enabled: false, keyId: '' }), ...cleanPatch } } : current));
+  };
 
   const handleSaveRazorpay = async (hubId: string) => {
     if (!draftKeys) return;

@@ -9,7 +9,7 @@ import { hubDoc } from '../data/hubs';
 import {
   useDeliveriesRange, deliveryToOrder, setDeliveryStatus, reassignDelivery, DB_STATUS, type DeliveryStatus, type DeliveryDoc,
 } from '../data/deliveries';
-import { DateFilter, lastDaysRange, type DateRange } from '../components/common/DateFilter';
+import { DateFilter, DELIVERY_PRESETS, recentRange, type DateRange } from '../components/common/DateFilter';
 import { DataState, LoadMore } from '../components/common/DataState';
 import { logAudit } from '../utils/auditLogger';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
@@ -66,7 +66,7 @@ export default function OrdersPage({
   const hubInfo = useLiveDoc<{ address?: string }>(doc(db, 'hubs', hubId), [hubId]);
   const hubContact = useLiveDoc<{ gstin?: string; phone?: string }>(hubDoc(hubId, 'settings', 'contact'), [hubId]);
   const appConfig = useLiveDoc<{ fssaiNumber?: string; supportEmail?: string }>(doc(db, 'config', 'app'), []);
-  const [range, setRange] = useState<DateRange>(lastDaysRange(7));
+  const [range, setRange] = useState<DateRange>(recentRange());
   const serverStatus: DeliveryStatus | undefined =
     statusFilter === 'all' ? undefined : DB_STATUS[statusFilter];
   const deliveriesQuery = useDeliveriesRange(hubId, range.from, range.to, serverStatus);
@@ -559,7 +559,7 @@ export default function OrdersPage({
 
         {/* Date Presets & Date Picker */}
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <DateFilter value={range} onChange={(r) => { setRange(r); setCurrentPage(1); }} presets={['today', 'yesterday', 'last7', 'last30']} allowRange />
+          <DateFilter value={range} onChange={(r) => { setRange(r); setCurrentPage(1); }} presets={DELIVERY_PRESETS} allowRange />
 
 
           <button

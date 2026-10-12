@@ -1,3 +1,5 @@
+import { addDays, istDateKey, todayKey } from '../data/dates';
+
 export const parseLocalDate = (dateInput?: string | Date | number | null): Date => {
   if (!dateInput) return new Date();
   if (dateInput instanceof Date) {
@@ -42,45 +44,32 @@ export const getEndOfDay = (date: Date): Date => {
   return d;
 };
 
+/**
+ * IST day key ('yyyy-MM-dd') of a date value. Plain 'yyyy-MM-dd' strings (delivery days)
+ * are taken as they are; anything else is converted from its instant. Unknown → ''.
+ */
+export const toDayKey = (dateInput: any): string => {
+  if (dateInput == null || dateInput === '') return '';
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) return dateInput.trim();
+  const d = dateInput instanceof Date ? dateInput
+    : typeof dateInput?.toDate === 'function' ? dateInput.toDate()
+    : new Date(dateInput);
+  return d instanceof Date && !isNaN(d.getTime()) ? istDateKey(d) : '';
+};
+
 export const matchesDatePreset = (
   dateInput: any,
   preset: 'all' | 'today' | 'yesterday' | 'week' | 'month' | string
 ): boolean => {
   if (!preset || preset === 'all' || preset === 'All Dates' || preset === 'All Time') return true;
-
-  const targetDate = parseLocalDate(dateInput);
-  const targetMs = targetDate.getTime();
-
-  const now = new Date();
-  const startOfToday = getStartOfDay(now).getTime();
-  const endOfToday = getEndOfDay(now).getTime();
-
-  if (preset === 'today' || preset === 'Today') {
-    return targetMs >= startOfToday && targetMs <= endOfToday;
-  }
-
-  if (preset === 'yesterday' || preset === 'Yesterday') {
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const startOfYesterday = getStartOfDay(yesterday).getTime();
-    const endOfYesterday = getEndOfDay(yesterday).getTime();
-    return targetMs >= startOfYesterday && targetMs <= endOfYesterday;
-  }
-
-  if (preset === 'week' || preset === 'This Week' || preset === 'Past 7 Days') {
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const startOfWeek = getStartOfDay(weekAgo).getTime();
-    return targetMs >= startOfWeek && targetMs <= endOfToday;
-  }
-
-  if (preset === 'month' || preset === 'This Month') {
-    const monthAgo = new Date(now);
-    monthAgo.setDate(monthAgo.getDate() - 30);
-    const startOfMonth = getStartOfDay(monthAgo).getTime();
-    return targetMs >= startOfMonth && targetMs <= endOfToday;
-  }
-
+  const key = toDayKey(dateInput);
+  if (!key) return false;
+  const today = todayKey();
+  if (preset === 'today' || preset === 'Today') return key === today;
+  if (preset === 'yesterday' || preset === 'Yesterday') return key === addDays(today, -1);
+  if (preset === 'tomorrow' || preset === 'Tomorrow') return key === addDays(today, 1);
+  if (preset === 'week' || preset === 'This Week' || preset === 'Past 7 Days') return key >= addDays(today, -6) && key <= today;
+  if (preset === 'month' || preset === 'This Month') return key >= addDays(today, -29) && key <= today;
   return true;
 };
 
@@ -90,21 +79,9 @@ export const matchesCustomDateRange = (
   endDateStr?: string
 ): boolean => {
   if (!startDateStr && !endDateStr) return true;
-
-  const targetDate = parseLocalDate(dateInput);
-  const targetMs = targetDate.getTime();
-
-  if (startDateStr) {
-    const startObj = parseLocalDate(startDateStr);
-    const startMs = getStartOfDay(startObj).getTime();
-    if (targetMs < startMs) return false;
-  }
-
-  if (endDateStr) {
-    const endObj = parseLocalDate(endDateStr);
-    const endMs = getEndOfDay(endObj).getTime();
-    if (targetMs > endMs) return false;
-  }
-
+  const key = toDayKey(dateInput);
+  if (!key) return false;
+  if (startDateStr && key < startDateStr.slice(0, 10)) return false;
+  if (endDateStr && key > endDateStr.slice(0, 10)) return false;
   return true;
 };

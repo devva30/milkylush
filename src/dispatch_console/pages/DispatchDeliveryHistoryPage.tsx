@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { ProductThumb } from '../../components/common/ProductThumb';
 import { ProofPhotoBox } from '../../components/common/ProofPhotoBox';
 import { todayKey, formatDay, formatDateTime } from '../../data/dates';
 import { CheckCircle2, Search, Download, ArrowLeft, ExternalLink, Phone, Calendar, MapPin, Printer } from 'lucide-react';
@@ -314,17 +315,13 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                 o.items.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img
-                        src={item.product?.imageUrl || 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'}
-                        alt={item.product?.name}
-                        style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                      />
+                      <ProductThumb hubId={(o as any).hubId} productId={item.product?.id} name={item.product?.name} radius={8} />
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>
-                          {item.product?.name || 'Fresh organic buffalo milk'}
+                          {item.product?.name || 'Item'}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
-                          {item.quantity} x {item.product?.unit || '750ml glass bottle'}
+                          {item.quantity} x {item.product?.unit || ''}
                         </div>
                       </div>
                     </div>
@@ -334,26 +331,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
                   </div>
                 ))
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img
-                      src="https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80"
-                      alt="Milk"
-                      style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>
-                        Fresh organic buffalo milk
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
-                        1 x 750ml glass bottle
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
-                    ₹{o.totalAmount ?? 0}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1rem' }}>No items recorded for this drop.</div>
               )}
 
               <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>

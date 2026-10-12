@@ -6,6 +6,8 @@ import { ArrowLeft, ExternalLink, Camera, AlertTriangle, CheckCircle2, ShieldChe
 import { doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useLiveDoc } from '../../data/useFirestore';
+import { hubDoc } from '../../data/hubs';
+import { ProductThumb } from './ProductThumb';
 import type { Order, DeliveryAgent, User } from '../../types';
 import { formatAddressDetails, getGoogleMapsUrl } from '../../utils/addressFormatter';
 
@@ -49,9 +51,9 @@ export default function FulfillmentSheetView({
 
   // User & Address resolution
   const u = users.find((usr) => usr.id === o.userId);
-  const customerName = o.customerName || u?.name || 'Valued Customer';
+  const customerName = o.customerName || u?.name || 'Customer';
   const customerPhone = o.customerPhone || u?.phone || '';
-  const rawAddressText = o.deliveryAddress || o.address || u?.savedAddresses?.[0] || u?.address || 'Hosur Central Hub Area, TN';
+  const rawAddressText = o.deliveryAddress || o.address || u?.savedAddresses?.[0] || u?.address || '';
   const formattedAddr = formatAddressDetails(rawAddressText);
   const { cleanAddress, addressType, contactInfo, hubId: parsedHubId, gpsCoords } = formattedAddr;
   const addressText = cleanAddress;
@@ -70,10 +72,21 @@ export default function FulfillmentSheetView({
         return sum + (pr * q);
       }, 0)
     : 0;
-  const dropValue = isFreeSample ? 0 : (rawAmount > 0 ? rawAmount : (itemsSum > 0 ? itemsSum : 110));
+  const dropValue = isFreeSample ? 0 : (rawAmount > 0 ? rawAmount : itemsSum);
   const isSubscription = !isFreeSample && (o.isSubscriptionDelivery || o.orderType === 'subscription' || (o as any).subscriptionId);
-  const subscriptionId = (o as any).subscriptionId || `sub_${o.id.replace(/[^0-9]/g, '') || '91307'}`;
-  const totalPlanValue = isSubscription ? dropValue * 30 : dropValue;
+  const subscriptionId: string = (o as any).subscriptionId || '';
+  // The plan this drop belongs to (paid drops + amount paid), read live.
+  const planDoc = useLiveDoc<{ totalDrops?: number; amountPaid?: number }>(
+    isSubscription && subscriptionId ? hubDoc(deliveryHubId, 'subscriptions', subscriptionId) : null,
+    [deliveryHubId, subscriptionId]);
+  const planDrops = planDoc.data?.totalDrops ?? 0;
+  const totalPlanValue = planDoc.data?.amountPaid != null ? planDoc.data.amountPaid / 100 : 0;
+  // "Delivered 12 m from the customer's pin" — written by the rider app when the drop is closed.
+  const gpsMatch = String((o as any).riderNote ?? '').match(/Delivered (\d+(?:\.\d+)?) m from the customer's pin/);
+  const gpsMetres = gpsMatch ? Math.round(Number(gpsMatch[1])) : null;
+  const deliveredAtText = (o as any).deliveredAt
+    ? new Date((o as any).deliveredAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+    : '';
 
   // Proof Image
   const getCleanProofUrl = (raw: any): string => {
@@ -89,7 +102,7 @@ export default function FulfillmentSheetView({
   const rawProof = proofPhoto.data?.dataUrl || o.proofImageUrl || (o as any).dropoffPhotoUrl || (o as any).deliveryProofUrl || (o as any).proofUrl || (o as any).photoProofPath || (o as any).photoProof || (o as any).photo || (o as any).dropoffPhoto || (o as any).image || (o as any).imageUrl || '';
   const proofUrl = getCleanProofUrl(rawProof);
   const cancelReason = (o as any).cancellationReason || (o as any).cancelReason || '';
-  const assignedRiderName = o.assignedPartner || deliveryAgents.find((a) => a.id === o.deliveryAgentId)?.name || 'Local Delivery Partner';
+  const assignedRiderName = o.assignedPartner || deliveryAgents.find((a) => a.id === o.deliveryAgentId)?.name || 'Not assigned';
 
   const handlePrintExport = () => {
     window.print();
@@ -112,6 +125,7 @@ export default function FulfillmentSheetView({
 
   const isDelivered = o.status === 'delivered';
   const isCancelled = o.status === 'cancelled';
+
 
   // Format date helper
   const formattedCreatedDate = new Date(o.orderDate || Date.now()).toLocaleString('en-GB', {
@@ -213,22 +227,15 @@ export default function FulfillmentSheetView({
                 o.items.map((item, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                     <td style={{ padding: '6px 8px', color: '#64748B' }}>{idx + 1}</td>
-                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>{item.product?.name || 'Fresh Organic Buffalo Milk'}</td>
-                    <td style={{ padding: '6px 8px', color: '#475569' }}>{item.product?.unit || '750ml Glass Bottle'}</td>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>{item.product?.name || 'Item'}</td>
+                    <td style={{ padding: '6px 8px', color: '#475569' }}>{item.product?.unit || ''}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 700 }}>{item.quantity || 1}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>₹{item.product?.price || dropValue}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800 }}>₹{(item.quantity || 1) * (item.product?.price || dropValue)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>₹{item.product?.price ?? 0}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800 }}>₹{(item.quantity || 1) * (item.product?.price ?? 0)}</td>
                   </tr>
                 ))
               ) : (
-                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
-                  <td style={{ padding: '6px 8px', color: '#64748B' }}>1</td>
-                  <td style={{ padding: '6px 8px', fontWeight: 700 }}>Fresh Organic Buffalo Milk</td>
-                  <td style={{ padding: '6px 8px', color: '#475569' }}>750ml Glass Bottle</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 700 }}>1</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>₹{dropValue}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800 }}>₹{dropValue}</td>
-                </tr>
+                <tr><td colSpan={6} style={{ padding: '6px 8px', color: '#64748B' }}>No items recorded</td></tr>
               )}
             </tbody>
           </table>
@@ -239,7 +246,7 @@ export default function FulfillmentSheetView({
           <div style={{ fontSize: '10px', color: '#475569', maxWidth: '60%' }}>
             <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: '2px' }}>PLAN &amp; LOGISTICS SUMMARY:</div>
             {isSubscription ? (
-              <div>Prepaid Subscription Plan ({subscriptionId}). Drop value ₹{dropValue} deducted per schedule.</div>
+              <div>Prepaid Subscription Plan ({subscriptionId || '—'}). Drop value ₹{dropValue} deducted per schedule.</div>
             ) : isFreeSample ? (
               <div>Free Sample Promotional Drop. ₹0 Charged to Customer.</div>
             ) : (
@@ -516,29 +523,20 @@ export default function FulfillmentSheetView({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {o.items && o.items.length > 0 ? (
                 o.items.map((item, idx) => {
-                  const prodDisplayName = item.product?.name || 'Fresh organic buffalo milk';
-                  const unitPrice = item.product?.price && item.product.price > 0 
-                    ? item.product.price 
-                    : dropValue;
-                  const itemImgUrl = item.product?.imageUrl && item.product.imageUrl.startsWith('http')
-                    ? item.product.imageUrl
-                    : 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80';
+                  const prodDisplayName = item.product?.name || 'Item';
+                  const unitPrice = item.product?.price ?? 0;
+                  const displayUnit = item.product?.unit || '';
 
                   return (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img
-                          src={itemImgUrl}
-                          alt={prodDisplayName}
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80'; }}
-                          style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
-                        />
+                        <ProductThumb hubId={deliveryHubId} productId={item.product?.id} name={prodDisplayName} />
                         <div>
                           <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
                             {prodDisplayName}
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                            {item.quantity || 1} x {item.product?.unit || '500ml glass bottle'}
+                            {item.quantity || 1} x {displayUnit}
                           </div>
                         </div>
                       </div>
@@ -549,26 +547,7 @@ export default function FulfillmentSheetView({
                   );
                 })
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img
-                      src="https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80"
-                      alt="Milk"
-                      style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
-                        A2 desi cow milk
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
-                        1 x 500ml glass bottle
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
-                    ₹{dropValue}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.84rem', color: 'var(--text-muted, #64748B)' }}>No items recorded for this drop.</div>
               )}
 
               {/* Breakdown */}
@@ -607,7 +586,7 @@ export default function FulfillmentSheetView({
                   fontWeight: 700,
                   lineHeight: 1.45
                 }}>
-                  Part of prepaid plan <strong>{subscriptionId}</strong> · total plan value ₹{totalPlanValue.toLocaleString('en-IN')} · 30 drops · already fully paid
+                  Part of prepaid plan <strong>{subscriptionId || '—'}</strong>{planDoc.data ? <> · total plan value ₹{totalPlanValue.toLocaleString('en-IN')} · {planDrops} drops · already fully paid</> : null}
                 </div>
               ) : (
                 <div style={{
@@ -655,12 +634,12 @@ export default function FulfillmentSheetView({
                     color: '#047857',
                     border: '1px solid #A7F3D0'
                   }}>
-                    gps match confirmed
+                    {gpsMetres != null ? `gps: ${gpsMetres} m from pin` : 'no gps reading'}
                   </span>
                 </div>
 
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #64748B)' }}>
-                  <div>Captured {formattedCreatedDate} · within 32m of address</div>
+                  <div>{deliveredAtText ? `Delivered ${deliveredAtText}` : `Drop date ${formattedCreatedDate}`}{gpsMetres != null ? ` · ${gpsMetres} m from the customer's pin` : ''}</div>
                   <div style={{ marginTop: '2px' }}>Uploaded by rider: {assignedRiderName}</div>
                 </div>
 
@@ -689,7 +668,7 @@ export default function FulfillmentSheetView({
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                     }}>
                       <span>🔍 Click to Expand Photo</span>
-                      <span>GPS Verified ✓</span>
+                      <span>{gpsMetres != null ? `GPS · ${gpsMetres} m from pin` : ''}</span>
                     </div>
                   </div>
                 ) : (
@@ -803,9 +782,11 @@ export default function FulfillmentSheetView({
                     const dbStatus = nextStatus === 'outForDelivery' ? 'out_for_delivery' : nextStatus;
                     try {
                       await setDeliveryStatus(deliveryHubId, o.id, dbStatus as any);
-                    } catch (_) {}
-                    onUpdateOrderStatus(o.id, nextStatus);
-                    showToast(`Updated delivery status to ${nextStatus}`, 'success');
+                      onUpdateOrderStatus(o.id, nextStatus);
+                      showToast(`Updated delivery status to ${nextStatus}`, 'success');
+                    } catch (err) {
+                      showToast(`Could not update delivery status: ${(err as Error).message}`, 'error');
+                    }
                   }}
                   style={{
                     width: '100%',
@@ -834,12 +815,17 @@ export default function FulfillmentSheetView({
                 </label>
                 <select
                   value={o.deliveryAgentId || ''}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const nextAgentId = e.target.value;
-                    if (onUpdateOrderDriver) {
-                      onUpdateOrderDriver(o.id, nextAgentId);
+                    try {
+                      if (onUpdateOrderDriver) {
+                        await onUpdateOrderDriver(o.id, nextAgentId);
+                      }
+                      const matchedAgent = deliveryAgents.find((a) => a.id === nextAgentId);
+                      showToast(matchedAgent ? `Assigned ${matchedAgent.name} to delivery` : 'Rider removed', 'success');
+                    } catch (err) {
+                      showToast(`Could not assign driver: ${(err as Error).message}`, 'error');
                     }
-                    showToast(`Assigned live rider to order ${o.id}`, 'success');
                   }}
                   style={{
                     width: '100%',

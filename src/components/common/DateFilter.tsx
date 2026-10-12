@@ -9,7 +9,7 @@ export interface DateRange {
   to: string;   // inclusive 'yyyy-MM-dd'
 }
 
-type Preset = 'yesterday' | 'today' | 'tomorrow' | 'last7' | 'last30' | 'next30' | 'all';
+type Preset = 'yesterday' | 'today' | 'tomorrow' | 'last7' | 'last30' | 'recent' | 'next7' | 'next30' | 'all';
 
 function presetRange(p: Preset): DateRange {
   const t = todayKey();
@@ -17,15 +17,17 @@ function presetRange(p: Preset): DateRange {
     case 'yesterday': return { from: addDays(t, -1), to: addDays(t, -1) };
     case 'today': return { from: t, to: t };
     case 'tomorrow': return { from: addDays(t, 1), to: addDays(t, 1) };
-    case 'last7': return { from: addDays(t, -6), to: addDays(t, 30) }; // Include upcoming week drops
-    case 'last30': return { from: addDays(t, -29), to: addDays(t, 30) };
+    case 'last7': return { from: addDays(t, -6), to: t };
+    case 'last30': return { from: addDays(t, -29), to: t };
+    case 'recent': return { from: addDays(t, -6), to: addDays(t, 7) }; // last week + drops already booked
+    case 'next7': return { from: addDays(t, 1), to: addDays(t, 7) };
     case 'next30': return { from: t, to: addDays(t, 30) };
     case 'all': return { from: addDays(t, -60), to: addDays(t, 60) };
   }
 }
 
 const LABELS: Record<Preset, string> = {
-  yesterday: 'Yesterday', today: 'Today', tomorrow: 'Tomorrow', last7: 'Last 7 days', last30: 'Last 30 days', next30: 'Next 30 days', all: 'All Dates',
+  yesterday: 'Yesterday', today: 'Today', tomorrow: 'Tomorrow', last7: 'Last 7 days', last30: 'Last 30 days', recent: 'Last 7 + next 7 days', next7: 'Next 7 days', next30: 'Next 30 days', all: 'All Dates',
 };
 
 const pill = (active: boolean): React.CSSProperties => ({
@@ -111,3 +113,7 @@ export function DateFilter({
 
 export const todayRange = (): DateRange => presetRange('today');
 export const lastDaysRange = (days: 7 | 30): DateRange => presetRange(days === 7 ? 'last7' : 'last30');
+/** Last 7 days plus the next 7 (orders placed today are delivered tomorrow). */
+export const recentRange = (): DateRange => presetRange('recent');
+/** Quick buttons for pages listing deliveries (past and booked). */
+export const DELIVERY_PRESETS: Preset[] = ['yesterday', 'today', 'tomorrow', 'recent', 'last7', 'last30', 'next7'];

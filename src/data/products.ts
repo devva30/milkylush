@@ -8,7 +8,8 @@ import {
 import type { Product } from '../types';
 import { hubCol, hubDoc, type HubId } from './hubs';
 import { withNextId } from './ids';
-import { useLiveQuery } from './useFirestore';
+import { useLiveDoc, useLiveQuery } from './useFirestore';
+import { useMemo } from 'react';
 import { logAudit } from '../utils/auditLogger';
 
 type StockStatus = 'in_stock' | 'limited' | 'out_of_stock' | 'coming_soon';
@@ -126,6 +127,19 @@ export function toDoc(p: Partial<Product>): ProductDoc {
 export function useHubProducts(hubId: HubId) {
   const res = useLiveQuery<ProductDoc>(query(hubCol(hubId, 'products'), orderBy('displayOrder')), [hubId]);
   return { ...res, data: res.data.map((d) => toUi(d.id, d)) };
+}
+
+/**
+ * Product id → first image, from the hub's one-doc catalogue (hubs/{hubId}/catalog/current).
+ * Deliveries and orders keep only the item name/price, so pages showing a product photo look
+ * it up here (one live read per hub).
+ */
+export function useProductImages(hubId: string | undefined): Map<string, string> {
+  const cat = useLiveDoc<{ products?: { id: string; images?: string[] }[] }>(
+    hubId ? hubDoc(hubId, 'catalog', 'current') : null, [hubId]);
+  return useMemo(() => new Map((cat.data?.products ?? [])
+    .filter((p) => p.images?.[0])
+    .map((p) => [p.id, p.images![0]] as [string, string])), [cat.data]);
 }
 
 /**

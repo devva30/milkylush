@@ -12,6 +12,7 @@ import { hubCol, hubDoc, type HubId } from './hubs';
 import { addDays, istDayEnd, istDayStart, todayKey } from './dates';
 import { logAudit } from '../utils/auditLogger';
 import type { DeliveryDoc, DeliveryStatus } from './deliveries';
+import { syncMissedDrops } from './subscriptions';
 
 export interface DayStats {
   deliveriesScheduled: number;
@@ -98,6 +99,10 @@ export async function closeDay(hubId: HubId, date: string): Promise<DayStats & {
     }
   }
   if (inBatch) await batch.commit();
+  // Subscription drops that were not delivered move their plan's end date out (paid drops).
+  if (date < todayKey()) {
+    await syncMissedDrops(hubId, date, drops.docs.map((s) => s.data() as DeliveryDoc));
+  }
   stats.milkLitres = Math.round(stats.milkLitres * 10) / 10;
 
   const dayStart = istDayStart(date);

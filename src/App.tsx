@@ -285,7 +285,7 @@ function AppContent() {
               )}
 
               {activeTab === 'all-deliveries' && (
-                <DeliveriesRangeShell hubId={selectedHubId} deliveryAgents={hubDeliveryAgents} showToast={showToast} defaultDays={30}>
+                <DeliveriesRangeShell hubId={selectedHubId} deliveryAgents={hubDeliveryAgents} showToast={showToast} defaultDays="recent">
                   {(d) => (
                     <AllDeliveriesPage
                       selectedHubId={selectedHubId}

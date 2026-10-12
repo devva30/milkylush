@@ -12,7 +12,7 @@ import {
   useDeliveries, useDeliveriesRange, useRiderDeliveries, deliveryToOrder, setDeliveryStatus, reassignDelivery, generateDeliveries,
   DB_STATUS, type DeliveryStatus, type DeliveryDoc,
 } from '../../data/deliveries';
-import { DateFilter, lastDaysRange, todayRange, type DateRange } from './DateFilter';
+import { DateFilter, DELIVERY_PRESETS, lastDaysRange, recentRange, todayRange, type DateRange } from './DateFilter';
 import { DataState, LoadMore } from './DataState';
 
 export interface DeliveriesShellData {
@@ -26,7 +26,8 @@ interface Props {
   hubId: HubId;
   deliveryAgents: DeliveryAgent[];
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
-  defaultDays?: 7 | 30;
+  /** 7 / 30 = past days only; 'recent' = last 7 days + the next 7 (booked drops). */
+  defaultDays?: 7 | 30 | 'recent';
   status?: DeliveryStatus;
   children: (data: DeliveriesShellData) => ReactNode;
 }
@@ -65,7 +66,7 @@ function useDeliveryActions(hubId: HubId, deliveryAgents: DeliveryAgent[], showT
 }
 
 export function DeliveriesRangeShell({ hubId, deliveryAgents, showToast, defaultDays = 30, status, children }: Props) {
-  const [range, setRange] = useState<DateRange>(lastDaysRange(defaultDays));
+  const [range, setRange] = useState<DateRange>(defaultDays === 'recent' ? recentRange() : lastDaysRange(defaultDays));
   const q = useDeliveriesRange(hubId, range.from, range.to, status);
   const orders = useMemo(() => q.data.map(deliveryToOrder), [q.data]);
   const users = useMemo(() => usersFrom(q.data), [q.data]);
@@ -77,7 +78,7 @@ export function DeliveriesRangeShell({ hubId, deliveryAgents, showToast, default
         <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)' }}>
           Period: {formatDay(range.from)} – {formatDay(range.to)}
         </span>
-        <DateFilter value={range} onChange={setRange} presets={['today', 'yesterday', 'last7', 'last30']} allowRange />
+        <DateFilter value={range} onChange={setRange} presets={DELIVERY_PRESETS} allowRange />
       </div>
       <DataState loading={q.loading} error={q.error} onRetry={q.retry} loadingLabel="Loading deliveries…">
         {children({ orders, users, onUpdateOrderStatus, onUpdateOrderDriver })}

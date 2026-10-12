@@ -2,7 +2,7 @@
 // Created by the customer app; the admin pauses, skips days, cancels, reactivates.
 
 import {
-  addDoc, collection, count, getAggregateFromServer, getDoc, orderBy, query, serverTimestamp, updateDoc, where, type Timestamp,
+  arrayUnion, addDoc, collection, count, getAggregateFromServer, getDoc, orderBy, query, serverTimestamp, updateDoc, where, type Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logAudit } from '../utils/auditLogger';
@@ -35,6 +35,7 @@ export interface SubscriptionDoc {
   planId?: string;
   planTitle?: string;
   planDurationDays?: number;
+  missedDates?: string[]; // past drops not delivered (Close day) — they move the end date out
   totalDrops?: number; // paid drops; the end date follows from these + skips (deliveries.ts → subscriptionEndDate)
   timing?: string;
   couponCode?: string | null;
@@ -208,6 +209,75 @@ export async function extendSubscription(hubId: HubId, subId: string, endDate: s
   }
   await logAudit({ hubId, category: 'Hub Operations', action: `Extended ${subId} by ${extraDays} days to ${next}`, target: `hubs/${hubId}/subscriptions/${subId}` });
   return next;
+}
+
+/**
+ * Option A — the admin gives the customer extra paid drops (e.g. for a missed or bad
+ * delivery). The end date follows; the customer sees it in the plan's activity history.
+ */
+export async function addPaidDrops(hubId: HubId, subId: string, drops: number, reason: string): Promise<string | null> {
+  const ref = hubDoc(hubId, 'subscriptions', subId);
+  const sub = (await getDoc(ref)).data() as SubscriptionDoc | undefined;
+  if (!sub) throw new Error('Subscription not found');
+  if (!sub.totalDrops) throw new Error('This older plan has no paid-drop count; use Extend instead.');
+  const n = Math.max(1, Math.min(60, Math.round(drops)));
+  const updated = { ...sub, totalDrops: sub.totalDrops + n };
+  const end = subscriptionEndDate(updated);
+  await updateDoc(ref, {
+    totalDrops: updated.totalDrops,
+    ...(end ? { endDate: end } : {}),
+    historyLog: arrayUnion({
+      id: `log_${Date.now()}`,
+      type: 'admin_added_drops',
+      date: todayKey(),
+      reason: `${n} extra drop${n > 1 ? 's' : ''} added — ${reason}`,
+      notes: '',
+      actor: 'admin',
+      actorName: 'MilkyLush Support',
+      timestamp: new Date().toISOString(),
+    }),
+    updatedAt: serverTimestamp(),
+  });
+  await logAudit({ hubId, category: 'Hub Operations', action: `Added ${n} paid drop(s) to ${subId} (${reason}); ends ${end}`, target: `hubs/${hubId}/subscriptions/${subId}` });
+  return end;
+}
+
+/**
+ * Option B — run by Close day. A subscription drop of [date] that was not delivered
+ * (failed, or never done) is recorded in the plan's missedDates, so it does not use up a
+ * paid drop and the end date moves out. Closing the day again after a correction
+ * (e.g. the drop was set to delivered) removes it again.
+ */
+export async function syncMissedDrops(hubId: HubId, date: string, drops: { sourceType: string; sourceId: string; status: string }[]): Promise<number> {
+  let changed = 0;
+  for (const d of drops) {
+    if (d.sourceType !== 'subscription') continue;
+    const missed = d.status === 'failed' || d.status === 'scheduled' || d.status === 'out_for_delivery';
+    const ref = hubDoc(hubId, 'subscriptions', d.sourceId);
+    const sub = (await getDoc(ref)).data() as SubscriptionDoc | undefined;
+    if (!sub || sub.status === 'cancelled') continue;
+    const had = (sub.missedDates ?? []).includes(date);
+    if (had === missed) continue;
+    const missedDates = missed ? [...(sub.missedDates ?? []), date] : (sub.missedDates ?? []).filter((x) => x !== date);
+    const end = sub.totalDrops ? subscriptionEndDate({ ...sub, missedDates }) : null;
+    await updateDoc(ref, {
+      missedDates,
+      ...(end ? { endDate: end } : {}),
+      historyLog: arrayUnion({
+        id: `log_${Date.now()}_${changed}`,
+        type: missed ? 'drop_missed' : 'drop_missed_cleared',
+        date,
+        reason: missed ? 'Drop not delivered — added at the end of the plan' : 'Drop confirmed delivered',
+        notes: '',
+        actor: 'admin',
+        actorName: 'MilkyLush Support',
+        timestamp: new Date().toISOString(),
+      }),
+      updatedAt: serverTimestamp(),
+    });
+    changed++;
+  }
+  return changed;
 }
 
 /** Is `date` a delivery day of the plan (frequency, skips, vacation), ignoring its end? */

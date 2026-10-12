@@ -1,9 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { SubscriptionDropStats } from '../components/common/SubscriptionDropStats';
 import { Search, Download, ArrowLeft, Calendar as CalendarIcon, Sparkles, X, ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, CheckCircle, PauseCircle, Headphones, Mail, MapPin, Phone, Trash2 } from 'lucide-react';
-import { updateDoc, arrayUnion, deleteField, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { hubDoc, type HubId } from '../data/hubs';
-import { useHubSubscriptions, syncDeliveryForSkip } from '../data/subscriptions';
+import { updateDoc, arrayUnion, deleteField, addDoc, collection, serverTimestamp, query, where } from 'firebase/firestore';
+import { hubCol, hubDoc, type HubId } from '../data/hubs';
+import { useLiveQuery } from '../data/useFirestore';
+import { isoWeekday, subscriptionEndDate, type DeliveryDoc } from '../data/deliveries';
+import { addDays, todayKey } from '../data/dates';
+import { useHubSubscriptions, syncDeliveryForSkip, subToUi, addPaidDrops, type SubscriptionDoc } from '../data/subscriptions';
 import { LoadMore } from '../components/common/DataState';
 import { db } from '../firebase';
 import { shiftEndDate } from '../utils/subscriptionDates';
@@ -362,180 +365,70 @@ const calculatePaidDropEndDate = (
   }
 };
 
+/** 'yyyy-MM-dd' of a calendar tile. */
+const tileKey = (year: number, monthIndex: number, dayNum: number) =>
+  `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+
+/** Whole days between two 'yyyy-MM-dd' keys. */
+const keyDiff = (a: string, b: string) => {
+  const t = (k: string) => { const [y, m, d] = k.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  return Math.round((t(b) - t(a)) / 86_400_000);
+};
+
+/**
+ * What the plan does on one calendar day, from the live subscription (same rules as the
+ * apps: frequency, skips, vacation, paid end date) and, when the drop exists, its real
+ * result from hubs/{hub}/deliveries (delivered / not delivered).
+ */
 const getCalendarDayStatus = (
   year: number,
   monthIndex: number,
   dayNum: number,
   plan: any,
-  override?: DateStatusInfo
+  dropStatus?: string,
 ): { isScheduled: boolean; status: 'active' | 'skipped' | 'exception' | 'offDay' | 'vacation'; label: string; reason?: string; notes?: string } => {
-  if (override) {
-    return {
-      isScheduled: override.status !== 'skipped',
-      status: override.status,
-      label: override.status === 'exception' ? '⚠️ Exception' : override.status === 'skipped' ? '⏸️ Skipped' : `${plan.dailyQty || 1} unit`,
-      reason: override.reason,
-      notes: override.notes,
-    };
+  const key = tileKey(year, monthIndex, dayNum);
+  const start = String(plan.startDate || '').slice(0, 10);
+  const end = String(plan.endDate || '').slice(0, 10);
+  const qtyLabel = `${plan.dailyQty || 1} unit`;
+
+  // A drop that already happened is shown as it happened.
+  if (dropStatus === 'delivered') return { isScheduled: true, status: 'active', label: '✓ Delivered' };
+  if (dropStatus === 'failed') return { isScheduled: true, status: 'exception', label: 'Not delivered', reason: 'Not delivered' };
+
+  if (!start || key < start || (end && key > end)) return { isScheduled: false, status: 'offDay', label: '-' };
+
+  if (String(plan.status || '').toLowerCase() === 'cancelled') {
+    return { isScheduled: false, status: 'exception', label: '❌ Plan Cancelled', reason: plan.cancellationReason || 'Cancelled plan' };
   }
 
-  const targetDate = new Date(year, monthIndex, dayNum);
-  targetDate.setHours(0, 0, 0, 0);
-
-  const startDate = plan.startDate ? new Date(plan.startDate) : new Date();
-  startDate.setHours(0, 0, 0, 0);
-
-  const reqDrops = getDurationDays(plan.planDuration || plan.planDurationDays || '30days');
-  const pausedKeysSet = new Set(
-    (plan.pausedDates || []).map((d: any) => String(d).split('T')[0].trim())
-  );
-  Object.keys(plan.pausedDateReasons || {}).forEach((k) => pausedKeysSet.add(String(k).split('T')[0].trim()));
-
-  let endCalc = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  let countDrops = 0;
-  for (let i = 0; i < 700; i++) {
-    const key = `${endCalc.getFullYear()}-${String(endCalc.getMonth() + 1).padStart(2, '0')}-${String(endCalc.getDate()).padStart(2, '0')}`;
-    const isP = pausedKeysSet.has(key);
-    let isV = false;
-    if (plan.vacationStart && plan.vacationEnd) {
-      const vS = new Date(plan.vacationStart);
-      const vE = new Date(plan.vacationEnd);
-      vS.setHours(0, 0, 0, 0);
-      vE.setHours(23, 59, 59, 999);
-      if (endCalc >= vS && endCalc <= vE) isV = true;
-    }
-    if (!isP && !isV) {
-      let isSch = false;
-      const freq = (plan.frequency || 'everyday').toLowerCase();
-      if (freq === 'daily' || freq === 'everyday') {
-        isSch = true;
-      } else if (freq.includes('alternate')) {
-        const diff = Math.floor((endCalc.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        isSch = diff % 2 === 0;
-      } else if (freq.includes('custom') && (plan.customDays || []).length > 0) {
-        const jsDay = endCalc.getDay();
-        const isoWk = jsDay === 0 ? 7 : jsDay;
-        const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-        const nameOfWk = dayNames[jsDay];
-        isSch = (plan.customDays || []).some((cd: any) => {
-          const cdStr = String(cd).toUpperCase();
-          return cdStr === nameOfWk || cdStr === String(jsDay) || cdStr === String(isoWk);
-        });
-      } else {
-        isSch = true;
-      }
-      if (isSch) {
-        countDrops++;
-        if (countDrops >= reqDrops) break;
-      }
-    }
-    endCalc.setDate(endCalc.getDate() + 1);
+  const reasons = plan.pausedDateReasons || {};
+  const r = reasons[key];
+  const reason: string | undefined = r ? (typeof r === 'string' ? r : (r.reason || r.notes)) : undefined;
+  const paused = (plan.pausedDates || []).some((d: any) => String(d).slice(0, 10) === key);
+  if (paused || dropStatus === 'skipped') {
+    return { isScheduled: false, status: 'skipped', label: reason ? `⏸️ ${reason}` : '⏸️ Skipped', reason, notes: typeof r === 'object' && r ? r.notes : undefined };
   }
 
-  const calculatedEndDate = plan.endDate ? new Date(plan.endDate) : (plan.calculatedEndDate ? new Date(plan.calculatedEndDate) : endCalc);
-  calculatedEndDate.setHours(23, 59, 59, 999);
+  const vs = String(plan.vacationStart || '').slice(0, 10);
+  const ve = String(plan.vacationEnd || '').slice(0, 10);
+  if (vs && ve && key >= vs && key <= ve) return { isScheduled: false, status: 'vacation', label: '🏖️ Vacation' };
 
-  if (targetDate.getTime() < startDate.getTime() || targetDate.getTime() > calculatedEndDate.getTime()) {
-    return { isScheduled: false, status: 'offDay', label: '-' };
+  const freq = String(plan.frequency || 'daily').toLowerCase();
+  let due = true;
+  if (freq.includes('alternate')) due = keyDiff(start, key) % 2 === 0;
+  else if (freq.includes('custom') || freq.includes('weekdays')) {
+    const wd = isoWeekday(key);
+    due = (plan.customDays || []).some((cd: any) => Number(cd) === wd);
   }
-
-  const normDateKey = (val?: any): string => {
-    if (!val) return '';
-    const str = String(val).trim();
-    const datePart = str.split('T')[0].split(' ')[0].trim();
-    const parts = datePart.split('-');
-    if (parts.length === 3) {
-      const y = parts[0];
-      const m = parts[1].padStart(2, '0');
-      const d = parts[2].padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-    return str;
-  };
-
-  const dateKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-  const isCancelledPlan = String(plan.status || '').toLowerCase() === 'cancelled';
-  if (isCancelledPlan) {
-    return {
-      isScheduled: false,
-      status: 'exception',
-      label: '❌ Plan Cancelled',
-      reason: plan.cancellationReason || 'Cancelled plan',
-    };
-  }
-
-  const pausedDates = (plan.pausedDates || []).map((d: any) => normDateKey(d));
-  const pausedDateReasons = plan.pausedDateReasons || {};
-  
-  let customerReason: string | undefined = undefined;
-  let customerNotes: string | undefined = undefined;
-  Object.entries(pausedDateReasons).forEach(([k, v]: [string, any]) => {
-    if (normDateKey(k) === dateKey) {
-      if (typeof v === 'object' && v) {
-        customerReason = v.reason || v.notes;
-        customerNotes = v.notes;
-      } else if (typeof v === 'string') {
-        customerReason = v;
-      }
-    }
-  });
-
-  const isPausedInArray = pausedDates.includes(dateKey);
-
-  if (isPausedInArray || customerReason) {
-    return {
-      isScheduled: false,
-      status: 'skipped',
-      label: customerReason ? `⏸️ ${customerReason}` : '⏸️ Skipped',
-      reason: customerReason,
-      notes: customerNotes,
-    };
-  }
-
-  if (plan.vacationStart && plan.vacationEnd) {
-    const vStart = new Date(plan.vacationStart);
-    vStart.setHours(0, 0, 0, 0);
-    const vEnd = new Date(plan.vacationEnd);
-    vEnd.setHours(23, 59, 59, 999);
-    if (targetDate.getTime() >= vStart.getTime() && targetDate.getTime() <= vEnd.getTime()) {
-      return { isScheduled: false, status: 'vacation', label: '🏖️ Vacation' };
-    }
-  }
-
-  const freq = (plan.frequency || 'everyday').toLowerCase();
-  let isScheduled = false;
-
-  if (freq === 'daily' || freq === 'everyday') {
-    isScheduled = true;
-  } else if (freq.includes('alternate')) {
-    const diffDays = Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    isScheduled = diffDays % 2 === 0;
-  } else if (freq.includes('custom')) {
-    const customDays = plan.customDays || [];
-    const jsDay = targetDate.getDay();
-    const isoWeekday = jsDay === 0 ? 7 : jsDay;
-    const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-    const nameOfWeek = dayNames[jsDay];
-
-    isScheduled = customDays.some((cd: any) => {
-      const cdStr = String(cd).toUpperCase();
-      return cdStr === nameOfWeek || cdStr === String(jsDay) || cdStr === String(isoWeekday);
-    });
-  } else {
-    isScheduled = true;
-  }
-
-  if (isScheduled) {
-    return { isScheduled: true, status: 'active', label: `${plan.dailyQty || 1} unit` };
-  } else {
-    return { isScheduled: false, status: 'offDay', label: '-' };
-  }
+  return due ? { isScheduled: true, status: 'active', label: qtyLabel } : { isScheduled: false, status: 'offDay', label: '-' };
 };
 
 const getSpannedMonths = (plan: any) => {
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const start = plan.startDate ? new Date(plan.startDate) : new Date(2026, 8, 11);
-  const end = plan.calculatedEndDate ? new Date(plan.calculatedEndDate) : new Date(2026, 10, 8);
+  const toLocal = (k?: string) => { const [y, m, d] = String(k || '').slice(0, 10).split('-').map(Number); return y ? new Date(y, m - 1, d) : null; };
+  const start = toLocal(plan.startDate) ?? new Date();
+  const end = toLocal(plan.endDate) ?? start;
   
   const months = [];
   let curr = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -553,7 +446,7 @@ const getSpannedMonths = (plan: any) => {
   }
 
   if (months.length === 0) {
-    months.push({ label: 'Month 1 (September 2026)', year: 2026, monthIndex: 8 });
+    months.push({ label: `Month 1 (${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()})`, year: start.getFullYear(), monthIndex: start.getMonth() });
   }
 
   return months;
@@ -568,7 +461,6 @@ export default function SubscriptionsPage({
 }: SubscriptionsPageProps) {
   const hubId = selectedHubId as HubId;
   const subsQuery = useHubSubscriptions(hubId);
-  const hubSubscriptions = subsQuery.ui;
   const isLoading = subsQuery.loading;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -577,10 +469,49 @@ export default function SubscriptionsPage({
 
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
+  // The registry list is a one-time page load; the customer being looked at is followed
+  // live, so skips, vacations, extensions and cancels (here or from the app) show at once.
+  const selectedUid: string | null = selectedCustomer?.fullCustomerId || null;
+  const liveCustomerSubs = useLiveQuery<SubscriptionDoc>(
+    selectedUid ? query(hubCol(hubId, 'subscriptions'), where('customerUid', '==', selectedUid)) : null,
+    [hubId, selectedUid]);
+  const rawSubById = useMemo(() => {
+    const m = new Map<string, SubscriptionDoc>();
+    subsQuery.data.forEach((d) => m.set(d.id, d));
+    liveCustomerSubs.data.forEach((d) => m.set(d.id, d));
+    return m;
+  }, [subsQuery.data, liveCustomerSubs.data]);
+  const hubSubscriptions = useMemo(() => {
+    const live = new Map(liveCustomerSubs.data.map((d) => [d.id, subToUi(d.id, d)]));
+    const list = subsQuery.ui.map((sub) => live.get(sub.id) ?? sub);
+    live.forEach((sub, id) => { if (!list.some((x) => x.id === id)) list.push(sub); });
+    return list;
+  }, [subsQuery.ui, liveCustomerSubs.data]);
+
+  /** End date after a skip change: paid-drop plans recount their drops; older plans shift by days. */
+  const endDateWith = (planId: string, uiEndDate: unknown, newPaused: string[], delta: number): string | null => {
+    const raw = rawSubById.get(planId);
+    if (raw?.totalDrops) return subscriptionEndDate({ ...raw, pausedDates: newPaused });
+    return shiftEndDate(uiEndDate, delta);
+  };
+
   // Month Shifting State (Default: Current Active Month)
   const todayNow = new Date();
   const [calendarYear, setCalendarYear] = useState<number>(todayNow.getFullYear());
   const [calendarMonthIndex, setCalendarMonthIndex] = useState<number>(todayNow.getMonth());
+
+  // Real drops of the open customer in the month on screen: `${subscriptionId}_${day}` → status.
+  const monthFrom = tileKey(calendarYear, calendarMonthIndex, 1);
+  const monthTo = tileKey(calendarYear, calendarMonthIndex, new Date(calendarYear, calendarMonthIndex + 1, 0).getDate());
+  const monthDrops = useLiveQuery<DeliveryDoc>(
+    selectedUid ? query(hubCol(hubId, 'deliveries'), where('customerUid', '==', selectedUid),
+      where('date', '>=', monthFrom), where('date', '<=', monthTo)) : null,
+    [hubId, selectedUid, monthFrom, monthTo]);
+  const dropStatusOf = useMemo(() => {
+    const m = new Map<string, string>();
+    monthDrops.data.forEach((d) => m.set(`${d.sourceId}_${d.date}`, d.status));
+    return m;
+  }, [monthDrops.data]);
 
   // Interactive Calendar Date Status Overrides: Key = `${planId}_${year}_${month}_${day}`
   const [dateOverrides, setDateOverrides] = useState<Record<string, DateStatusInfo>>({});
@@ -638,6 +569,20 @@ export default function SubscriptionsPage({
     setCancelModalSub({ plan, customer });
     setCancelReasonType('Distance / Outside Delivery Zone (Refund Processed)');
     setCancelCustomNotes('');
+  };
+
+  // Option A: extra paid drops for this plan (the end date moves out; logged in its history).
+  const handleAddDrops = async (plan: any) => {
+    const n = Number(window.prompt(`How many extra drops for ${plan.id}?`, '1'));
+    if (!Number.isFinite(n) || n < 1) return;
+    const reason = window.prompt('Reason (shown to the customer in the plan history):', 'Missed delivery');
+    if (reason == null) return;
+    try {
+      const end = await addPaidDrops(hubId, plan.id, n, reason.trim() || 'Added by support');
+      showToast(`${n} drop(s) added to ${plan.id}. New end date: ${end ?? '—'}`, 'success');
+    } catch (err) {
+      showToast(`Could not add drops: ${(err as Error).message}`, 'error');
+    }
   };
 
   const handleOpenReactivateModal = (plan: any, customer: any) => {
@@ -873,7 +818,7 @@ export default function SubscriptionsPage({
         };
 
         // Restoring a skipped day pulls the end date back in by the same amount.
-        const restoredEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
+        const restoredEnd = endDateWith(planId, subDoc.endDate, updatedPaused, updatedPaused.length - currentPaused.length);
         if (restoredEnd) updatePayload.endDate = restoredEnd;
 
         if (dateKey) {
@@ -881,6 +826,7 @@ export default function SubscriptionsPage({
         }
 
         await updateDoc(hubDoc(hubId, 'subscriptions', planId), updatePayload);
+        if (dateKey && dateKey >= todayKey()) await syncDeliveryForSkip(hubId, planId, dateKey, false);
         showToast("History log deleted & delivery schedule restored on Web and App", "success");
       }
     } catch (err) {
@@ -1094,7 +1040,16 @@ export default function SubscriptionsPage({
   const handleSaveDateStatus = async (statusType: 'active' | 'skipped' | 'exception') => {
     if (!activeDateModal) return;
     const key = `${activeDateModal.planId}_${activeDateModal.year}_${activeDateModal.monthIndex}_${activeDateModal.dayNum}`;
-    const dateKey = `${activeDateModal.year}-${String(activeDateModal.monthIndex + 1).padStart(2, '0')}-${String(activeDateModal.dayNum).padStart(2, '0')}`;
+    const dateKey = tileKey(activeDateModal.year, activeDateModal.monthIndex, activeDateModal.dayNum);
+    if (dateKey < todayKey()) {
+      showToast('Past days cannot be changed — that drop has already happened.', 'error');
+      return;
+    }
+    const doneDrop = dropStatusOf.get(`${activeDateModal.planId}_${dateKey}`);
+    if (doneDrop === 'delivered' || doneDrop === 'failed') {
+      showToast(`This drop is already ${doneDrop === 'delivered' ? 'delivered' : 'closed as not delivered'}.`, 'error');
+      return;
+    }
     
     const newOverride: DateStatusInfo = {
       status: statusType,
@@ -1128,12 +1083,7 @@ export default function SubscriptionsPage({
       const subDoc: any = hubSubscriptions.find((s) => s.id === activeDateModal.planId);
       if (subDoc) {
         let currentPaused: string[] = subDoc.pausedDates || [];
-        const isAlreadyInPaused = currentPaused.some((pd) => {
-          const d = new Date(pd);
-          return (d.getFullYear() === targetDateObj.getFullYear() &&
-                  d.getMonth() === targetDateObj.getMonth() &&
-                  d.getDate() === targetDateObj.getDate()) || pd === dateKey;
-        });
+        const isAlreadyInPaused = currentPaused.some((pd) => String(pd).slice(0, 10) === dateKey);
 
         let updatedPaused: string[] = [...currentPaused];
         if (statusType === 'skipped' || statusType === 'exception') {
@@ -1141,7 +1091,7 @@ export default function SubscriptionsPage({
             updatedPaused.push(dateKey);
           }
           // A skipped day owes the customer one more delivery day at the end.
-          const extendedEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
+          const extendedEnd = endDateWith(activeDateModal.planId, subDoc.endDate, updatedPaused, updatedPaused.length - currentPaused.length);
 
           await updateDoc(hubDoc(hubId, 'subscriptions', activeDateModal.planId), {
             pausedDates: updatedPaused,
@@ -1156,15 +1106,9 @@ export default function SubscriptionsPage({
             historyLog: arrayUnion(historyEntry)
           });
         } else if (statusType === 'active') {
-          updatedPaused = currentPaused.filter((pd) => {
-            const d = new Date(pd);
-            const isSame = d.getFullYear() === targetDateObj.getFullYear() &&
-                           d.getMonth() === targetDateObj.getMonth() &&
-                           d.getDate() === targetDateObj.getDate();
-            return !isSame && pd !== dateKey;
-          });
+          updatedPaused = currentPaused.filter((pd) => String(pd).slice(0, 10) !== dateKey);
           // Un-skipping a day removes the extra day it had bought.
-          const shortenedEnd = shiftEndDate(subDoc.endDate, updatedPaused.length - currentPaused.length);
+          const shortenedEnd = endDateWith(activeDateModal.planId, subDoc.endDate, updatedPaused, updatedPaused.length - currentPaused.length);
 
           await updateDoc(hubDoc(hubId, 'subscriptions', activeDateModal.planId), {
             pausedDates: updatedPaused,
@@ -1235,9 +1179,15 @@ export default function SubscriptionsPage({
 
         updatePayload.pausedDates = updatedPaused;
         updatePayload[`pausedDateReasons.${normKey}`] = deleteField();
+        const restoredEnd = endDateWith(planId, subDoc.endDate, updatedPaused, updatedPaused.length - currentPaused.length);
+        if (restoredEnd) updatePayload.endDate = restoredEnd;
       }
 
       await updateDoc(hubDoc(hubId, 'subscriptions', planId), updatePayload);
+      if (dateKey) {
+        const normKey = String(dateKey).split('T')[0].trim();
+        if (normKey >= todayKey()) await syncDeliveryForSkip(hubId, planId, normKey, false);
+      }
 
       logAdminAuditAction(
         'Tom SuperAdmin',
@@ -1400,6 +1350,27 @@ export default function SubscriptionsPage({
                       }}>
                         {isCancelled ? 'CANCELLED BY ADMIN 🛑' : plan.status}
                       </span>
+                      {!isCancelled && plan.totalDrops ? (
+                        <button
+                          onClick={() => handleAddDrops(plan)}
+                          title="Give the customer extra paid drops (e.g. for a missed or bad delivery)"
+                          style={{
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '8px',
+                            backgroundColor: '#ECFDF5',
+                            color: '#047857',
+                            border: '1px solid #A7F3D0',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Sparkles size={14} /> Add Drop
+                        </button>
+                      ) : null}
                       {!isCancelled ? (
                         <button
                           onClick={() => handleOpenCancelModal(plan, cust)}
@@ -1595,7 +1566,7 @@ export default function SubscriptionsPage({
                   {Array.from({ length: daysInSelectedMonth }, (_, i) => i + 1).map((dayNum) => {
                     const key = `${plan.id}_${calendarYear}_${calendarMonthIndex}_${dayNum}`;
                     const override = dateOverrides[key];
-                    const dayInfo = getCalendarDayStatus(calendarYear, calendarMonthIndex, dayNum, plan, override);
+                    const dayInfo = getCalendarDayStatus(calendarYear, calendarMonthIndex, dayNum, plan, dropStatusOf.get(`${plan.id}_${tileKey(calendarYear, calendarMonthIndex, dayNum)}`));
                     
                     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
                     const dayOfWeekIdx = (monthFirstDayOfWeek + (dayNum - 1)) % 7;
@@ -1683,7 +1654,7 @@ export default function SubscriptionsPage({
                               justifyContent: 'center',
                               gap: '2px'
                             }}>
-                              <AlertTriangle size={10} /> Exception
+                              <AlertTriangle size={10} /> {dayInfo.reason === 'Not delivered' ? 'Not delivered' : 'Exception'}
                             </span>
                           </div>
                         ) : isSkip ? (
@@ -1738,7 +1709,7 @@ export default function SubscriptionsPage({
                             padding: '1px 3px',
                             textAlign: 'center'
                           }}>
-                            {plan.dailyQty || 1} unit
+                            {dayInfo.label}
                           </span>
                         ) : (
                           <span style={{

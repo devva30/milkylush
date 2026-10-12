@@ -92,6 +92,8 @@ interface SubscriptionDoc {
   endDate?: string | null;
   totalDrops?: number; // paid drops (customer app plans); end date follows from these
   pausedDates?: string[];
+  /** Past plan days whose drop was not delivered (set by Close day): they move the end out. */
+  missedDates?: string[];
   vacationStart?: string | null;
   vacationEnd?: string | null;
   status: string;
@@ -149,7 +151,8 @@ function isPlanDay(sub: SubscriptionDoc, date: string): boolean {
  */
 export function subscriptionEndDate(sub: SubscriptionDoc): string | null {
   if (!sub.totalDrops || !sub.startDate) return sub.endDate ?? null;
-  const paused = new Set(sub.pausedDates ?? []);
+  // Skipped days and drops that were not delivered both move the end date out.
+  const paused = new Set([...(sub.pausedDates ?? []), ...(sub.missedDates ?? [])]);
   let day = sub.startDate;
   let counted = 0;
   for (let i = 0; i < 1500; i++) {
@@ -370,7 +373,7 @@ export function deliveryToOrder(d: WithId<DeliveryDoc>): Order {
     userId: d.customerUid,
     items: d.items.map((i) => ({
       id: i.productId,
-      product: { id: i.productId, name: i.name, price: i.price / 100, unit: i.unit, imageUrl: '' } as Product,
+      product: { id: i.productId, name: i.name, price: i.price / 100, unit: i.unit, imageUrl: (i as any).imageUrl || '' } as Product,
       quantity: i.qty,
       isSubscription: isSub,
     })),
@@ -399,44 +402,31 @@ export function deliveryToOrder(d: WithId<DeliveryDoc>): Order {
 
 /**
  * Deliveries of a hub between two IST days (inclusive), newest day first, 50 per
- * page. Optional status filter runs in the database, not the browser.
+ * page ("Load more" fetches the next older 50). The optional status filter runs in
+ * the database (index status + date desc), so pages never miss rows.
  */
 export function useDeliveriesRange(hubId: HubId, from: string, to: string, status?: DeliveryStatus) {
   const q = useMemo(() => {
     const base = hubCol(hubId, 'deliveries');
-    return query(base, where('date', '>=', from), where('date', '<=', to));
-  }, [hubId, from, to]);
-
-  const res = usePagedQuery<DeliveryDoc>(q, [hubId, from, to]);
-  const sortedData = useMemo(() => {
-    if (!res.data) return [];
-    let list = res.data;
-    if (status) {
-      list = list.filter((d) => d.status === status);
-    }
-    return [...list].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  }, [res.data, status]);
-  return { ...res, data: sortedData };
+    return status
+      ? query(base, where('status', '==', status), where('date', '>=', from), where('date', '<=', to), byField('date', 'desc'))
+      : query(base, where('date', '>=', from), where('date', '<=', to), byField('date', 'desc'));
+  }, [hubId, from, to, status]);
+  return usePagedQuery<DeliveryDoc>(q, [hubId, from, to, status ?? '']);
 }
 
 /** One rider's drops over the last `days` IST days, newest first, 50 per page. */
 export function useRiderDeliveries(hubId: HubId, riderUid: string | null, days = 30) {
   const to = todayKey();
   const from = addDays(to, -(days - 1));
+  // Index riderUid + date desc.
   const q = useMemo(() => {
     return riderUid
-      ? query(hubCol(hubId, 'deliveries'), where('riderUid', '==', riderUid))
+      ? query(hubCol(hubId, 'deliveries'), where('riderUid', '==', riderUid),
+        where('date', '>=', from), where('date', '<=', to), byField('date', 'desc'))
       : null;
-  }, [hubId, riderUid]);
-
-  const res = usePagedQuery<DeliveryDoc>(q, [hubId, riderUid || '']);
-  const sortedData = useMemo(() => {
-    if (!res.data) return [];
-    return res.data
-      .filter((d) => !d.date || (d.date >= from && d.date <= to))
-      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  }, [res.data, from, to]);
-  return { ...res, data: sortedData };
+  }, [hubId, riderUid, from, to]);
+  return usePagedQuery<DeliveryDoc>(q, [hubId, riderUid || '', from, to]);
 }
 
 /** Free-sample drops of the hub, newest delivery day first, 50 per page. */

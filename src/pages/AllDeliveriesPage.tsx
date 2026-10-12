@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import type { Order, Subscription, DeliveryAgent, User, Product } from '../types';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 import { matchesDatePreset, matchesCustomDateRange } from '../utils/dateFilterUtils';
+import { addDays, todayKey } from '../data/dates';
 
 interface AllDeliveriesPageProps {
   selectedHubId: string;
@@ -39,13 +40,7 @@ export interface DeliveryEntry {
   items?: any[];
 }
 
-const getTodayFormatted = (): string => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+const getTodayFormatted = (): string => todayKey(); // IST day
 
 const formatDateTimeString = (rawDate: Date, timing?: string): string => {
   if (!rawDate || isNaN(rawDate.getTime())) return 'Today, 06:30 AM';
@@ -83,7 +78,7 @@ export default function AllDeliveriesPage({
   onNavigateTab,
 }: AllDeliveriesPageProps) {
   // Filter States
-  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'custom' | 'all'>('all');
+  const [dateFilter, setDateFilter] = useState<'today' | 'tomorrow' | 'yesterday' | 'week' | 'month' | 'custom' | 'all'>('all');
   const [customStartDate, setCustomStartDate] = useState<string>(getTodayFormatted());
   const [customEndDate, setCustomEndDate] = useState<string>(getTodayFormatted());
   const [typeFilter, setTypeFilter] = useState<'all' | 'subscription' | 'onetime'>('all');
@@ -139,50 +134,27 @@ export default function AllDeliveriesPage({
       });
     });
 
-    // 2. Active Subscriptions (scheduled recurring deliveries not yet delivered)
-    subscriptions.forEach((s) => {
-      if (s.status === 'paused' || s.status === 'cancelled') return;
-
-      const userObj = users.find((u) => u.id === s.userId);
-      const startDate = new Date(s.startDate || Date.now());
-      const prodName = s.productName || s.product?.name || 'Fresh Organic A2 Milk';
-      const prodUnit = s.product?.unit || '500ml';
-      const prodDetails = `${prodName} - ${prodUnit} (x${s.quantity || 1})`;
-
-      // Check if entry already added via order object
-      const existsInOrders = entries.some((e) => e.rawObject?.userId === s.userId && e.isSub);
-      if (!existsInOrders) {
-        entries.push({
-          id: `SUB_${s.id.slice(0, 8).toUpperCase()}`,
-          customerName: s.customerName || userObj?.name || 'Subscribed Customer',
-          phone: s.customerPhone || userObj?.phone || 'N/A',
-          address: s.deliveryAddress || userObj?.address || 'Hosur Central Sector',
-          products: prodDetails,
-          orderType: 'Subscription',
-          dateStr: s.startDate ? s.startDate.slice(0, 10) : getTodayFormatted(),
-          rawDate: isNaN(startDate.getTime()) ? todayStart : startDate,
-          status: 'outForDelivery',
-          totalAmount: (s.quantity || 1) * 95,
-          isSub: true,
-          deliveryInstructions: s.deliveryInstructions || '',
-          rawObject: s,
-          items: [{ product: s.product || { name: prodName, price: 95, unit: prodUnit, imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=120&auto=format&fit=crop&q=80' }, quantity: s.quantity || 1 }],
-        });
-      }
-    });
+    // Subscription drops are real delivery docs too (created by "Generate deliveries"),
+    // so they already arrive in `orders` above — nothing is invented from the plans here.
 
     // Sort newest scheduled date first
-    return entries.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
-  }, [orders, subscriptions, users]);
+    return entries.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+  }, [orders, users]);
 
   // Filter combined entries by Date Range, Type, Status & Search
   const filteredEntries = useMemo(() => {
     return combinedEntries.filter((item) => {
       // 1. Date Range Filter
+      // Drop days are IST 'yyyy-MM-dd'; week / month include drops already booked ahead.
+      const today = todayKey();
       if (dateFilter === 'custom') {
-        if (!matchesCustomDateRange(item.rawDate || item.dateStr, customStartDate, customEndDate)) return false;
+        if (!matchesCustomDateRange(item.dateStr, customStartDate, customEndDate)) return false;
+      } else if (dateFilter === 'week') {
+        if (!matchesCustomDateRange(item.dateStr, addDays(today, -6), addDays(today, 7))) return false;
+      } else if (dateFilter === 'month') {
+        if (!matchesCustomDateRange(item.dateStr, addDays(today, -29), addDays(today, 30))) return false;
       } else {
-        if (!matchesDatePreset(item.rawDate || item.dateStr, dateFilter)) return false;
+        if (!matchesDatePreset(item.dateStr, dateFilter)) return false;
       }
 
       // 2. Order Type Filter (Strict Check)
@@ -412,6 +384,7 @@ export default function AllDeliveriesPage({
             {[
               { key: 'all', label: 'All Dates' },
               { key: 'today', label: 'Today' },
+              { key: 'tomorrow', label: 'Tomorrow' },
               { key: 'yesterday', label: 'Yesterday' },
               { key: 'week', label: 'This Week' },
               { key: 'month', label: 'This Month' },

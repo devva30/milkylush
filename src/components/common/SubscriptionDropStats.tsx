@@ -57,7 +57,8 @@ export function SubscriptionDropStats({ plan }: { plan: PlanLike }) {
   }
 
   const total = plan.totalDrops ?? 0;
-  const remaining = Math.max(0, total - delivered - notDelivered);
+  // Drops that were not delivered are added at the end (Close day), so only delivered ones count.
+  const remaining = Math.max(0, total - delivered);
 
   const cell = (label: string, value: string, color: string) => (
     <div>
@@ -75,6 +76,7 @@ export function SubscriptionDropStats({ plan }: { plan: PlanLike }) {
       {cell('PLAN DURATION', plan.duration ?? '—', '#111827')}
       {cell('TOTAL DROPS', total ? `${total} drops` : '—', '#047857')}
       {cell('DELIVERED', `${delivered} drops`, '#0284C7')}
+      {notDelivered > 0 && cell('NOT DELIVERED', `${notDelivered} drops`, '#DC2626')}
       {cell('SKIPPED / VACATION', `${skipped} days`, '#D97706')}
       {cell('REMAINING', total ? `${remaining} drops` : '—', '#047857')}
     </div>

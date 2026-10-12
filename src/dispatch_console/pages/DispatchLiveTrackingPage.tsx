@@ -17,7 +17,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
     return (hubDeliveryAgents || []).map(a => {
       const lat = typeof (a as any).latitude === 'number' ? (a as any).latitude : parseFloat((a as any).latitude || String(defaultLat));
       const lng = typeof (a as any).longitude === 'number' ? (a as any).longitude : parseFloat((a as any).longitude || String(defaultLng));
-      const isOnline = a.isOnline !== undefined ? Boolean(a.isOnline) : true;
+      const isOnline = Boolean(a.isOnline);
       return {
         ...a,
         lat: isNaN(lat) ? defaultLat : lat,
@@ -30,7 +30,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
   const onlineCount = activeAgents.filter(a => a.isOnline).length;
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
-  const selectedAgent = activeAgents.find(a => a.id === selectedAgentId) || activeAgents[0];
+  const selectedAgent = activeAgents.find(a => a.id === selectedAgentId) || activeAgents.find(a => a.isOnline) || activeAgents[0];
 
   const currentLat = selectedAgent ? selectedAgent.lat : defaultLat;
   const currentLng = selectedAgent ? selectedAgent.lng : defaultLng;
@@ -45,14 +45,22 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
             📍 Live Rider GPS Tracking & Telemetry
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
-            Real-time GPS route monitoring for active delivery partners in {selectedHubId}.
+            Real-time GPS route monitoring for delivery partners in {selectedHubId}.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#ECFDF5', padding: '0.55rem 1.1rem', borderRadius: '12px', border: '1px solid #A7F3D0' }}>
-          <Radio size={16} style={{ color: '#047857' }} className="animate-pulse" />
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#047857' }}>
-            {onlineCount || activeAgents.length} Active Riders Online (Realtime GPS)
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: onlineCount > 0 ? '#ECFDF5' : '#F1F5F9',
+          padding: '0.55rem 1.1rem',
+          borderRadius: '12px',
+          border: onlineCount > 0 ? '1px solid #A7F3D0' : '1px solid #E2E8F0'
+        }}>
+          <Radio size={16} style={{ color: onlineCount > 0 ? '#047857' : '#64748B' }} className={onlineCount > 0 ? 'animate-pulse' : ''} />
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: onlineCount > 0 ? '#047857' : '#64748B' }}>
+            {onlineCount} {onlineCount === 1 ? 'Rider' : 'Riders'} Online (On Duty)
           </span>
         </div>
       </div>
@@ -156,12 +164,12 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
                       <span style={{
                         fontSize: '0.68rem',
                         fontWeight: 800,
-                        color: agent.isOnline ? '#047857' : '#D97706',
-                        backgroundColor: agent.isOnline ? '#DCFCE7' : '#FEF3C7',
+                        color: agent.isOnline ? '#047857' : '#64748B',
+                        backgroundColor: agent.isOnline ? '#DCFCE7' : '#F1F5F9',
                         padding: '2px 8px',
                         borderRadius: '10px'
                       }}>
-                        {agent.isOnline ? '🟢 Live GPS' : '🟡 On Duty'}
+                        {agent.isOnline ? '🟢 Live GPS' : '⚪ Off Duty'}
                       </span>
                       {isSelected && (
                         <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#047857' }}>
