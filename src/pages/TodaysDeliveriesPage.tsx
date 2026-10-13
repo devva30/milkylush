@@ -14,6 +14,12 @@ import { DataState } from '../components/common/DataState';
 import FulfillmentSheetView from '../components/common/FulfillmentSheetView';
 import { formatAddressDetails } from '../utils/addressFormatter';
 
+// Status view for the day's list: pending = not yet done, cancelled = not delivered
+// (cancelled, failed or skipped).
+type StatusView = 'all' | 'pending' | 'delivered' | 'cancelled';
+const statusGroup = (s: string): Exclude<StatusView, 'all'> =>
+  s === 'delivered' ? 'delivered' : (s === 'cancelled' || s === 'failed' || s === 'skipped') ? 'cancelled' : 'pending';
+
 interface TodaysDeliveriesPageProps {
   selectedHubId: string;
   /** Ignored: the page reads hubs/{hubId}/deliveries for the chosen date. Kept so callers compile. */
@@ -40,6 +46,7 @@ export default function TodaysDeliveriesPage({
   onNavigateTab,
 }: TodaysDeliveriesPageProps) {
   const [filterType, setFilterType] = useState<string>('all');
+  const [statusView, setStatusView] = useState<StatusView>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedFulfillmentOrder, setSelectedFulfillmentOrder] = useState<Order | null>(null);
   const [cancellationReason, setCancellationReason] = useState<string>('');
@@ -150,8 +157,15 @@ export default function TodaysDeliveriesPage({
   const subScheduledCount = activeOrdersList.filter((o) => o.isSubscriptionDelivery || o.orderType === 'subscription').length;
   const oneTimeScheduledCount = activeOrdersList.filter((o) => !o.isSubscriptionDelivery && o.orderType !== 'subscription').length;
 
+  const statusCounts = useMemo(() => {
+    const c = { all: activeOrdersList.length, pending: 0, delivered: 0, cancelled: 0 };
+    activeOrdersList.forEach((o) => { c[statusGroup(o.status as string)]++; });
+    return c;
+  }, [activeOrdersList]);
+
   const filteredOrders = useMemo(() => {
     return activeOrdersList.filter((o) => {
+      if (statusView !== 'all' && statusGroup(o.status as string) !== statusView) return false;
       const u = users.find((usr) => usr.id === o.userId);
       const matchesSearch =
         o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -165,7 +179,7 @@ export default function TodaysDeliveriesPage({
       if (filterType === 'unassigned') return !o.deliveryAgentId;
       return true;
     });
-  }, [activeOrdersList, users, searchQuery, filterType]);
+  }, [activeOrdersList, users, searchQuery, filterType, statusView]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / (pageSize === 9999 ? filteredOrders.length || 1 : pageSize)));
   
@@ -363,6 +377,30 @@ export default function TodaysDeliveriesPage({
               />
             </div>
 
+          {([
+            { id: 'all', label: `All Deliveries (${statusCounts.all})` },
+            { id: 'pending', label: `Pending (${statusCounts.pending})` },
+            { id: 'delivered', label: `Delivered (${statusCounts.delivered})` },
+            { id: 'cancelled', label: `Cancelled (${statusCounts.cancelled})` },
+          ] as { id: StatusView; label: string }[]).map((s) => (
+            <button
+              key={s.id}
+              onClick={() => { setStatusView(s.id); setCurrentPage(1); }}
+              style={{
+                padding: '0.38rem 0.75rem',
+                borderRadius: '8px',
+                border: statusView === s.id ? 'none' : '1px solid var(--border-color)',
+                backgroundColor: statusView === s.id ? '#047857' : 'var(--bg-main)',
+                color: statusView === s.id ? '#FFFFFF' : 'var(--text-main)',
+                fontWeight: 700,
+                fontSize: '0.76rem',
+                cursor: 'pointer',
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+            <span style={{ width: 1, alignSelf: 'stretch', backgroundColor: 'var(--border-color)', margin: '0 0.25rem' }} />
             {[
               { id: 'all', label: 'All Types' },
               { id: 'subscriptions', label: 'Subscriptions' },

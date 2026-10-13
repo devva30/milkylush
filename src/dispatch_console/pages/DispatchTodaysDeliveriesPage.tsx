@@ -4,6 +4,12 @@ import { Download, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import type { Order, DeliveryAgent, User, Product } from '../../types';
 import FulfillmentSheetView from '../../components/common/FulfillmentSheetView';
 
+// Status view for the day's list: pending = not yet done, cancelled = not delivered
+// (cancelled, failed or skipped).
+type StatusView = 'all' | 'pending' | 'delivered' | 'cancelled';
+const statusGroup = (s: string): Exclude<StatusView, 'all'> =>
+  s === 'delivered' ? 'delivered' : (s === 'cancelled' || s === 'failed' || s === 'skipped') ? 'cancelled' : 'pending';
+
 interface DispatchTodaysDeliveriesPageProps {
   selectedHubId: string;
   hubOrders: Order[];
@@ -26,6 +32,7 @@ export default function DispatchTodaysDeliveriesPage({
   showToast,
 }: DispatchTodaysDeliveriesPageProps) {
   const [filterType, setFilterType] = useState<string>('all');
+  const [statusView, setStatusView] = useState<StatusView>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedFulfillmentOrder, setSelectedFulfillmentOrder] = useState<Order | null>(null);
 
@@ -38,10 +45,9 @@ export default function DispatchTodaysDeliveriesPage({
 
   const todayStr = todayKey();
 
-  // The chosen day's drops (the page shell loads exactly that IST day); cancelled and skipped drops are not work.
-  const todayOnlyOrders = useMemo(
-    () => (hubOrders || []).filter((o) => o.status !== 'cancelled' && (o.status as string) !== 'skipped'),
-    [hubOrders]);
+  // The chosen day's drops (the page shell loads exactly that IST day); the status chips
+  // below narrow it to pending / delivered / cancelled.
+  const todayOnlyOrders = useMemo(() => hubOrders || [], [hubOrders]);
 
   const activeOrdersList = todayOnlyOrders;
 
@@ -49,8 +55,15 @@ export default function DispatchTodaysDeliveriesPage({
   const subScheduledCount = activeOrdersList.filter((o) => o.isSubscriptionDelivery || o.orderType === 'subscription').length;
   const oneTimeScheduledCount = activeOrdersList.filter((o) => !o.isSubscriptionDelivery && o.orderType !== 'subscription').length;
 
+  const statusCounts = useMemo(() => {
+    const c = { all: activeOrdersList.length, pending: 0, delivered: 0, cancelled: 0 };
+    activeOrdersList.forEach((o) => { c[statusGroup(o.status as string)]++; });
+    return c;
+  }, [activeOrdersList]);
+
   const filteredOrders = useMemo(() => {
     return activeOrdersList.filter((o) => {
+      if (statusView !== 'all' && statusGroup(o.status as string) !== statusView) return false;
       const u = users.find((usr) => usr.id === o.userId);
       const matchesSearch =
         (o.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,7 +79,7 @@ export default function DispatchTodaysDeliveriesPage({
       if (filterType === 'unassigned') return !effectiveAgentId;
       return true;
     });
-  }, [activeOrdersList, users, searchQuery, filterType]);
+  }, [activeOrdersList, users, searchQuery, filterType, statusView]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / (pageSize === 9999 ? filteredOrders.length || 1 : pageSize)));
   
@@ -162,7 +175,31 @@ export default function DispatchTodaysDeliveriesPage({
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1rem 1.25rem', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         
         {/* Filter Pills */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {([
+            { id: 'all', label: `All Deliveries (${statusCounts.all})` },
+            { id: 'pending', label: `Pending (${statusCounts.pending})` },
+            { id: 'delivered', label: `Delivered (${statusCounts.delivered})` },
+            { id: 'cancelled', label: `Cancelled (${statusCounts.cancelled})` },
+          ] as { id: StatusView; label: string }[]).map((s) => (
+            <button
+              key={s.id}
+              onClick={() => { setStatusView(s.id); setCurrentPage(1); }}
+              style={{
+                padding: '0.38rem 0.75rem',
+                borderRadius: '8px',
+                border: statusView === s.id ? 'none' : '1px solid #E2E8F0',
+                backgroundColor: statusView === s.id ? '#044E35' : '#FFFFFF',
+                color: statusView === s.id ? '#FFFFFF' : '#475569',
+                fontWeight: 700,
+                fontSize: '0.76rem',
+                cursor: 'pointer',
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+          <span style={{ width: 1, alignSelf: 'stretch', backgroundColor: '#E2E8F0', margin: '0 0.25rem' }} />
           {[
             { id: 'all', label: `All Drops (${totalTodayCount})` },
             { id: 'subscriptions', label: `🔁 Subscriptions (${subScheduledCount})` },

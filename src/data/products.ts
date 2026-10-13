@@ -168,6 +168,8 @@ export async function rebuildCatalog(hubId: HubId): Promise<void> {
 export async function saveProduct(hubId: HubId, product: Partial<Product>): Promise<string> {
   const data = toDoc(product);
   if (!data.name) throw new Error('Product name is required.');
+  // A ₹0 product could be ordered for free — never save one as available.
+  if (data.mrp <= 0 || data.price <= 0) throw new Error('Enter the price (MRP) before saving — a ₹0 product could be ordered for free.');
   let id = product.id ?? '';
   if (!id) {
     id = await withNextId(hubId, 'product', (tx, newId) =>

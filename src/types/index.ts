@@ -173,7 +173,10 @@ export interface Banner {
   imageUrl: string;
   displayOrder: number;
   active: boolean;
+  /** What a tap opens: a product id, or "category:<name>" for a shop category. */
   targetProductId?: string;
+  /** Small label above the title (e.g. NOW IN HOSUR, NOTICE). Empty → SPECIAL OFFER. */
+  badge?: string;
 }
 
 export interface DeliveryProof {

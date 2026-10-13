@@ -54,7 +54,8 @@ interface BannerDoc {
   title: string;
   subtitle: string;
   imageUrl: string;
-  link: string | null; // product id the banner opens
+  link: string | null; // what a tap opens: product id, or "category:<name>"
+  badge?: string;      // label above the title; empty → the app shows SPECIAL OFFER
   active: boolean;
   displayOrder: number;
 }
@@ -63,7 +64,7 @@ export function useHubBanners(hubId: HubId) {
   const res = useLiveQuery<BannerDoc>(query(hubCol(hubId, 'banners'), orderBy('displayOrder')), [hubId]);
   const data: Banner[] = res.data.map((b) => ({
     id: b.id, title: b.title, description: b.subtitle ?? '', imageUrl: b.imageUrl, displayOrder: b.displayOrder,
-    active: !!b.active, targetProductId: b.link ?? undefined,
+    active: !!b.active, targetProductId: b.link ?? undefined, badge: b.badge ?? '',
   }));
   return { ...res, data };
 }
@@ -76,6 +77,7 @@ export async function saveBanner(hubId: HubId, banner: Banner): Promise<void> {
     subtitle: (banner.description ?? '').trim(),
     imageUrl: (banner.imageUrl ?? '').trim(),
     link: banner.targetProductId || null,
+    badge: (banner.badge ?? '').trim().toUpperCase(),
     active: !!banner.active,
     displayOrder: Number(banner.displayOrder) || 99,
   };

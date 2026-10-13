@@ -8,6 +8,7 @@ import {
   loadHubSetting, saveHubSetting, loadAppConfig, saveAppConfig, loadBroadcasts, sendBroadcast, deleteBroadcast,
 } from '../data/appContent';
 import type { Banner, OnboardingSlide } from '../types';
+import { useHubProducts } from '../data/products';
 
 interface MobileControlPageProps {
   selectedHubId?: string;
@@ -190,6 +191,9 @@ export default function MobileControlPage({
 
   // Modal State - Banner Modal
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  // Products / categories of this hub, for "When tapped, open" on banners.
+  const hubProducts = useHubProducts(hubId);
+  const bannerCategories = Array.from(new Set(hubProducts.data.map((p) => (p.category ?? '').trim()).filter(Boolean))).sort();
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
 
   // Broadcast Form State
@@ -1965,6 +1969,50 @@ export default function MobileControlPage({
                   onChange={(e) => setEditingBanner({ ...editingBanner, description: e.target.value })}
                   style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
                 />
+              </div>
+
+              {/* Badge */}
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  Badge (small label above the title)
+                </label>
+                <input
+                  type="text"
+                  maxLength={22}
+                  placeholder="SPECIAL OFFER"
+                  value={editingBanner.badge ?? ''}
+                  onChange={(e) => setEditingBanner({ ...editingBanner, badge: e.target.value })}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                />
+                <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '4px' }}>
+                  e.g. NOW IN HOSUR, NEW, NOTICE, COMING SOON. Leave empty to show SPECIAL OFFER.
+                </div>
+              </div>
+
+              {/* Tap opens */}
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  When tapped, open
+                </label>
+                <select
+                  value={editingBanner.targetProductId ?? ''}
+                  onChange={(e) => setEditingBanner({ ...editingBanner, targetProductId: e.target.value || undefined })}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none' }}
+                >
+                  <option value="">Nothing (notice only)</option>
+                  {editingBanner.targetProductId && !editingBanner.targetProductId.startsWith('category:')
+                    && !hubProducts.data.some((p) => p.id === editingBanner.targetProductId) && (
+                    <option value={editingBanner.targetProductId}>⚠ Deleted product — choose another</option>
+                  )}
+                  {bannerCategories.length > 0 && (
+                    <optgroup label="Shop category">
+                      {bannerCategories.map((c) => <option key={c} value={`category:${c}`}>{c}</option>)}
+                    </optgroup>
+                  )}
+                  <optgroup label="Product">
+                    {hubProducts.data.map((p) => <option key={p.id} value={p.id}>{p.name}{p.unit ? ` · ${p.unit}` : ''}</option>)}
+                  </optgroup>
+                </select>
               </div>
 
               {/* Display Rank */}
