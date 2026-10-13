@@ -16,7 +16,7 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({ theme, onToggleTheme, showToast }: SettingsPageProps) {
-  const { selectedHubId, allowedHubIds, staff, switchHub } = useHubContext();
+  const { selectedHubId, staff } = useHubContext();
   const [adminProfile, setAdminProfile] = useState({
     name: staff?.name || '',
     email: staff?.email || '',
@@ -292,32 +292,22 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
             </p>
           </div>
 
-          {/* Quick Hub Switcher Tabs */}
+          {/* Only the hub being administered. Showing every hub's tab here invited
+              editing one hub's payment key while believing you were in another. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F3F4F6', padding: '4px', borderRadius: '12px' }}>
-            {(allowedHubIds.length > 0 ? allowedHubIds : Object.keys(HUBS)).map((hubId) => {
-              const active = selectedHubId === hubId;
-              return (
-                <button
-                  key={hubId}
-                  type="button"
-                  onClick={() => switchHub(hubId)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    backgroundColor: active ? '#047857' : 'transparent',
-                    color: active ? '#FFFFFF' : '#4B5563',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: active ? '0 2px 6px rgba(4,120,87,0.2)' : 'none',
-                  }}
-                >
-                  {HUBS[hubId]?.name || hubId}
-                </button>
-              );
-            })}
+            <span
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                backgroundColor: '#047857',
+                color: '#FFFFFF',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                boxShadow: '0 2px 6px rgba(4,120,87,0.2)',
+              }}
+            >
+              {HUBS[selectedHubId]?.name || selectedHubId}
+            </span>
           </div>
         </div>
 
