@@ -5,7 +5,7 @@ import type { Order, DeliveryAgent, User, Product } from '../types';
 import type { HubId } from '../data/hubs';
 import { todayKey, formatDay } from '../data/dates';
 import {
-  useDeliveries, generateDeliveries, setDeliveryStatus, reassignDelivery, deliveryToOrder as toOrderRow, DB_STATUS,
+  useDeliveries, generateDeliveries, ensureDeliveries, setDeliveryStatus, reassignDelivery, deliveryToOrder as toOrderRow, DB_STATUS,
 } from '../data/deliveries';
 import { DateFilter, todayRange, type DateRange } from '../components/common/DateFilter';
 import { DataState } from '../components/common/DataState';
@@ -64,6 +64,7 @@ export default function TodaysDeliveriesPage({
   const isToday = date === todayKey();
   const dayLabel = isToday ? 'today' : formatDay(date);
   const deliveriesQuery = useDeliveries(hubId, date);
+  useEffect(() => { ensureDeliveries(hubId, date); }, [hubId, date]); // live list shows new drops by itself
   const [generating, setGenerating] = useState(false);
 
   // Auto-sync drops for today when page is opened so active subscriptions show immediately
@@ -511,7 +512,7 @@ export default function TodaysDeliveriesPage({
                   }
                 }
                 if (!fullAddressText || fullAddressText.startsWith('Doorstep')) {
-                  fullAddressText = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+                  fullAddressText = 'Address not available';
                 }
 
                 const hasGpsInText = fullAddressText.includes('[GPS:');

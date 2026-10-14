@@ -306,7 +306,7 @@ export default function DispatchTodaysDeliveriesPage({
                             }
                           }
                           if (!addr || addr.startsWith('Doorstep')) {
-                            addr = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+                            addr = 'Address not available';
                           }
                           return addr;
                         })()}

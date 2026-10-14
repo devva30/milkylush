@@ -2,7 +2,7 @@
 // Created by the customer app; the admin pauses, skips days, cancels, reactivates.
 
 import {
-  arrayUnion, addDoc, collection, count, getAggregateFromServer, getDoc, orderBy, query, serverTimestamp, updateDoc, where, type Timestamp,
+  writeBatch, arrayUnion, addDoc, collection, count, getAggregateFromServer, getDoc, orderBy, query, serverTimestamp, updateDoc, where, type Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logAudit } from '../utils/auditLogger';
@@ -278,6 +278,43 @@ export async function syncMissedDrops(hubId: HubId, date: string, drops: { sourc
     changed++;
   }
   return changed;
+}
+
+/**
+ * Recovery: the customer paid (Razorpay) but the app never confirmed the plan, so it is still
+ * "pending payment" and hidden from the customer. The admin enters the Razorpay payment id
+ * (from the Razorpay dashboard); this activates the plan and records the payment.
+ */
+export async function activatePaidSubscription(hubId: HubId, subId: string, paymentId: string): Promise<void> {
+  const id = paymentId.trim();
+  if (!/^pay_[A-Za-z0-9]{8,}$/.test(id)) throw new Error('Enter the Razorpay payment id, like pay_AbCdEf123456.');
+  const subRef = hubDoc(hubId, 'subscriptions', subId);
+  const sub = (await getDoc(subRef)).data() as (SubscriptionDoc & Record<string, any>) | undefined;
+  if (!sub) throw new Error('Subscription not found.');
+  if (sub.status !== 'pending_payment') throw new Error(`This plan is already ${sub.status}.`);
+  const payRef = hubDoc(hubId, 'payments', id);
+  const existing = await getDoc(payRef);
+  if (existing.exists() && existing.data().refId !== subId) throw new Error('That payment id is already used for another order or plan.');
+
+  const batch = writeBatch(db);
+  batch.update(subRef, {
+    status: 'active', paymentId: id, updatedAt: serverTimestamp(),
+    historyLog: arrayUnion({
+      id: `log_${Date.now()}`, type: 'admin_payment_confirmed', date: todayKey(),
+      reason: 'Payment confirmed by support — plan activated', notes: '', actor: 'admin', actorName: 'MilkyLush Support',
+      timestamp: new Date().toISOString(),
+    }),
+  });
+  if (!existing.exists()) {
+    batch.set(payRef, {
+      hubId, customerUid: sub.customerUid, customerId: sub.customerId ?? '', customerName: sub.customerName ?? '',
+      customerPhone: sub.customerPhone ?? '', amount: sub.amountPaid ?? 0, purpose: 'subscription', refId: subId,
+      razorpayOrderId: null, razorpaySignature: null, method: 'razorpay', status: 'captured', confirmedBy: 'admin',
+      createdAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+  await logAudit({ hubId, category: 'Financials & Refunds', action: `Marked ${subId} as paid (${id}) and activated it`, target: `hubs/${hubId}/subscriptions/${subId}` });
 }
 
 /** Is `date` a delivery day of the plan (frequency, skips, vacation), ignoring its end? */

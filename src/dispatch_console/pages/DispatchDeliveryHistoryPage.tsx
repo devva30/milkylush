@@ -133,7 +133,7 @@ export default function DispatchDeliveryHistoryPage({ hubOrders, users = [], del
       }
     }
     if (!addressText || addressText.startsWith('Doorstep')) {
-      addressText = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+      addressText = 'Address not available';
     }
     const getCleanProofUrl = (raw: any): string => {
       if (typeof raw !== 'string') return '';

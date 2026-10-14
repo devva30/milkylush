@@ -6,7 +6,7 @@ import { hubCol, hubDoc, type HubId } from '../data/hubs';
 import { useLiveQuery } from '../data/useFirestore';
 import { isoWeekday, subscriptionEndDate, type DeliveryDoc } from '../data/deliveries';
 import { addDays, todayKey } from '../data/dates';
-import { useHubSubscriptions, syncDeliveryForSkip, subToUi, addPaidDrops, type SubscriptionDoc } from '../data/subscriptions';
+import { useHubSubscriptions, syncDeliveryForSkip, subToUi, addPaidDrops, activatePaidSubscription, type SubscriptionDoc } from '../data/subscriptions';
 import { LoadMore } from '../components/common/DataState';
 import { db } from '../firebase';
 import { shiftEndDate } from '../utils/subscriptionDates';
@@ -569,6 +569,20 @@ export default function SubscriptionsPage({
     setCancelModalSub({ plan, customer });
     setCancelReasonType('Distance / Outside Delivery Zone (Refund Processed)');
     setCancelCustomNotes('');
+  };
+
+  // Recovery for a plan the customer paid but the app never confirmed.
+  const [payIdInput, setPayIdInput] = useState<Record<string, string>>({});
+  const handleMarkPaid = async (plan: any) => {
+    const id = (payIdInput[plan.id] ?? '').trim();
+    if (!window.confirm(`Activate ${plan.id} for ${plan.productName}? Only do this after you see the payment ${id || '(enter its id first)'} in Razorpay.`)) return;
+    try {
+      await activatePaidSubscription(hubId, plan.id, id);
+      showToast(`${plan.id} activated. Its drops appear on the delivery pages automatically.`, 'success');
+      setPayIdInput((p) => ({ ...p, [plan.id]: '' }));
+    } catch (err) {
+      showToast((err as Error).message, 'error');
+    }
   };
 
   // Option A: extra paid drops for this plan (the end date moves out; logged in its history).
@@ -1415,6 +1429,29 @@ export default function SubscriptionsPage({
                 })()}
               </div>
             </div>
+
+            {String(plan.status || '').toUpperCase() === 'PENDING_PAYMENT' && (
+              <div style={{ margin: '0 0 1rem 0', padding: '0.9rem 1rem', borderRadius: '12px', border: '1px solid #FCD34D', backgroundColor: '#FFFBEB' }}>
+                <div style={{ fontWeight: 800, color: '#92400E', fontSize: '0.85rem' }}>Awaiting payment — hidden from the customer</div>
+                <div style={{ fontSize: '0.78rem', color: '#78350F', margin: '4px 0 8px' }}>
+                  If this customer says they paid, find the payment in the Razorpay dashboard and enter its id here. The plan is activated and the payment recorded.
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input
+                    value={payIdInput[plan.id] ?? ''}
+                    onChange={(e) => setPayIdInput((p) => ({ ...p, [plan.id]: e.target.value }))}
+                    placeholder="pay_XXXXXXXXXXXXXX"
+                    style={{ flex: '1 1 220px', padding: '0.5rem 0.7rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem' }}
+                  />
+                  <button
+                    onClick={() => handleMarkPaid(plan)}
+                    style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}
+                  >
+                    Mark as paid &amp; activate
+                  </button>
+                </div>
+              </div>
+            )}
 
             {(String(plan.status || '').toUpperCase() === 'CANCELLED' || String(plan.status || '').toLowerCase() === 'cancelled') && (
               <div style={{

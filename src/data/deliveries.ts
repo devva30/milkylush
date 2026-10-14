@@ -210,7 +210,7 @@ export interface GenerateSummary {
  * ones get the current rider/sequence, and drops whose subscription is now paused
  * for that day become `skipped`.
  */
-export async function generateDeliveries(hubId: HubId, date: string): Promise<GenerateSummary> {
+export async function generateDeliveries(hubId: HubId, date: string, opts: { auto?: boolean } = {}): Promise<GenerateSummary> {
   const [subsSnap, ordersSnap, routesSnap, existingSnap] = await Promise.all([
     getDocs(query(hubCol(hubId, 'subscriptions'), where('status', '==', 'active'))),
     getDocs(query(hubCol(hubId, 'orders'), where('deliveryDate', '==', date), where('status', '==', 'placed'))),
@@ -252,8 +252,15 @@ export async function generateDeliveries(hubId: HubId, date: string): Promise<Ge
     } else if (prev.status === 'scheduled') {
       // No route for this customer: keep a rider the admin picked by hand.
       const keep = !a && prevRider ? {} : routing;
-      writes.push({ ref, merge: true, data: { ...base, ...keep, updatedAt: serverTimestamp() } });
-      summary.refreshed++;
+      const next = { ...base, ...keep } as Record<string, unknown>;
+      // Write only what really changed (free plan: every write counts).
+      const changed = Object.keys(next).some((k) => JSON.stringify(next[k]) !== JSON.stringify((prev as unknown as Record<string, unknown>)[k]));
+      if (changed) {
+        writes.push({ ref, merge: true, data: { ...next, updatedAt: serverTimestamp() } });
+        summary.refreshed++;
+      } else {
+        summary.unchanged++;
+      }
     } else {
       summary.unchanged++;
     }
@@ -315,6 +322,8 @@ export async function generateDeliveries(hubId: HubId, date: string): Promise<Ge
     await batch.commit();
   }
 
+  if (opts.auto) return summary; // quiet background run: no audit entry, no photo clean-up
+
   // Housekeeping: proof photos are kept 30 days (no Cloud Storage on the free plan).
   summary.photosPurged = await purgeOldProofPhotos(hubId).catch(() => 0);
 
@@ -325,6 +334,35 @@ export async function generateDeliveries(hubId: HubId, date: string): Promise<Ge
   });
   return summary;
 }
+
+const lastAuto = new Map<string, number>();
+const AUTO_EVERY_MS = 5 * 60_000;
+
+/**
+ * Makes sure the drops of today and tomorrow exist (subscriptions create theirs only here:
+ * customers cannot write deliveries). Runs when an admin opens a delivery page, at most once
+ * every 5 minutes per hub and day, and writes only changes. Returns true if anything changed.
+ */
+export async function ensureDeliveries(hubId: HubId, extraDate?: string): Promise<boolean> {
+  const today = todayKey();
+  const dates = Array.from(new Set([today, addDays(today, 1), ...(extraDate && extraDate >= today && extraDate <= addDays(today, 7) ? [extraDate] : [])]));
+  let changed = false;
+  for (const date of dates) {
+    const key = `${hubId}_${date}`;
+    if (Date.now() - (lastAuto.get(key) ?? 0) < AUTO_EVERY_MS) continue;
+    lastAuto.set(key, Date.now());
+    try {
+      const r = await generateDeliveries(hubId, date, { auto: true });
+      if (r.created || r.refreshed || r.skippedNow || r.completedSubs) changed = true;
+    } catch {
+      lastAuto.delete(key); // try again next time (e.g. offline, or not an admin)
+    }
+  }
+  return changed;
+}
+
+/** Forget the throttle so the next ensureDeliveries runs at once (after Generate / a refresh). */
+export const resetAutoDeliveries = () => lastAuto.clear();
 
 export async function setDeliveryStatus(hubId: HubId, id: string, status: DeliveryStatus, reason?: string): Promise<void> {
   const historyEntry = {

@@ -7,7 +7,7 @@ import type { Order, User, Product, DeliveryAgent } from '../types';
 import type { HubId } from '../data/hubs';
 import { hubDoc } from '../data/hubs';
 import {
-  useDeliveriesRange, deliveryToOrder, setDeliveryStatus, reassignDelivery, DB_STATUS, type DeliveryStatus, type DeliveryDoc,
+  useDeliveriesRange, ensureDeliveries, deliveryToOrder, setDeliveryStatus, reassignDelivery, DB_STATUS, type DeliveryStatus, type DeliveryDoc,
 } from '../data/deliveries';
 import { DateFilter, DELIVERY_PRESETS, recentRange, type DateRange } from '../components/common/DateFilter';
 import { DataState, LoadMore } from '../components/common/DataState';
@@ -70,6 +70,12 @@ export default function OrdersPage({
   const serverStatus: DeliveryStatus | undefined =
     statusFilter === 'all' ? undefined : DB_STATUS[statusFilter];
   const deliveriesQuery = useDeliveriesRange(hubId, range.from, range.to, serverStatus);
+  const { retry: reloadDeliveries } = deliveriesQuery;
+  useEffect(() => {
+    let alive = true;
+    ensureDeliveries(hubId).then((changed) => { if (alive && changed) reloadDeliveries(); });
+    return () => { alive = false; };
+  }, [hubId]); // eslint-disable-line react-hooks/exhaustive-deps
   const orders = useMemo(() => deliveriesQuery.data.map(deliveryToOrder), [deliveriesQuery.data]);
   const users = useMemo(() => {
     const m = new Map<string, User>();
@@ -630,7 +636,7 @@ export default function OrdersPage({
                   }
                 }
                 if (!displayAddress || displayAddress.startsWith('Doorstep')) {
-                  displayAddress = isHosur ? '565, Darga, Hosur, Hosur, Tamil Nadu | Type: Home | Hub: hub_hosur_main' : 'Electronic City Phase 1, Bengaluru, Karnataka';
+                  displayAddress = 'Address not available';
                 }
 
                 const cleanAddress = displayAddress

@@ -2,14 +2,14 @@
 // Order/User shapes the older history pages render, to `children`. Those pages keep
 // their own screens and in-page filters; this shell supplies correct, bounded data.
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { DeliveryAgent, Order, User } from '../../types';
 import type { HubId } from '../../data/hubs';
 import { formatDay, todayKey } from '../../data/dates';
 import { closeDay } from '../../data/stats';
 import type { WithId } from '../../data/useFirestore';
 import {
-  useDeliveries, useDeliveriesRange, useRiderDeliveries, deliveryToOrder, setDeliveryStatus, reassignDelivery, generateDeliveries,
+  useDeliveries, useDeliveriesRange, useRiderDeliveries, deliveryToOrder, setDeliveryStatus, reassignDelivery, generateDeliveries, ensureDeliveries,
   DB_STATUS, type DeliveryStatus, type DeliveryDoc,
 } from '../../data/deliveries';
 import { DateFilter, DELIVERY_PRESETS, lastDaysRange, recentRange, todayRange, type DateRange } from './DateFilter';
@@ -68,6 +68,14 @@ function useDeliveryActions(hubId: HubId, deliveryAgents: DeliveryAgent[], showT
 export function DeliveriesRangeShell({ hubId, deliveryAgents, showToast, defaultDays = 30, status, children }: Props) {
   const [range, setRange] = useState<DateRange>(defaultDays === 'recent' ? recentRange() : lastDaysRange(defaultDays));
   const q = useDeliveriesRange(hubId, range.from, range.to, status);
+  // Subscription drops are created here (customers cannot): make sure today's and tomorrow's
+  // exist, then reload the list if anything was added.
+  const { retry } = q;
+  useEffect(() => {
+    let alive = true;
+    ensureDeliveries(hubId).then((changed) => { if (alive && changed) retry(); });
+    return () => { alive = false; };
+  }, [hubId, range.from, range.to]); // eslint-disable-line react-hooks/exhaustive-deps
   const orders = useMemo(() => q.data.map(deliveryToOrder), [q.data]);
   const users = useMemo(() => usersFrom(q.data), [q.data]);
   const { onUpdateOrderStatus, onUpdateOrderDriver } = useDeliveryActions(hubId, deliveryAgents, showToast);
@@ -103,6 +111,7 @@ export function DeliveriesDayShell({ hubId, deliveryAgents, showToast, allowGene
   const [range, setRange] = useState<DateRange>(todayRange());
   const date = range.from;
   const q = useDeliveries(hubId, date);
+  useEffect(() => { ensureDeliveries(hubId, date); }, [hubId, date]); // live list shows new drops by itself
   const [generating, setGenerating] = useState(false);
   const orders = useMemo(() => q.data
     .slice()
