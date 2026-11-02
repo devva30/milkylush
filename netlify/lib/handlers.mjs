@@ -5,6 +5,8 @@
 // deployed behaviour from drifting apart, which has bitten this project before.
 
 import { listTemplates, templateSpec, sendTemplate, normalizePhone } from './getgabs.mjs';
+import { verifyHubAdmin } from './firestore.mjs';
+import { ALERT_HUBS } from './staffAlerts.mjs';
 
 const configured = () => Boolean(process.env.GETGABS_API_KEY);
 const campaign = () => process.env.GETGABS_CAMPAIGN_ID || '';
@@ -71,4 +73,43 @@ export async function handleBroadcast(payload) {
       results,
     },
   };
+}
+
+/**
+ * Reads or sets the WhatsApp number that a hub's order and subscription alerts go
+ * to. It lives in settings/staff_alerts, which the security rules deny to every
+ * browser, and is reached only through here after the caller's sign-in has been
+ * checked. config/ and hubs/<hub>/settings would have been simpler but are
+ * readable without signing in, which would publish a staff member's mobile.
+ */
+export async function handleStaffAlertNumber({ method, hub, phone, authorization }) {
+  if (!ALERT_HUBS.some((h) => h.id === hub)) return { status: 400, body: { error: 'Unknown hub' } };
+
+  const token = String(authorization || '').replace(/^Bearer\s+/i, '');
+  const auth = await verifyHubAdmin(token, hub);
+  if (!auth.ok) return { status: auth.status, body: { error: auth.error } };
+
+  const ref = auth.db.collection('settings').doc('staff_alerts');
+
+  if (method === 'GET') {
+    const stored = ((await ref.get()).data()?.phones ?? {})[hub] ?? '';
+    return { status: 200, body: { phone: stored } };
+  }
+
+  if (method !== 'POST') return { status: 405, body: { error: 'Use GET or POST' } };
+
+  const raw = String(phone ?? '').trim();
+  if (raw === '') {
+    // set() with merge treats a nested delete marker as removing that one field.
+    const { FieldValue } = await import('firebase-admin/firestore');
+    await ref.set({ phones: { [hub]: FieldValue.delete() } }, { merge: true });
+    return { status: 200, body: { phone: '' } };
+  }
+
+  const normalized = normalizePhone(raw);
+  if (!normalized) {
+    return { status: 400, body: { error: 'Enter a valid Indian mobile number, 10 digits.' } };
+  }
+  await ref.set({ phones: { [hub]: normalized } }, { merge: true });
+  return { status: 200, body: { phone: normalized } };
 }

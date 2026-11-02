@@ -6,7 +6,7 @@
 // production, and a Vite middleware in `npm run dev` (see vite.config.ts).
 
 import { collection, addDoc, doc, getDoc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { sendWelcomeEmail } from './emailService';
 
 export interface GetgabsTemplate {
@@ -72,7 +72,7 @@ export const AUTOMATION_LABELS: Record<AutomationKey, { title: string; descripti
   staffOrderAlert: {
     title: 'New order alert to hub staff',
     description:
-      "Sent to the hub's own staff number when a customer's order is placed and paid, with the items, total and address. Each hub's number is set in Netlify (STAFF_ALERT_PHONE_HOSUR, STAFF_ALERT_PHONE_BENGALURU); a hub with none gets no alerts.",
+      "Sent to the active hub's staff number (set in the card below) when a customer's order is placed and paid, with the items, total and address. A hub with no number gets no alerts.",
   },
   staffSubscriptionAlert: {
     title: 'New subscription alert to hub staff',
@@ -250,3 +250,23 @@ export const sendWelcomeToNewCustomer = async (
 
   return { sent: outcome.success, channel, reason: outcome.message };
 };
+
+
+// The staff alert number is private, so it is not read from Firestore directly.
+// These go through a server function that checks the signed-in admin's token.
+const staffAlertRequest = async (url: string, init: RequestInit = {}) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Sign in again to change this.');
+  const res = await fetch(url, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
+  });
+  if (!res.ok) throw new Error(await readError(res, 'Could not reach the alert settings'));
+  return (await res.json()) as { phone: string };
+};
+
+export const getStaffAlertNumber = async (hubId: string): Promise<string> =>
+  (await staffAlertRequest(`/api/staff-alert-number?hub=${encodeURIComponent(hubId)}`)).phone;
+
+export const saveStaffAlertNumber = async (hubId: string, phone: string): Promise<string> =>
+  (await staffAlertRequest('/api/staff-alert-number', { method: 'POST', body: JSON.stringify({ hub: hubId, phone }) })).phone;

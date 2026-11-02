@@ -1,22 +1,18 @@
 // Tells each hub's staff, on WhatsApp, when a customer places an order or starts
 // a subscription.
 //
-// Each hub's alerts go to its own number, held in a Netlify environment variable
-// (STAFF_ALERT_PHONE_HOSUR, STAFF_ALERT_PHONE_BENGALURU) rather than in
-// Firestore. config/ and hubs/*/settings are readable by anyone, signed in or
-// not, so a staff member's mobile number kept there would be public.
+// Each hub's alerts go to its own number, set from the admin panel and kept in
+// settings/staff_alerts. That document is denied to every browser by the
+// security rules and is read and written only through the staff-alert-number
+// function, after it has checked the caller is an admin of that hub. It is kept
+// there rather than in config/ or hubs/*/settings because those are readable
+// without signing in, which would publish a staff member's mobile number.
 //
-// A hub with no number set gets no alerts, and nothing is read from the
-// database at all until at least one number is configured.
+// A hub with no number set gets no alerts.
 
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
-import { orderValues, subscriptionValues } from '../lib/staffAlerts.mjs';
-
-const HUBS = [
-  { id: 'hosur', name: 'Hosur', phoneEnv: 'STAFF_ALERT_PHONE_HOSUR' },
-  { id: 'bengaluru', name: 'Bangalore', phoneEnv: 'STAFF_ALERT_PHONE_BENGALURU' },
-];
+import { orderValues, subscriptionValues, ALERT_HUBS } from '../lib/staffAlerts.mjs';
 
 // Only records created this recently are looked at. A customer's payment can
 // complete minutes after the record was created, so this has to be wider than
@@ -53,17 +49,20 @@ export default async () => {
     return;
   }
 
-  const hubs = HUBS.map((h) => ({ ...h, phone: normalizePhone(process.env[h.phoneEnv]) })).filter((h) => h.phone);
+  const db = await connect();
+  const stateRef = db.collection('settings').doc('staff_alerts');
+  const state = (await stateRef.get()).data() ?? {};
+
+  const hubs = ALERT_HUBS
+    .map((h) => ({ ...h, phone: normalizePhone(state.phones?.[h.id]) }))
+    .filter((h) => h.phone);
   if (hubs.length === 0) {
-    console.log('no staff alert numbers set (STAFF_ALERT_PHONE_HOSUR / STAFF_ALERT_PHONE_BENGALURU)');
+    console.log('no staff alert numbers set; add one in the admin panel');
     return;
   }
 
-  const db = await connect();
   const rules = await getAutomations(db);
   const since = new Date(Date.now() - WINDOW_HOURS * 3600 * 1000);
-  const stateRef = db.collection('settings').doc('staff_alerts');
-  const state = (await stateRef.get()).data() ?? {};
   let budget = MAX_PER_RUN;
 
   for (const kind of KINDS) {

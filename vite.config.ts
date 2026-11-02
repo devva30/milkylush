@@ -13,15 +13,15 @@ function whatsappDevApi(env: Record<string, string>): Plugin {
     configureServer(server) {
       // The handlers read credentials from process.env, exactly as they do on
       // Netlify. These come from .env and never reach the browser bundle.
-      for (const key of ['GETGABS_API_KEY', 'GETGABS_CAMPAIGN_ID', 'GETGABS_SENDER', 'GETGABS_WELCOME_TEMPLATE', 'GETGABS_HEADER_IMAGE']) {
+      for (const key of ['GETGABS_API_KEY', 'GETGABS_CAMPAIGN_ID', 'GETGABS_SENDER', 'GETGABS_WELCOME_TEMPLATE', 'GETGABS_HEADER_IMAGE', 'FIREBASE_SERVICE_ACCOUNT']) {
         if (env[key]) process.env[key] = env[key];
       }
 
       server.middlewares.use(async (req, res, next) => {
         const path = (req.url || '').split('?')[0];
-        if (path !== '/api/wa-templates' && path !== '/api/wa-broadcast') return next();
+        if (path !== '/api/wa-templates' && path !== '/api/wa-broadcast' && path !== '/api/staff-alert-number') return next();
 
-        const { handleTemplates, handleBroadcast } = await server.ssrLoadModule(
+        const { handleTemplates, handleBroadcast, handleStaffAlertNumber } = await server.ssrLoadModule(
           '/netlify/lib/handlers.mjs'
         );
 
@@ -34,6 +34,23 @@ function whatsappDevApi(env: Record<string, string>): Plugin {
         try {
           if (path === '/api/wa-templates') {
             const { status, body } = await handleTemplates();
+            return send(status, body);
+          }
+
+          if (path === '/api/staff-alert-number') {
+            let payload: any = null;
+            if (req.method === 'POST') {
+              const parts: Buffer[] = [];
+              for await (const chunk of req) parts.push(chunk as Buffer);
+              payload = JSON.parse(Buffer.concat(parts).toString() || '{}');
+            }
+            const hub = new URL(req.url || '', 'http://localhost').searchParams.get('hub') ?? payload?.hub;
+            const { status, body } = await handleStaffAlertNumber({
+              method: req.method,
+              hub,
+              phone: payload?.phone,
+              authorization: req.headers['authorization'],
+            });
             return send(status, body);
           }
 

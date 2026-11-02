@@ -10,12 +10,15 @@ import {
   FileText
 } from 'lucide-react';
 import type { UserProfile } from '../../types';
+import { HUBS, useHubContext } from '../../context/HubContext';
 import {
   fetchApprovedTemplates,
   broadcastTemplate,
   formatPhoneNumberForWhatsApp,
   getAutomations,
   saveAutomation,
+  getStaffAlertNumber,
+  saveStaffAlertNumber,
   AUTOMATION_LABELS,
   type GetgabsTemplate,
   type BroadcastResult,
@@ -32,6 +35,50 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   const [targetAudience, setTargetAudience] = useState<'all' | 'active_subs' | 'inactive' | 'custom'>('active_subs');
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
+
+  // The WhatsApp number the active hub's order and subscription alerts go to.
+  // Held server-side and private, so it is fetched and saved through the API.
+  const { selectedHubId } = useHubContext();
+  const [alertSaved, setAlertSaved] = useState('');
+  const [alertDraft, setAlertDraft] = useState('');
+  const [alertLoading, setAlertLoading] = useState(false);
+  const [alertSaving, setAlertSaving] = useState(false);
+  const [alertNote, setAlertNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Stored as 91XXXXXXXXXX; shown as the 10 digits people actually type.
+  const tenDigits = (p: string) => p.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+
+  useEffect(() => {
+    if (selectedTab !== 'whatsapp-campaigns') return;
+    setAlertLoading(true);
+    setAlertNote(null);
+    getStaffAlertNumber(selectedHubId)
+      .then((phone) => {
+        setAlertSaved(tenDigits(phone));
+        setAlertDraft(tenDigits(phone));
+      })
+      .catch((err) => setAlertNote({ ok: false, text: err?.message || 'Could not load the number' }))
+      .finally(() => setAlertLoading(false));
+  }, [selectedTab, selectedHubId]);
+
+  const alertDigits = tenDigits(alertDraft);
+  const alertValid = alertDigits === '' || /^[6-9]\d{9}$/.test(alertDigits);
+  const alertChanged = alertDigits !== alertSaved;
+
+  const handleSaveAlertNumber = async () => {
+    setAlertSaving(true);
+    setAlertNote(null);
+    try {
+      const saved = await saveStaffAlertNumber(selectedHubId, alertDigits);
+      setAlertSaved(tenDigits(saved));
+      setAlertDraft(tenDigits(saved));
+      setAlertNote({ ok: true, text: saved ? 'Saved' : 'Number removed, alerts for this hub are off' });
+    } catch (err: any) {
+      setAlertNote({ ok: false, text: err?.message || 'Could not save' });
+    } finally {
+      setAlertSaving(false);
+    }
+  };
 
   const [templates, setTemplates] = useState<GetgabsTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
@@ -347,6 +394,61 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px' }}>
             To change the wording, edit the template in Getgabs and wait for Meta approval, then pick it here.
+          </div>
+        </div>
+      )}
+
+      {selectedTab === 'whatsapp-campaigns' && (
+        <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem 1.5rem', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+            Staff alert number — {HUBS[selectedHubId]?.name || selectedHubId}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 12px 0' }}>
+            New order and new subscription alerts for this hub are sent to this WhatsApp number. Each hub has its own;
+            switch hubs at the top to set the other one. Leave it empty to turn alerts off for this hub.
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>+91</span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={alertDraft}
+              disabled={alertLoading || alertSaving}
+              placeholder="10-digit mobile number"
+              onChange={(e) => setAlertDraft(e.target.value)}
+              style={{ flex: '1 1 200px', maxWidth: '260px', padding: '0.55rem 0.7rem', borderRadius: '10px', border: `1px solid ${alertValid ? 'var(--border-color)' : '#B91C1C'}`, backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }}
+            />
+            <button
+              type="button"
+              onClick={handleSaveAlertNumber}
+              disabled={alertLoading || alertSaving || !alertChanged || !alertValid}
+              style={{
+                padding: '0.5rem 1.1rem',
+                borderRadius: '10px',
+                border: 'none',
+                backgroundColor: !alertChanged || !alertValid || alertSaving ? '#94A3B8' : '#047857',
+                color: '#FFFFFF',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                cursor: !alertChanged || !alertValid || alertSaving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {alertSaving ? 'Saving…' : 'Save'}
+            </button>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: alertNote ? (alertNote.ok ? '#047857' : '#B91C1C') : !alertValid ? '#B91C1C' : alertChanged ? '#92400E' : 'var(--text-muted)' }}>
+              {alertLoading
+                ? 'Loading…'
+                : alertNote
+                  ? alertNote.text
+                  : !alertValid
+                    ? 'Enter a 10-digit mobile number'
+                    : alertChanged
+                      ? 'Unsaved changes — click Save to apply'
+                      : alertSaved
+                        ? 'Alerts for this hub go to this number'
+                        : 'No number set — no alerts for this hub'}
+            </span>
           </div>
         </div>
       )}

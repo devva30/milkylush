@@ -9,6 +9,7 @@
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 /**
  * The whole service account JSON, as one line, in FIREBASE_SERVICE_ACCOUNT.
@@ -56,4 +57,36 @@ export async function getAutomations(db) {
   } catch {
     return DEFAULTS;
   }
+}
+
+/**
+ * The same test the Firestore security rules apply: an active staff member who is
+ * a super admin, or a hub admin of this particular hub. Riders and customers, who
+ * also hold valid sign-ins, are refused.
+ */
+export const canManageHub = (staff, hubId) =>
+  Boolean(
+    staff &&
+      staff.active === true &&
+      (staff.role === 'super_admin' ||
+        (staff.role === 'hub_admin' && Array.isArray(staff.hubIds) && staff.hubIds.includes(hubId)))
+  );
+
+/** Checks a Firebase sign-in token from the admin panel and that it may manage this hub. */
+export async function verifyHubAdmin(idToken, hubId) {
+  if (!idToken) return { ok: false, status: 401, error: 'Sign in to change this.' };
+
+  const db = await connect();
+  let uid;
+  try {
+    uid = (await getAuth(getApps()[0]).verifyIdToken(idToken)).uid;
+  } catch {
+    return { ok: false, status: 401, error: 'Your sign-in has expired. Sign in again.' };
+  }
+
+  const staff = (await db.collection('staff').doc(uid).get()).data();
+  if (!canManageHub(staff, hubId)) {
+    return { ok: false, status: 403, error: 'Only an admin of this hub can change its alert number.' };
+  }
+  return { ok: true, uid, db };
 }

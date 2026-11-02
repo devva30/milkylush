@@ -74,3 +74,9 @@ export function subscriptionValues(hubName, id, s) {
     id,
   ].map((v) => clean(v, 100));
 }
+
+/** The hubs that can have a staff alert number. Ids match hubs/{hubId} in Firestore. */
+export const ALERT_HUBS = [
+  { id: 'hosur', name: 'Hosur' },
+  { id: 'bengaluru', name: 'Bangalore' },
+];
