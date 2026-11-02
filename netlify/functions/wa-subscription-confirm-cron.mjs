@@ -20,6 +20,14 @@ const PENDING = 'pending';
 const alreadyHandled = (s) =>
   Boolean(s.confirmationWhatsappStatus) && s.confirmationWhatsappStatus !== PENDING;
 
+// A subscription is only confirmed once it is paid. The app creates it as
+// pending_payment before opening Razorpay, so a customer who backs out leaves a
+// record that was never paid for; confirming those told people their plan was
+// set up when it was not. Unpaid ones are left unmarked on purpose, so they are
+// confirmed later if the payment does go through and the status becomes active.
+const CONFIRMABLE = new Set(['active', 'paused']);
+const readyToConfirm = (s) => !alreadyHandled(s) && CONFIRMABLE.has(s.status);
+
 /** The template shows a readable date, not the ISO value stored in Firestore. */
 const formatDate = (value) => {
   const parts = String(value ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -72,7 +80,7 @@ export default async () => {
     return;
   }
 
-  const pending = subs.docs.filter((snap) => !alreadyHandled(snap.data())).slice(0, MAX_PER_RUN);
+  const pending = subs.docs.filter((snap) => readyToConfirm(snap.data())).slice(0, MAX_PER_RUN);
   if (pending.length === 0) {
     console.log('no new subscriptions to confirm');
     return;
@@ -106,7 +114,7 @@ export default async () => {
     // Claiming in a transaction stops a retried run confirming twice.
     const claimed = await db.runTransaction(async (tx) => {
       const fresh = await tx.get(snap.ref);
-      if (!fresh.exists || alreadyHandled(fresh.data())) return false;
+      if (!fresh.exists || !readyToConfirm(fresh.data())) return false;
       tx.update(snap.ref, { confirmationWhatsappStatus: 'sending' });
       return true;
     });

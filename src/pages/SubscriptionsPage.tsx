@@ -464,6 +464,11 @@ export default function SubscriptionsPage({
   const isLoading = subsQuery.loading;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  // Plans the customer never paid for, and cancelled ones, are kept (the recovery
+  // tool below needs them) but hidden unless asked for, so a customer who backed
+  // out of checkout does not appear as a subscriber. Opening a specific plan from
+  // elsewhere shows them, since that plan might be one of these.
+  const [showUnpaid, setShowUnpaid] = useState(Boolean(targetSubscriptionId));
   const [frequencyFilter, setFrequencyFilter] = useState('all');
   const [historyFilter, setHistoryFilter] = useState<string>('all');
 
@@ -857,11 +862,15 @@ export default function SubscriptionsPage({
   const isHosur = selectedHubId === 'hosur';
   const hubCodeName = isHosur ? 'Hosur Main Hub' : 'Bangalore Hub';
 
+  const isUnpaidOrCancelled = (status: unknown) => status === 'pending_payment' || status === 'cancelled';
+  const unpaidCount = (hubSubscriptions || []).filter((sub) => isUnpaidOrCancelled(sub.status)).length;
+
   // Dynamic Live Customer Registry from Firestore hubSubscriptions + users
   const customerRegistry = useMemo(() => {
     if (hubSubscriptions && hubSubscriptions.length > 0) {
       const userMap = new Map<string, any>();
       hubSubscriptions.forEach((sub) => {
+        if (!showUnpaid && isUnpaidOrCancelled(sub.status)) return;
         const uId = sub.userId || sub.id;
         const matchedUser = (users || []).find((u) => u.id === sub.userId || u.name === sub.customerName);
         const userName = sub.customerName || matchedUser?.name || 'Customer';
@@ -938,7 +947,7 @@ export default function SubscriptionsPage({
       return Array.from(userMap.values());
     }
     return [];
-  }, [hubSubscriptions, users, selectedHubId]);
+  }, [hubSubscriptions, users, selectedHubId, showUnpaid]);
 
   // Auto-open target customer subscription if deep-linked via prop
   useEffect(() => {
@@ -2691,6 +2700,24 @@ export default function SubscriptionsPage({
                 {s.label}
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={() => setShowUnpaid((v) => !v)}
+              title="Plans the customer never paid for, and cancelled plans"
+              style={{
+                padding: '0.38rem 0.75rem',
+                borderRadius: '8px',
+                border: `1px dashed ${showUnpaid ? '#D97706' : '#D1D5DB'}`,
+                backgroundColor: showUnpaid ? '#FEF3C7' : '#FFFFFF',
+                color: showUnpaid ? '#92400E' : '#6B7280',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+              }}
+            >
+              {showUnpaid ? 'Hide' : 'Show'} unpaid &amp; cancelled ({unpaidCount})
+            </button>
 
             <span style={{ color: '#E5E7EB', margin: '0 2px' }}>|</span>
 
