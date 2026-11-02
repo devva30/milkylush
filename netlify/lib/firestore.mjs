@@ -42,17 +42,17 @@ const DEFAULTS = {
   welcome: { enabled: true, template: process.env.GETGABS_WELCOME_TEMPLATE || 'milkylush_welcome' },
   subscriptionExpiry: { enabled: false, template: 'subscription_expiry_alert', daysBefore: 1 },
   subscriptionConfirmation: { enabled: false, template: 'subscription_confirmation' },
+  staffOrderAlert: { enabled: false, template: 'hub_new_order' },
+  staffSubscriptionAlert: { enabled: false, template: 'hub_new_subscription' },
 };
 
 /** Reads the automation rules the admin chose in the panel. */
 export async function getAutomations(db) {
   try {
     const stored = (await db.collection('config').doc('whatsapp_automations').get()).data() ?? {};
-    return {
-      welcome: { ...DEFAULTS.welcome, ...(stored.welcome ?? {}) },
-      subscriptionExpiry: { ...DEFAULTS.subscriptionExpiry, ...(stored.subscriptionExpiry ?? {}) },
-      subscriptionConfirmation: { ...DEFAULTS.subscriptionConfirmation, ...(stored.subscriptionConfirmation ?? {}) },
-    };
+    return Object.fromEntries(
+      Object.keys(DEFAULTS).map((key) => [key, { ...DEFAULTS[key], ...(stored[key] ?? {}) }])
+    );
   } catch {
     return DEFAULTS;
   }

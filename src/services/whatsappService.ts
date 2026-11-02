@@ -41,7 +41,12 @@ export const DEFAULT_WELCOME_TEMPLATE: string =
 // displayed automations as off while they were running.
 const AUTOMATIONS_DOC = ['config', 'whatsapp_automations'] as const;
 
-export type AutomationKey = 'welcome' | 'subscriptionExpiry' | 'subscriptionConfirmation';
+export type AutomationKey =
+  | 'welcome'
+  | 'subscriptionExpiry'
+  | 'subscriptionConfirmation'
+  | 'staffOrderAlert'
+  | 'staffSubscriptionAlert';
 
 export interface AutomationRule {
   enabled: boolean;
@@ -64,22 +69,33 @@ export const AUTOMATION_LABELS: Record<AutomationKey, { title: string; descripti
     title: 'New subscription confirmation',
     description: 'Sent once when a customer subscribes to a product, confirming the plan and its start date.',
   },
+  staffOrderAlert: {
+    title: 'New order alert to hub staff',
+    description:
+      "Sent to the hub's own staff number when a customer's order is placed and paid, with the items, total and address. Each hub's number is set in Netlify (STAFF_ALERT_PHONE_HOSUR, STAFF_ALERT_PHONE_BENGALURU); a hub with none gets no alerts.",
+  },
+  staffSubscriptionAlert: {
+    title: 'New subscription alert to hub staff',
+    description:
+      "Sent to the hub's own staff number when a customer's subscription is paid and goes active, with the plan, start date and amount.",
+  },
 };
 
 const DEFAULT_AUTOMATIONS: Record<AutomationKey, AutomationRule> = {
   welcome: { enabled: true, template: DEFAULT_WELCOME_TEMPLATE },
   subscriptionExpiry: { enabled: false, template: 'subscription_expiry_alert', daysBefore: 1 },
   subscriptionConfirmation: { enabled: false, template: 'subscription_confirmation' },
+  staffOrderAlert: { enabled: false, template: 'hub_new_order' },
+  staffSubscriptionAlert: { enabled: false, template: 'hub_new_subscription' },
 };
 
 export const getAutomations = async (): Promise<Record<AutomationKey, AutomationRule>> => {
   try {
     const stored = (await getDoc(doc(db, ...AUTOMATIONS_DOC))).data() ?? {};
-    return {
-      welcome: { ...DEFAULT_AUTOMATIONS.welcome, ...(stored.welcome ?? {}) },
-      subscriptionExpiry: { ...DEFAULT_AUTOMATIONS.subscriptionExpiry, ...(stored.subscriptionExpiry ?? {}) },
-      subscriptionConfirmation: { ...DEFAULT_AUTOMATIONS.subscriptionConfirmation, ...(stored.subscriptionConfirmation ?? {}) },
-    };
+    const keys = Object.keys(DEFAULT_AUTOMATIONS) as AutomationKey[];
+    return Object.fromEntries(
+      keys.map((key) => [key, { ...DEFAULT_AUTOMATIONS[key], ...(stored[key] ?? {}) }])
+    ) as Record<AutomationKey, AutomationRule>;
   } catch {
     return DEFAULT_AUTOMATIONS;
   }
