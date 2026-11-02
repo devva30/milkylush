@@ -10,6 +10,7 @@
 //
 // A hub with no number set gets no alerts.
 
+import { FieldValue } from 'firebase-admin/firestore';
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 import { orderValues, subscriptionValues, ALERT_HUBS } from '../lib/staffAlerts.mjs';
@@ -133,6 +134,17 @@ export default async () => {
 
       const result = await sendTemplate(filled, hub.phone, 'MilkyLush Team');
       budget--;
+
+      // Meta answers 132001 while a template is created but not yet approved. That
+      // is not this record's failure, and Getgabs already lists the template, so the
+      // earlier check for a missing one does not catch it. Release the claim so it is
+      // sent on a later run instead of being marked failed for good, and stop here:
+      // every other record would be refused in exactly the same way.
+      if (!result.success && /132001|does not exist in the translation/i.test(result.error ?? '')) {
+        await snap.ref.update({ staffAlertStatus: FieldValue.delete() });
+        console.warn(`${kind.key}: template ${rules[kind.rule].template} is not approved by Meta yet, will retry`);
+        break;
+      }
 
       await snap.ref.set(
         {
