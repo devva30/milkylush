@@ -9,7 +9,6 @@
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
 
 /**
  * The whole service account JSON, as one line, in FIREBASE_SERVICE_ACCOUNT.
@@ -72,18 +71,37 @@ export const canManageHub = (staff, hubId) =>
         (staff.role === 'hub_admin' && Array.isArray(staff.hubIds) && staff.hubIds.includes(hubId)))
   );
 
+// The web API key is public by design (it is in the browser bundle); it only
+// identifies the project to Google's own sign-in service.
+const WEB_API_KEY = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBLLmjVTiJ8uKlrSiy4A6yUjVbzgSqMR6g';
+
+/**
+ * Asks Google who a sign-in token belongs to. This deliberately does not use
+ * firebase-admin/auth: its jwks-rsa dependency require()s the ESM-only jose
+ * package, which crashes when Netlify ships node_modules unbundled. Every
+ * function that merely imported this file then failed to start, including the
+ * scheduled senders, and nothing was sent until it was removed. Google's lookup
+ * also rejects an expired or forged token, so nothing is lost by asking it.
+ */
+async function uidFromIdToken(idToken) {
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${WEB_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  });
+  if (!res.ok) return null;
+  const user = (await res.json())?.users?.[0];
+  return user && user.disabled !== true ? user.localId : null;
+}
+
 /** Checks a Firebase sign-in token from the admin panel and that it may manage this hub. */
 export async function verifyHubAdmin(idToken, hubId) {
   if (!idToken) return { ok: false, status: 401, error: 'Sign in to change this.' };
 
-  const db = await connect();
-  let uid;
-  try {
-    uid = (await getAuth(getApps()[0]).verifyIdToken(idToken)).uid;
-  } catch {
-    return { ok: false, status: 401, error: 'Your sign-in has expired. Sign in again.' };
-  }
+  const uid = await uidFromIdToken(idToken);
+  if (!uid) return { ok: false, status: 401, error: 'Your sign-in has expired. Sign in again.' };
 
+  const db = await connect();
   const staff = (await db.collection('staff').doc(uid).get()).data();
   if (!canManageHub(staff, hubId)) {
     return { ok: false, status: 403, error: 'Only an admin of this hub can change its alert number.' };
