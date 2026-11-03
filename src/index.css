@@ -1622,9 +1622,6 @@ body {
 
 /* Responsive Mobile Fixes to prevent header title overlap */
 @media (max-width: 768px) {
-  .header-page-title {
-    display: none !important;
-  }
   .header-search-box {
     display: none !important;
   }
@@ -1853,3 +1850,28 @@ button, input, select, textarea { font-family: inherit; }
 /* Small all-caps labels read wide and shouty; tighten them a little */
 th, [style*="text-transform: uppercase"], [style*="textTransform"] { letter-spacing: 0.03em; }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
+
+/* ===== Phones (including iPhone) ===== */
+html { -webkit-text-size-adjust: 100%; }
+body { overflow-x: hidden; }
+.header-left { min-width: 0; }
+.header-page-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 640px) {
+  .header-container { height: 60px !important; padding: 0 0.75rem !important; gap: 0.5rem; padding-top: env(safe-area-inset-top); }
+  .header-left { gap: 0.5rem !important; flex: 1 1 auto; }
+  .header-page-title { font-size: 1rem !important; }
+  .header-hub-pill { padding: 3px 9px !important; font-size: 0.72rem !important; flex-shrink: 0; }
+  .header-hub-pill svg { display: none; }
+  .header-actions { gap: 0.35rem !important; }
+  .header-refresh, .header-profile { display: none !important; }
+  .app-main-content { padding: 0.85rem !important; padding-bottom: calc(0.85rem + env(safe-area-inset-bottom)) !important; }
+  .sidenav { width: min(86vw, 300px) !important; padding-top: env(safe-area-inset-top); }
+}
+/* Wide tables scroll inside their own box instead of stretching the whole page */
+.table-scroll, .table-container, .admin-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+img, svg, video { max-width: 100%; }
+.sidenav { height: 100vh; height: 100dvh; }
+@media (max-width: 640px) { .header-install { display: none !important; } }
+@media (max-width: 1024px) {
+  .sidenav:not(.mobile-open) { box-shadow: none !important; visibility: hidden; }
+}

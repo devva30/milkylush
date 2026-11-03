@@ -123,7 +123,7 @@ export default function Header({
       zIndex: 90
     }}>
       {/* Left: Mobile Menu Trigger & Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+      <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
         <button 
           onClick={onToggleMobileSidebar}
           className="btn-icon mobile-menu-btn"
@@ -171,12 +171,13 @@ export default function Header({
       )}
 
       {/* Right: Theme Toggle, Notifications, Admin Profile Pill & Logout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
 
-        <InstallAppButton compact />
+        <span className="header-install" style={{ display: "flex" }}><InstallAppButton compact /></span>
 
         {/* Refresh Portal Data Button */}
         <button 
+          className="header-refresh"
           onClick={() => window.location.reload()}
           style={{
             display: 'flex',
@@ -264,7 +265,7 @@ export default function Header({
         </div>
 
         {/* Admin Profile Chip */}
-        <div style={{
+        <div className="header-profile" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -285,7 +286,7 @@ export default function Header({
           }}>
             {adminUsername.substring(0, 2).toUpperCase()}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+          <div className="header-profile-text" style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.1 }}>
               {adminUsername}
             </span>
