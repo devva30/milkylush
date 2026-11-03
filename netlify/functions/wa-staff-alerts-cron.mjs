@@ -20,8 +20,10 @@ import { orderValues, subscriptionValues, ALERT_HUBS } from '../lib/staffAlerts.
 // that, but every extra hour is re-read on every run.
 const WINDOW_HOURS = Number(process.env.STAFF_ALERT_WINDOW_HOURS) || 72;
 
-// Keeps one run inside Netlify's execution limit; the next run takes the rest.
-const MAX_PER_RUN = 10;
+// A scheduled function is stopped after 30 seconds and one send to Getgabs takes
+// about 3.5, so five per run is what fits. A run killed part-way leaves a record
+// claimed but never sent. The next run takes the rest.
+const MAX_PER_RUN = 5;
 
 const KINDS = [
   {

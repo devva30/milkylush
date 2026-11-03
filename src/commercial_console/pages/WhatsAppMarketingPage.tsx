@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   MessageSquare,
   Send,
@@ -11,9 +11,14 @@ import {
 } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import { HUBS, useHubContext } from '../../context/HubContext';
+import { analyseRows } from '../../utils/contactImport';
+import { loadContactFile, type LoadedSheet } from '../../utils/contactFile';
 import {
   fetchApprovedTemplates,
   broadcastTemplate,
+  fetchTemplateInfo,
+  estimateBroadcastMinutes,
+  BROADCAST_MAX_UPLOAD,
   formatPhoneNumberForWhatsApp,
   getAutomations,
   saveAutomation,
@@ -22,6 +27,8 @@ import {
   AUTOMATION_LABELS,
   type GetgabsTemplate,
   type BroadcastResult,
+  type BroadcastRecipient,
+  type TemplateInfo,
   type AutomationKey,
   type AutomationRule,
 } from '../../services/whatsappService';
@@ -32,7 +39,7 @@ interface WhatsAppMarketingPageProps {
 }
 
 export default function WhatsAppMarketingPage({ selectedTab, users = [] }: WhatsAppMarketingPageProps) {
-  const [targetAudience, setTargetAudience] = useState<'all' | 'active_subs' | 'inactive' | 'custom'>('active_subs');
+  const [targetAudience, setTargetAudience] = useState<'all' | 'active_subs' | 'inactive' | 'custom' | 'upload'>('active_subs');
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
 
@@ -88,6 +95,52 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [results, setResults] = useState<BroadcastResult[] | null>(null);
+  const [skipped, setSkipped] = useState(0);
+  const stopRequested = useRef(false);
+  const [stopping, setStopping] = useState(false);
+
+  // What the chosen template will need filled in, asked before anything is sent.
+  const [templateInfo, setTemplateInfo] = useState<TemplateInfo | null>(null);
+  const [templateInfoError, setTemplateInfoError] = useState('');
+
+  useEffect(() => {
+    setTemplateInfo(null);
+    setTemplateInfoError('');
+    if (!selectedTemplate) return;
+    let current = true;
+    fetchTemplateInfo(selectedTemplate)
+      .then((info) => { if (current) setTemplateInfo(info); })
+      .catch((err) => { if (current) setTemplateInfoError(err?.message || 'Could not check this template'); });
+    return () => { current = false; };
+  }, [selectedTemplate]);
+
+  // A contact list uploaded from a file. Held in memory for this one send, never saved.
+  const [upload, setUpload] = useState<LoadedSheet | null>(null);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadColumns, setUploadColumns] = useState<{ phone?: number; name?: number | null }>({});
+  const [consent, setConsent] = useState(false);
+  const imported = useMemo(() => (upload ? analyseRows(upload.rows, uploadColumns) : null), [upload, uploadColumns]);
+
+  const handleFileChosen = async (file: File | undefined) => {
+    setUploadError('');
+    setConsent(false);        // agreeing to message one list says nothing about the next
+    setUploadColumns({});
+    setResults(null);
+    if (!file) { setUpload(null); return; }
+    try {
+      setUpload(await loadContactFile(file));
+    } catch (err: any) {
+      setUpload(null);
+      setUploadError(err?.message || 'Could not read that file');
+    }
+  };
+
+  const columnLabel = (i: number) => {
+    const letter = i < 26 ? String.fromCharCode(65 + i) : `#${i + 1}`;
+    const heading = imported?.headers?.[i];
+    const sample = imported?.preview[imported.headers ? 1 : 0]?.[i];
+    return `${letter} — ${heading || (sample ? `e.g. ${sample.slice(0, 18)}` : 'empty')}`;
+  };
 
   // "saved" is what is live in Firestore; "drafts" is what the admin is editing.
   // Nothing takes effect until Save is pressed, so a half-typed value can never
@@ -154,6 +207,9 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   }, [reachable, customerSearch]);
 
   const recipients = useMemo(() => {
+    if (targetAudience === 'upload') {
+      return (imported?.contacts ?? []).map((c, i) => ({ id: `upload-${i}`, name: c.name, phone: c.phone }));
+    }
     const picked = new Set(pickedIds);
     return reachable
       .filter((r) => {
@@ -163,32 +219,43 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
         return true;
       })
       .map(({ id, name, phone }) => ({ id, name, phone }));
-  }, [reachable, targetAudience, pickedIds]);
+  }, [reachable, targetAudience, pickedIds, imported]);
 
   const togglePicked = (id: string) =>
     setPickedIds((current) =>
       current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
     );
 
-  const handleBroadcast = async () => {
-    if (!selectedTemplate || recipients.length === 0) return;
+  const overUploadLimit = targetAudience === 'upload' && recipients.length > BROADCAST_MAX_UPLOAD;
+  const templateBlocked = Boolean(templateInfo && templateInfo.bodyVariables > 1);
+  const canSend =
+    !sending &&
+    Boolean(selectedTemplate) &&
+    recipients.length > 0 &&
+    !templateBlocked &&
+    !overUploadLimit &&
+    (targetAudience !== 'upload' || consent);
 
-    const confirmed = window.confirm(
-      `Send the "${selectedTemplate}" template to ${recipients.length} customer(s) on WhatsApp?\n\n` +
-        `These are real messages and each one is chargeable.`
-    );
-    if (!confirmed) return;
+  const runBroadcast = async (list: BroadcastRecipient[], confirmText: string, keep: BroadcastResult[] = []) => {
+    if (!selectedTemplate || list.length === 0) return;
+    if (!window.confirm(confirmText)) return;
 
+    stopRequested.current = false;
+    setStopping(false);
     setSending(true);
     setResults(null);
-    setProgress({ done: 0, total: recipients.length });
+    setSkipped(0);
+    setProgress({ done: 0, total: list.length });
 
     try {
-      const outcome = await broadcastTemplate(selectedTemplate, recipients, (done, total) =>
-        setProgress({ done, total })
+      const outcome = await broadcastTemplate(
+        selectedTemplate,
+        list,
+        (done, total) => setProgress({ done, total }),
+        { shouldStop: () => stopRequested.current }
       );
-
-      setResults(outcome);
+      setResults([...keep, ...outcome]);
+      setSkipped(list.length - outcome.length);
     } catch (err: any) {
       setResults([
         {
@@ -199,11 +266,55 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
       ]);
     } finally {
       setSending(false);
+      setStopping(false);
     }
   };
 
+  const handleBroadcast = () =>
+    runBroadcast(
+      recipients,
+      targetAudience === 'upload'
+        ? `Send the "${selectedTemplate}" template to ${recipients.length} people from ${upload?.fileName ?? 'your file'}?\n\n` +
+            `These are real messages and each one is chargeable. It will take about ${estimateBroadcastMinutes(recipients.length)} minute(s), ` +
+            `and this tab must stay open until it finishes.`
+        : `Send the "${selectedTemplate}" template to ${recipients.length} customer(s) on WhatsApp?\n\n` +
+            `These are real messages and each one is chargeable.` +
+            (recipients.length > 15 ? `\n\nIt will take about ${estimateBroadcastMinutes(recipients.length)} minute(s); keep this tab open.` : '')
+    );
+
   const sentCount = results?.filter((r) => r.success).length ?? 0;
   const failedResults = results?.filter((r) => !r.success) ?? [];
+
+  const handleRetryFailed = () => {
+    const again = failedResults.filter((r) => r.recipient.phone !== '—').map((r) => r.recipient);
+    runBroadcast(
+      again,
+      `Send the "${selectedTemplate}" template again to the ${again.length} that failed?\n\nEach one is chargeable if it goes through.`,
+      (results ?? []).filter((r) => r.success)
+    );
+  };
+
+  const downloadResults = () => {
+    if (!results) return;
+    // A name or reason that begins with = + - or @ would run as a formula when the file
+    // is opened in Excel, and these come from an uploaded file, so defuse them.
+    const cell = (v: unknown) => {
+      let text = String(v ?? '');
+      if (/^[=+\-@]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const lines = [['Name', 'Phone', 'Result', 'Detail'].map(cell).join(',')];
+    for (const r of results) {
+      lines.push([r.recipient.name, r.recipient.phone, r.success ? 'sent' : 'failed', r.success ? '' : r.message].map(cell).join(','));
+    }
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `whatsapp-results-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Dynamic real-time Cohort Calculations derived from users array
   const dynamicCohorts = useMemo(() => {
@@ -465,6 +576,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>Approved WhatsApp Template</label>
                 <select
+                  data-testid="template-select"
                   value={selectedTemplate}
                   onChange={(e) => setSelectedTemplate(e.target.value)}
                   disabled={sending || loadingTemplates}
@@ -484,6 +596,27 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                 {templatesError && (
                   <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>{templatesError}</div>
                 )}
+                {templateInfoError && (
+                  <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>{templateInfoError}</div>
+                )}
+                {templateInfo && templateInfo.bodyVariables === 0 && (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    No variables: this is sent exactly as approved.
+                  </div>
+                )}
+                {templateInfo && templateInfo.bodyVariables === 1 && (
+                  <div style={{ fontSize: '0.75rem', color: '#92400E', marginTop: '6px', fontWeight: 600 }}>
+                    This template has one variable, which is filled with each person's name. Getgabs' example for it is
+                    “{templateInfo.examples[0]}”. Only use it if the message opens with something like “Hi {'{{1}}'},”.
+                  </div>
+                )}
+                {templateBlocked && templateInfo && (
+                  <div style={{ fontSize: '0.78rem', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>
+                    This template needs {templateInfo.bodyVariables} values filled in for every message, which a broadcast
+                    can't supply, so it can't be sent from here. Choose a template with no variables, or with only the
+                    person's name.
+                  </div>
+                )}
               </div>
 
               <div>
@@ -498,13 +631,145 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                   <option value="all">All Registered MilkyLush App Users</option>
                   <option value="inactive">Inactive / Paused Subscribers</option>
                   <option value="custom">Choose specific customers…</option>
+                  <option value="upload">Upload a list from a file (Excel or CSV)…</option>
                 </select>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                   {targetAudience === 'custom'
                     ? `${recipients.length} customer(s) selected.`
-                    : `${recipients.length} customer(s) in this segment have a valid WhatsApp number.`}
+                    : targetAudience === 'upload'
+                      ? imported
+                        ? `${recipients.length} people from your file.`
+                        : 'Choose a file below.'
+                      : `${recipients.length} customer(s) in this segment have a valid WhatsApp number.`}
                 </div>
               </div>
+
+              {targetAudience === 'upload' && (
+                <div style={{ border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', backgroundColor: 'var(--bg-main)' }}>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                    Upload an Excel (.xlsx) or CSV file with a column of mobile numbers and, if you have one, a column of
+                    names. The file is read in your browser and the numbers are used for this send only; they are not saved
+                    in MilkyLush. Indian mobile numbers only.
+                  </div>
+
+                  <input
+                    type="file"
+                    accept=".xlsx,.csv,.txt"
+                    data-testid="contact-file"
+                    disabled={sending}
+                    onChange={(e) => {
+                      handleFileChosen(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                    style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}
+                  />
+
+                  {uploadError && <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>{uploadError}</div>}
+
+                  {upload && imported && (
+                    <>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                        {upload.fileName}
+                        {upload.sheetName ? ` · sheet “${upload.sheetName}”` : ''} · {imported.rows} row(s)
+                      </div>
+
+                      {imported.phoneColumn < 0 ? (
+                        <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>
+                          No column of phone numbers was found. Check the file has 10-digit mobile numbers, or choose the
+                          phone column below.
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857' }}>
+                          {imported.contacts.length} ready to message
+                          {imported.duplicates > 0 && (
+                            <span style={{ color: '#92400E' }}> · {imported.duplicates} repeated number(s) removed</span>
+                          )}
+                          {imported.invalid > 0 && (
+                            <span style={{ color: '#B91C1C' }}>
+                              {' '}· {imported.invalid} skipped as not a valid Indian mobile number
+                              {imported.invalidSamples.length > 0 && ` (e.g. ${imported.invalidSamples.slice(0, 3).join(', ')})`}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '3px', flex: '1 1 180px' }}>
+                          Phone numbers are in
+                          <select
+                            data-testid="phone-column"
+                            value={imported.phoneColumn}
+                            disabled={sending}
+                            onChange={(e) => setUploadColumns((c) => ({ ...c, phone: Number(e.target.value) }))}
+                            style={{ padding: '0.45rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.78rem' }}
+                          >
+                            {imported.phoneColumn < 0 && <option value={-1}>Choose a column…</option>}
+                            {Array.from({ length: imported.columnCount }, (_, i) => (
+                              <option key={i} value={i}>{columnLabel(i)}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '3px', flex: '1 1 180px' }}>
+                          Names are in
+                          <select
+                            data-testid="name-column"
+                            value={imported.nameColumn ?? -1}
+                            disabled={sending}
+                            onChange={(e) => setUploadColumns((c) => ({ ...c, name: Number(e.target.value) < 0 ? null : Number(e.target.value) }))}
+                            style={{ padding: '0.45rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.78rem' }}
+                          >
+                            <option value={-1}>No names (use “Customer”)</option>
+                            {Array.from({ length: imported.columnCount }, (_, i) => (
+                              <option key={i} value={i}>{columnLabel(i)}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      {recipients.length > 0 && (
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          <div style={{ fontWeight: 700, marginBottom: '2px' }}>First few:</div>
+                          {recipients.slice(0, 5).map((r) => (
+                            <div key={r.id}>{r.name} · +{r.phone.slice(0, 2)} {r.phone.slice(2)}</div>
+                          ))}
+                          {recipients.length > 5 && <div>…and {recipients.length - 5} more</div>}
+                        </div>
+                      )}
+
+                      {overUploadLimit && (
+                        <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>
+                          That is {recipients.length} people, and one send is limited to {BROADCAST_MAX_UPLOAD}. Split the file
+                          into smaller ones, or use the Broadcast section in Getgabs for very large lists.
+                        </div>
+                      )}
+
+                      <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '0.76rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          data-testid="consent"
+                          checked={consent}
+                          disabled={sending}
+                          onChange={(e) => setConsent(e.target.checked)}
+                          style={{ marginTop: '2px' }}
+                        />
+                        <span>
+                          I confirm these people have agreed to receive WhatsApp messages from MilkyLush. Messaging people who
+                          haven't can get this WhatsApp number blocked or banned, and MilkyLush has no record of who has opted out.
+                        </span>
+                      </label>
+
+                      <button
+                        type="button"
+                        disabled={sending}
+                        onClick={() => { setUpload(null); setUploadColumns({}); setConsent(false); setResults(null); setUploadError(''); }}
+                        style={{ alignSelf: 'flex-start', padding: '0.35rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.74rem', fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer' }}
+                      >
+                        Remove this file
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
 
               {targetAudience === 'custom' && (
                 <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -566,17 +831,17 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
               <button
                 type="button"
                 onClick={handleBroadcast}
-                disabled={sending || !selectedTemplate || recipients.length === 0}
+                disabled={!canSend}
                 style={{
                   width: '100%',
                   padding: '0.75rem',
                   borderRadius: '12px',
-                  backgroundColor: sending || recipients.length === 0 ? '#94A3B8' : '#047857',
+                  backgroundColor: !canSend ? '#94A3B8' : '#047857',
                   color: '#FFFFFF',
                   border: 'none',
                   fontWeight: 800,
                   fontSize: '0.9rem',
-                  cursor: sending || recipients.length === 0 ? 'not-allowed' : 'pointer',
+                  cursor: !canSend ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -592,6 +857,23 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                 </span>
               </button>
 
+              {sending && (
+                <div style={{ padding: '0.7rem 0.85rem', borderRadius: '12px', border: '1px solid #FDE68A', backgroundColor: '#FFFBEB', fontSize: '0.76rem', color: '#92400E', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ flex: '1 1 200px' }}>
+                    Keep this tab open until it finishes: about {estimateBroadcastMinutes(progress.total)} minute(s) in total.
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="stop"
+                    disabled={stopping}
+                    onClick={() => { stopRequested.current = true; setStopping(true); }}
+                    style={{ padding: '0.35rem 0.9rem', borderRadius: '8px', border: 'none', backgroundColor: stopping ? '#94A3B8' : '#B91C1C', color: '#FFFFFF', fontSize: '0.74rem', fontWeight: 800, cursor: stopping ? 'not-allowed' : 'pointer' }}
+                  >
+                    {stopping ? 'Stopping after the current messages…' : 'Stop'}
+                  </button>
+                </div>
+              )}
+
               {results && (
                 <div style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
                   <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#047857', marginBottom: failedResults.length ? '8px' : 0 }}>
@@ -606,6 +888,31 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                   {failedResults.length > 8 && (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>…and {failedResults.length - 8} more</div>
                   )}
+                  {skipped > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 700, marginTop: '6px' }}>
+                      Stopped: {skipped} were not sent.
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    <button
+                      type="button"
+                      data-testid="download-results"
+                      onClick={downloadResults}
+                      style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Download results (CSV)
+                    </button>
+                    {failedResults.length > 0 && !sending && (
+                      <button
+                        type="button"
+                        data-testid="retry-failed"
+                        onClick={handleRetryFailed}
+                        style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        Retry the {failedResults.length} that failed
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

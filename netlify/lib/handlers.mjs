@@ -6,17 +6,55 @@
 
 import { listTemplates, templateSpec, sendTemplate, normalizePhone } from './getgabs.mjs';
 import { verifyHubAdmin } from './firestore.mjs';
-import { ALERT_HUBS } from './staffAlerts.mjs';
+import { ALERT_HUBS, clean } from './staffAlerts.mjs';
 
 const configured = () => Boolean(process.env.GETGABS_API_KEY);
 const campaign = () => process.env.GETGABS_CAMPAIGN_ID || '';
 
-// Netlify allows roughly 10s per function call. With 400ms of pacing between
-// sends, 10 recipients leaves headroom; the client splits larger audiences.
+// A synchronous Netlify function gets 60 seconds, and one send to Getgabs takes
+// about 3.5 seconds, so a call must stay well under 15 recipients. The panel sends
+// 5 at a time (about 20 seconds) and the cap here is only a backstop.
 export const MAX_PER_CALL = 10;
 
-export async function handleTemplates() {
+/** How many values a template's body expects, from Getgabs' definition of it. */
+export const bodyVariableCount = (spec) =>
+  (spec.template?.components ?? [])
+    .filter((c) => c.type?.toUpperCase() === 'BODY')
+    .reduce((n, c) => n + (c.parameters?.length ?? 0), 0);
+
+/** Getgabs' example value for each body variable, so a person can see what it stands for. */
+export const bodyExamples = (spec) =>
+  (spec.template?.components ?? [])
+    .filter((c) => c.type?.toUpperCase() === 'BODY')
+    .flatMap((c) => (c.parameters ?? []).map((p) => String(p.text ?? '')));
+
+/**
+ * A template with one body variable is assumed to open with the person's name
+ * ("Hi {{1}}, ..."). Without this the message went out carrying Getgabs' own
+ * example text, so everyone was greeted as whoever the example happened to be.
+ */
+const withName = (spec, name) => {
+  const copy = JSON.parse(JSON.stringify(spec));
+  for (const component of copy.template?.components ?? []) {
+    if (component.type?.toUpperCase() === 'BODY' && component.parameters?.length) {
+      component.parameters[0] = { type: 'text', text: name };
+    }
+  }
+  return copy;
+};
+
+export async function handleTemplates(name) {
   if (!configured()) return { status: 500, body: { error: 'GETGABS_API_KEY is not set on the server' } };
+
+  // One template's details, used to tell the person what it will need before sending.
+  if (name) {
+    try {
+      const spec = await templateSpec(name);
+      return { status: 200, body: { name, bodyVariables: bodyVariableCount(spec), examples: bodyExamples(spec) } };
+    } catch (err) {
+      return { status: 502, body: { error: err?.message || 'Could not load that template' } };
+    }
+  }
 
   try {
     return { status: 200, body: { templates: await listTemplates() } };
@@ -45,6 +83,19 @@ export async function handleBroadcast(payload) {
     return { status: 502, body: { error: err?.message || 'Unknown template' } };
   }
 
+  // A broadcast can supply the person's name and nothing else. Anything more would
+  // go out with Getgabs' example values in it, which is a message that is wrong
+  // for every recipient, so refuse rather than send it.
+  const variables = bodyVariableCount(spec);
+  if (variables > 1) {
+    return {
+      status: 400,
+      body: {
+        error: `"${templateName}" needs ${variables} values filled in for each message, which a broadcast cannot supply. Choose a template with no variables, or with just the customer's name.`,
+      },
+    };
+  }
+
   const results = [];
   let sentSoFar = 0;
 
@@ -57,12 +108,15 @@ export async function handleBroadcast(payload) {
       continue;
     }
 
-    // Pace the run. Firing a whole audience back to back trips Getgabs rate
-    // limiting, which answers 200 with a body carrying no message id.
+    // A short pause between sends, so a batch does not reach Getgabs as one burst.
     if (sentSoFar > 0) await new Promise((r) => setTimeout(r, 400));
     sentSoFar++;
 
-    results.push({ ...base, phone, ...(await sendTemplate(spec, phone, recipient?.name)) });
+    const name = clean(recipient?.name, 60);
+    const given = name === '-' ? 'Customer' : name;
+    const outgoing = variables === 1 ? withName(spec, given) : spec;
+
+    results.push({ ...base, phone, ...(await sendTemplate(outgoing, phone, given)) });
   }
 
   return {

@@ -10,8 +10,10 @@
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 
-// Keeps one run inside Netlify's execution limit; the rest wait for tomorrow.
-const MAX_PER_RUN = 25;
+// A scheduled function is stopped after 30 seconds and one send to Getgabs takes
+// about 3.5, so five per run is what fits. The reminder is for one calendar day, so
+// it runs hourly through the morning and each run takes the next five.
+const MAX_PER_RUN = 5;
 
 const startOfDay = (value) => {
   const d = value?.toDate ? value.toDate() : new Date(value);
@@ -129,4 +131,5 @@ export default async () => {
   }
 };
 
-export const config = { schedule: '30 3 * * *' };
+// 03:30 to 06:30 UTC, which is 09:00 to 12:00 IST.
+export const config = { schedule: '30 3-6 * * *' };

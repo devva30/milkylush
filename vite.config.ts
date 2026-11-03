@@ -33,7 +33,8 @@ function whatsappDevApi(env: Record<string, string>): Plugin {
 
         try {
           if (path === '/api/wa-templates') {
-            const { status, body } = await handleTemplates();
+            const name = new URL(req.url || '', 'http://localhost').searchParams.get('name') || undefined;
+            const { status, body } = await handleTemplates(name);
             return send(status, body);
           }
 

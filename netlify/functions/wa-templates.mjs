@@ -5,7 +5,8 @@ export default async (req) => {
   const auth = requireTrustedOrigin(req);
   if (!auth.ok) return json({ error: auth.error }, auth.status);
 
-  const { status, body } = await handleTemplates();
+  const name = new URL(req.url).searchParams.get('name') || undefined;
+  const { status, body } = await handleTemplates(name);
   return json(body, status);
 };
 

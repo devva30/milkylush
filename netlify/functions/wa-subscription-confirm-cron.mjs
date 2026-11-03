@@ -9,8 +9,10 @@
 import { connect, getAutomations } from '../lib/firestore.mjs';
 import { templateSpec, sendTemplate, normalizePhone, apiKey, campaignId } from '../lib/getgabs.mjs';
 
-// Keeps one run inside Netlify's execution limit; the next run takes the rest.
-const MAX_PER_RUN = 10;
+// A scheduled function is stopped after 30 seconds and one send to Getgabs takes
+// about 3.5, so five per run is what fits. A run killed part-way leaves a record
+// claimed but never sent. The next run takes the rest.
+const MAX_PER_RUN = 5;
 
 const SETTINGS_PATH = ['settings', 'subscription_confirmation'];
 

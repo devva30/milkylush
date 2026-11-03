@@ -142,47 +142,115 @@ export const fetchApprovedTemplates = async (): Promise<GetgabsTemplate[]> => {
   return (await res.json()).templates ?? [];
 };
 
-// Matches MAX_PER_CALL in netlify/lib/handlers.mjs so a larger audience is
-// split across calls rather than timing out a single function invocation.
-const BATCH_SIZE = 10;
+// A send to Getgabs takes about 3.5 seconds, so five per call is roughly 20, which
+// sits comfortably inside the 60 seconds Netlify allows a function (see
+// netlify/lib/handlers.mjs). Three calls run at once, each for different people,
+// which turns a long list from a wait of an hour into one of minutes.
+export const BROADCAST_BATCH_SIZE = 5;
+export const BROADCAST_CONCURRENCY = 3;
+
+/** The most contacts one uploaded list may hold. Longer lists belong in Getgabs' own Broadcast. */
+export const BROADCAST_MAX_UPLOAD = 500;
+
+/** A rough wait, so a person knows how long to leave the tab open. */
+export const estimateBroadcastMinutes = (count: number): number => {
+  const calls = Math.ceil(count / BROADCAST_BATCH_SIZE);
+  const rounds = Math.ceil(calls / BROADCAST_CONCURRENCY);
+  return Math.max(1, Math.round((rounds * 20) / 60));
+};
+
+export interface TemplateInfo {
+  name: string;
+  /** How many values the template's body expects. */
+  bodyVariables: number;
+  /** Getgabs' example for each, so a person can see what a variable stands for. */
+  examples: string[];
+}
+
+/** What a template will need, asked before anything is sent. */
+export const fetchTemplateInfo = async (name: string): Promise<TemplateInfo> => {
+  const res = await fetch(`/api/wa-templates?name=${encodeURIComponent(name)}`);
+  if (!res.ok) throw new Error(await readError(res, 'Could not load that template'));
+  return res.json();
+};
+
+export interface BroadcastOptions {
+  /** Checked before each call starts; once it returns true the rest is not sent. */
+  shouldStop?: () => boolean;
+}
 
 /**
  * Sends one approved template to many recipients. Sending happens server-side,
  * so the Getgabs API key is never exposed to the browser.
+ *
+ * Returns a result for every recipient that was attempted. If stopped part-way,
+ * the ones never reached are simply absent, so the caller can say how many.
  */
 export const broadcastTemplate = async (
   templateName: string,
   recipients: BroadcastRecipient[],
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  options: BroadcastOptions = {}
 ): Promise<BroadcastResult[]> => {
-  const results: BroadcastResult[] = [];
-
-  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-    const batch = recipients.slice(i, i + BATCH_SIZE);
-
-    const res = await fetch('/api/wa-broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ templateName, recipients: batch }),
-    });
-    if (!res.ok) throw new Error(await readError(res, 'Broadcast failed'));
-
-    for (const row of (await res.json()).results ?? []) {
-      results.push({
-        recipient: { id: row.id, name: row.name, phone: row.phone },
-        success: row.success,
-        message: row.success ? row.messageId : row.error,
-      });
-    }
-
-    onProgress?.(Math.min(i + BATCH_SIZE, recipients.length), recipients.length);
+  const batches: BroadcastRecipient[][] = [];
+  for (let i = 0; i < recipients.length; i += BROADCAST_BATCH_SIZE) {
+    batches.push(recipients.slice(i, i + BROADCAST_BATCH_SIZE));
   }
+
+  const byBatch: BroadcastResult[][] = [];
+  let nextBatch = 0;
+  let done = 0;
+  let refusal: Error | null = null;
+
+  const failedBatch = (batch: BroadcastRecipient[], message: string): BroadcastResult[] =>
+    batch.map((recipient) => ({ recipient, success: false, message }));
+
+  const worker = async () => {
+    while (!refusal) {
+      if (options.shouldStop?.()) return;
+      const index = nextBatch++;
+      if (index >= batches.length) return;
+      const batch = batches[index];
+
+      try {
+        const res = await fetch('/api/wa-broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ templateName, recipients: batch }),
+        });
+
+        if (!res.ok) {
+          const message = await readError(res, 'Broadcast failed');
+          // A refusal of the request itself (an unusable template) applies to every
+          // call alike, so stop. Anything else is a failure of this call only.
+          if (res.status >= 400 && res.status < 500) { refusal = new Error(message); return; }
+          byBatch[index] = failedBatch(batch, message);
+        } else {
+          byBatch[index] = ((await res.json()).results ?? []).map((row: any) => ({
+            recipient: { id: row.id, name: row.name, phone: row.phone },
+            success: row.success,
+            message: row.success ? row.messageId : row.error,
+          }));
+        }
+      } catch (err: any) {
+        byBatch[index] = failedBatch(batch, err?.message || 'Network error');
+      }
+
+      done += batch.length;
+      onProgress?.(done, recipients.length);
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(BROADCAST_CONCURRENCY, batches.length) }, worker));
+
+  const results = byBatch.flat();
+  if (refusal && results.length === 0) throw refusal;
 
   try {
     await addDoc(collection(db, 'whatsapp_notifications'), {
       templateName,
       trigger: 'admin_broadcast',
-      recipientCount: recipients.length,
+      recipientCount: results.length,
       sentCount: results.filter((r) => r.success).length,
       failedCount: results.filter((r) => !r.success).length,
       dispatchedAt: new Date().toISOString(),
