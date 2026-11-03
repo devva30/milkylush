@@ -102,10 +102,10 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
       
       {/* Header Bar */}
       <div>
-        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
           MILKYLUSH PORTAL • SYSTEM SETTINGS
         </div>
-        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
+        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: '2px 0 0 0' }}>
           System Settings &amp; Hub Integrations
         </h2>
       </div>
@@ -132,7 +132,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
             borderRadius: '50%',
             backgroundColor: '#044E35',
             color: '#FFFFFF',
-            fontWeight: 800,
+            fontWeight: 700,
             fontSize: '2rem',
             display: 'flex',
             alignItems: 'center',
@@ -143,10 +143,10 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
           </div>
 
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 700, color: '#111827', margin: 0 }}>
               {adminProfile.email}
             </h3>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 12px', borderRadius: '12px', marginTop: '6px', display: 'inline-block' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 12px', borderRadius: '12px', marginTop: '6px', display: 'inline-block' }}>
               {adminProfile.role}
             </span>
           </div>
@@ -154,18 +154,18 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
           {/* Profile Metadata List */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.85rem', textAlign: 'left', borderTop: '1px solid #F3F4F6', paddingTop: '1rem', fontSize: '0.82rem' }}>
             <div>
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>EMAIL ADDRESS</div>
-              <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px' }}>{adminProfile.email}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>EMAIL ADDRESS</div>
+              <div style={{ fontWeight: 600, color: '#111827', marginTop: '2px' }}>{adminProfile.email}</div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>SECURITY LEVEL</div>
-              <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px' }}>{adminProfile.securityLevel}</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>SECURITY LEVEL</div>
+              <div style={{ fontWeight: 600, color: '#111827', marginTop: '2px' }}>{adminProfile.securityLevel}</div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>REAL-TIME CONNECTION</div>
-              <div style={{ fontWeight: 700, color: '#059669', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>REAL-TIME CONNECTION</div>
+              <div style={{ fontWeight: 600, color: '#059669', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }}></span>
                 {adminProfile.connectionStatus}
               </div>
@@ -181,7 +181,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
               backgroundColor: '#FFFFFF',
               color: '#111827',
               border: '1px solid #D1D5DB',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',
@@ -206,7 +206,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
         }}>
           {/* Theme Preference */}
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 600, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Settings size={18} style={{ color: '#047857' }} /> Theme Preferences
             </h3>
             <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
@@ -214,7 +214,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
             </p>
 
             <div style={{ marginTop: '1rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', marginBottom: '8px' }}>Color Mode</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', marginBottom: '8px' }}>Color Mode</div>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button
                   type="button"
@@ -228,7 +228,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                     border: theme === 'light' ? 'none' : '1px solid #D1D5DB',
                     backgroundColor: theme === 'light' ? '#044E35' : '#FFFFFF',
                     color: theme === 'light' ? '#FFFFFF' : '#374151',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: 'pointer'
                   }}
@@ -248,7 +248,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                     border: theme === 'dark' ? 'none' : '1px solid #D1D5DB',
                     backgroundColor: theme === 'dark' ? '#044E35' : '#FFFFFF',
                     color: theme === 'dark' ? '#FFFFFF' : '#374151',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: 'pointer'
                   }}
@@ -263,16 +263,16 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
 
           {/* System Integrity */}
           <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '0.95rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '0.95rem', fontWeight: 700, color: '#111827', margin: 0 }}>
               System Integrity
             </h4>
             
             <div style={{ backgroundColor: '#F9FAFB', borderRadius: '12px', padding: '1rem', border: '1px solid #E5E7EB', marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#111827' }}>Automatic Database Backups</div>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#111827' }}>Automatic Database Backups</div>
                 <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '2px' }}>Hourly synchronization active</div>
               </div>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '4px 10px', borderRadius: '10px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', backgroundColor: '#ECFDF5', padding: '4px 10px', borderRadius: '10px' }}>
                 ENABLED
               </span>
             </div>
@@ -284,7 +284,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', border: '1px solid #E5E7EB' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Key size={20} style={{ color: '#047857' }} /> Razorpay Payment Key Configuration
             </h3>
             <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
@@ -302,7 +302,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
                 fontSize: '0.8rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 boxShadow: '0 2px 6px rgba(4,120,87,0.2)',
               }}
             >
@@ -341,19 +341,19 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                   {/* Hub Header & Status Badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.6rem' }}>
                     <MapPin size={18} color="#047857" />
-                    <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111827' }}>{hubDisplayName}</span>
+                    <span style={{ fontWeight: 700, fontSize: '1rem', color: '#111827' }}>{hubDisplayName}</span>
                     {isSelected && (
-                      <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '8px', color: '#047857', backgroundColor: '#D1FAE5' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', color: '#047857', backgroundColor: '#D1FAE5' }}>
                         ACTIVE SELECTION
                       </span>
                     )}
                     
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#374151', cursor: busy ? 'wait' : 'pointer', marginLeft: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600, color: '#374151', cursor: busy ? 'wait' : 'pointer', marginLeft: '8px' }}>
                       <input type="checkbox" checked={draft.enabled} disabled={busy} onChange={(e) => editHubKey(hubId, { enabled: e.target.checked })} />
                       Accept Razorpay Payments
                     </label>
 
-                    <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 800, padding: '3px 12px', borderRadius: '12px', color: live.enabled && liveKeyId ? '#047857' : '#92400E', backgroundColor: live.enabled && liveKeyId ? '#ECFDF5' : '#FEF3C7' }}>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 700, padding: '3px 12px', borderRadius: '12px', color: live.enabled && liveKeyId ? '#047857' : '#92400E', backgroundColor: live.enabled && liveKeyId ? '#ECFDF5' : '#FEF3C7' }}>
                       {liveKeyId ? (live.enabled ? 'ONLINE & READY' : 'KEY SET, OFF') : 'NOT CONFIGURED'}
                     </span>
                   </div>
@@ -361,13 +361,13 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                   {/* Razorpay Key ID Field */}
                   <div style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>
                         Razorpay Key ID ({hubDisplayName})
                       </label>
                       <button
                         type="button"
                         onClick={() => toggleShowKey(`rzp_${hubId}`)}
-                        style={{ background: 'none', border: 'none', color: '#047857', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'none', border: 'none', color: '#047857', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         {isKeyVisible ? <EyeOff size={14} /> : <Eye size={14} />}
                         {isKeyVisible ? 'Hide Key' : 'Reveal Key'}
@@ -399,11 +399,11 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                       type="button"
                       onClick={() => handleSaveRazorpay(hubId)}
                       disabled={busy || !changed || !check.ok}
-                      style={{ padding: '0.55rem 1.25rem', borderRadius: '10px', border: 'none', backgroundColor: !changed || !check.ok ? '#94A3B8' : '#047857', color: '#FFFFFF', fontSize: '0.82rem', fontWeight: 800, cursor: busy || !changed || !check.ok ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{ padding: '0.55rem 1.25rem', borderRadius: '10px', border: 'none', backgroundColor: !changed || !check.ok ? '#94A3B8' : '#047857', color: '#FFFFFF', fontSize: '0.82rem', fontWeight: 700, cursor: busy || !changed || !check.ok ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
                       <Save size={15} /> {busy ? 'Saving Key…' : 'Save Razorpay Key'}
                     </button>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: !check.ok ? '#B91C1C' : changed ? '#D97706' : '#6B7280' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: !check.ok ? '#B91C1C' : changed ? '#D97706' : '#6B7280' }}>
                       {!check.ok ? check.note : changed ? 'Unsaved key changes — click Save to apply to mobile app' : check.note || 'Key active & synced to app'}
                     </span>
                   </div>
@@ -439,13 +439,13 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
             boxShadow: 'var(--shadow-lg)',
             textAlign: 'left'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
               Edit Admin Profile
             </h3>
 
             <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Admin Name
                 </label>
                 <input
@@ -457,7 +457,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Admin Email
                 </label>
                 <input
@@ -469,7 +469,7 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   New Password (optional)
                 </label>
                 <input
@@ -485,13 +485,13 @@ export default function SettingsPage({ theme, onToggleTheme, showToast }: Settin
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Save Profile
                 </button>

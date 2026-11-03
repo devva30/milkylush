@@ -167,12 +167,12 @@ export default function ServiceAreasPage({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: 0 }}>
               Service Area &amp; Hub Map
             </h2>
             <span style={{
               fontSize: '0.78rem',
-              fontWeight: 700,
+              fontWeight: 600,
               color: isHosur ? '#059669' : '#0284C7',
               backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE',
               border: `1px solid ${isHosur ? '#A7F3D0' : '#BAE6FD'}`,
@@ -198,7 +198,7 @@ export default function ServiceAreasPage({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <MapIcon size={22} style={{ color: isHosur ? '#047857' : '#0284C7' }} />
             <div>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.15rem', margin: 0, color: '#111827' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.15rem', margin: 0, color: '#111827' }}>
                 {isHosur ? 'Hosur Sector Boundary Outline Map' : 'Bangalore Electronic City Hub Radius Map'}
               </h3>
               <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>
@@ -211,21 +211,21 @@ export default function ServiceAreasPage({
             <button
               onClick={() => setZoomLevel(prev => Math.min(prev + 1, 18))}
               title="Zoom In"
-              style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 700 }}
+              style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}
             >
               <ZoomIn size={15} /> Zoom In
             </button>
             <button
               onClick={() => setZoomLevel(prev => Math.max(prev - 1, 8))}
               title="Zoom Out"
-              style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 700 }}
+              style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}
             >
               <ZoomOut size={15} /> Zoom Out
             </button>
             <button
               onClick={() => setZoomLevel(isHosur ? 12 : 13)}
               title="Recenter"
-              style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', border: `1px solid ${isHosur ? '#047857' : '#0284C7'}`, backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE', color: isHosur ? '#047857' : '#0284C7', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 700 }}
+              style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', border: `1px solid ${isHosur ? '#047857' : '#0284C7'}`, backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE', color: isHosur ? '#047857' : '#0284C7', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}
             >
               <RefreshCw size={14} /> Reset View
             </button>
@@ -254,7 +254,7 @@ export default function ServiceAreasPage({
             borderRadius: '24px',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
             fontSize: '0.82rem',
-            fontWeight: 800,
+            fontWeight: 700,
             color: '#111827',
             display: 'flex',
             alignItems: 'center',
@@ -274,7 +274,7 @@ export default function ServiceAreasPage({
             padding: '8px 16px',
             borderRadius: '12px',
             fontSize: '0.78rem',
-            fontWeight: 700,
+            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
@@ -288,7 +288,7 @@ export default function ServiceAreasPage({
         <div style={{ backgroundColor: '#F9FAFB', padding: '1rem 1.25rem', borderRadius: '12px', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: isHosur ? '#047857' : '#0284C7' }}></div>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827' }}>Hub Center GPS: {latNum}, {lngNum}</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#111827' }}>Hub Center GPS: {latNum}, {lngNum}</span>
           </div>
 
           <div style={{ fontSize: '0.8rem', color: '#4B5563' }}>
@@ -304,28 +304,28 @@ export default function ServiceAreasPage({
       <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.15rem', margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.15rem', margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Building size={20} style={{ color: isHosur ? '#047857' : '#0284C7' }} /> Edit Active Hub Operations
           </h3>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isHosur ? '#059669' : '#0284C7', backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE', padding: '4px 12px', borderRadius: '10px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isHosur ? '#059669' : '#0284C7', backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE', padding: '4px 12px', borderRadius: '10px' }}>
             {isHosur ? 'Hosur Sector 1 & 2' : 'Electronic City Phase 1 & 2'}
           </span>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
           <div>
-            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>HUB NAME / TITLE</label>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>HUB NAME / TITLE</label>
             <input
               type="text"
               value={hubTitle}
               readOnly
-              style={{ width: '100%', padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', color: '#111827', fontSize: '0.88rem', fontWeight: 700, marginTop: '4px', outline: 'none' }}
+              style={{ width: '100%', padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', color: '#111827', fontSize: '0.88rem', fontWeight: 600, marginTop: '4px', outline: 'none' }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>CITY</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>CITY</label>
               <input
                 type="text"
                 value={hubCity}
@@ -335,7 +335,7 @@ export default function ServiceAreasPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>STATE</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>STATE</label>
               <input
                 type="text"
                 value={hubState}
@@ -346,7 +346,7 @@ export default function ServiceAreasPage({
           </div>
 
           <div>
-            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>OPERATIONAL STREET ADDRESS</label>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>OPERATIONAL STREET ADDRESS</label>
             <input
               type="text"
               value={address}
@@ -357,7 +357,7 @@ export default function ServiceAreasPage({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>HUB LATITUDE</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>HUB LATITUDE</label>
               <input
                 type="text"
                 value={lat}
@@ -367,7 +367,7 @@ export default function ServiceAreasPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>HUB LONGITUDE</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>HUB LONGITUDE</label>
               <input
                 type="text"
                 value={lng}
@@ -377,13 +377,13 @@ export default function ServiceAreasPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.72rem', fontWeight: 800, color: isHosur ? '#047857' : '#0284C7', textTransform: 'uppercase' }}>MAXIMUM DELIVERY RADIUS (KM)</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: isHosur ? '#047857' : '#0284C7', textTransform: 'uppercase' }}>MAXIMUM DELIVERY RADIUS (KM)</label>
               <input
                 type="text"
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
                 placeholder="e.g. 15.0"
-                style={{ width: '100%', padding: '0.7rem 0.9rem', borderRadius: '10px', border: `2px solid ${isHosur ? '#047857' : '#0284C7'}`, backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE', color: isHosur ? '#047857' : '#0284C7', fontSize: '0.95rem', fontWeight: 800, marginTop: '4px', outline: 'none' }}
+                style={{ width: '100%', padding: '0.7rem 0.9rem', borderRadius: '10px', border: `2px solid ${isHosur ? '#047857' : '#0284C7'}`, backgroundColor: isHosur ? '#ECFDF5' : '#E0F2FE', color: isHosur ? '#047857' : '#0284C7', fontSize: '0.95rem', fontWeight: 700, marginTop: '4px', outline: 'none' }}
               />
             </div>
           </div>
@@ -397,7 +397,7 @@ export default function ServiceAreasPage({
                 onChange={(e) => setIsActive(e.target.checked)}
                 style={{ width: '18px', height: '18px', accentColor: isHosur ? '#047857' : '#0284C7' }}
               />
-              <label htmlFor="activeHubCheck" style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
+              <label htmlFor="activeHubCheck" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}>
                 Active Operational Hub Branch
               </label>
             </div>
@@ -409,7 +409,7 @@ export default function ServiceAreasPage({
                 opacity: saving ? 0.7 : 1,
                 padding: '0.85rem 1.75rem',
                 fontSize: '0.92rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

@@ -212,10 +212,10 @@ export default function FarmerProcurementPage({
         }}
       >
         <div>
-          <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800, opacity: 0.9 }}>
+          <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, opacity: 0.9 }}>
             FARMER MILK PROCUREMENT &amp; RATE CHART • {hubTitle.toUpperCase()}
           </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 4px', fontFamily: "'Poppins', sans-serif" }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, margin: '4px 0 4px', fontFamily: "var(--font-body)" }}>
             Raw Milk Purchases &amp; Farmer Settlements
           </h1>
           <p style={{ fontSize: '0.85rem', margin: 0, opacity: 0.9 }}>
@@ -234,7 +234,7 @@ export default function FarmerProcurementPage({
               backgroundColor: '#ECFDF5',
               color: '#166534',
               fontSize: '0.85rem',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -255,7 +255,7 @@ export default function FarmerProcurementPage({
               backgroundColor: '#FFFFFF',
               color: '#166534',
               fontSize: '0.85rem',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -274,7 +274,7 @@ export default function FarmerProcurementPage({
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B' }}>
                 Partner Farmers &amp; Dairy Sellers Directory ({displayFarmers.length} Registered)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#64748B' }}>Realtime Firestore collection: farmers</div>
@@ -283,7 +283,7 @@ export default function FarmerProcurementPage({
             <button
               type="button"
               onClick={() => setIsAddFarmerModalOpen(true)}
-              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#166534', color: '#FFFFFF', border: 'none', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#166534', color: '#FFFFFF', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Plus size={16} />
               <span>Register Farmer</span>
@@ -293,24 +293,24 @@ export default function FarmerProcurementPage({
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>FARMER CODE</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>FARMER NAME</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>PHONE NUMBER</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>VILLAGE / HUB</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>DAILY MILK SUPPLY</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>STATUS</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>FARMER CODE</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>FARMER NAME</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>PHONE NUMBER</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>VILLAGE / HUB</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>DAILY MILK SUPPLY</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>STATUS</th>
               </tr>
             </thead>
             <tbody>
               {displayFarmers.map((f) => (
                 <tr key={f.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#166534' }}>{f.code}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{f.name}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{f.code}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{f.name}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{f.phone}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{f.village}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{f.dailySupplyLiters} Liters / day</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#166534' }}>{f.dailySupplyLiters} Liters / day</td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                    <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '4px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>
+                    <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '4px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>
                       ACTIVE
                     </span>
                   </td>
@@ -323,14 +323,14 @@ export default function FarmerProcurementPage({
 
       {selectedTab === 'milk-purchase' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Raw Milk Procurement Entry &amp; Quality Fat/SNF Test
           </div>
 
           <form onSubmit={handleSaveMilkPurchase}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Select Farmer</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Select Farmer</label>
                 <select
                   value={selectedFarmerId}
                   onChange={(e) => setSelectedFarmerId(e.target.value)}
@@ -343,7 +343,7 @@ export default function FarmerProcurementPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Quantity (Liters)</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Quantity (Liters)</label>
                 <input
                   type="number"
                   value={milkLiters}
@@ -353,7 +353,7 @@ export default function FarmerProcurementPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Fat %</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Fat %</label>
                 <input
                   type="number"
                   step="0.1"
@@ -364,7 +364,7 @@ export default function FarmerProcurementPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>SNF %</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>SNF %</label>
                 <input
                   type="number"
                   step="0.1"
@@ -378,15 +378,15 @@ export default function FarmerProcurementPage({
             {/* Calculated Realtime Payout Box */}
             <div style={{ backgroundColor: '#ECFDF5', padding: '1.25rem', borderRadius: '14px', border: '1px solid #A7F3D0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857' }}>QUALITY CALCULATED RATE</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#166534' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#047857' }}>QUALITY CALCULATED RATE</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#166534' }}>
                   ₹{currentRate.toFixed(2)} / Liter
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857' }}>TOTAL FARMER PAYOUT</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#166534' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#047857' }}>TOTAL FARMER PAYOUT</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#166534' }}>
                   ₹{currentTotalPayout.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </div>
               </div>
@@ -394,7 +394,7 @@ export default function FarmerProcurementPage({
 
             <button
               type="submit"
-              style={{ width: '100%', marginTop: '1.25rem', padding: '0.75rem', borderRadius: '12px', backgroundColor: '#166534', color: '#FFFFFF', border: 'none', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}
+              style={{ width: '100%', marginTop: '1.25rem', padding: '0.75rem', borderRadius: '12px', backgroundColor: '#166534', color: '#FFFFFF', border: 'none', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
             >
               Submit Raw Milk Procurement Entry to Firestore
             </button>
@@ -404,30 +404,30 @@ export default function FarmerProcurementPage({
 
       {selectedTab === 'purchase-reports' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Milk Purchase Ledger ({displayProcurements.length} Transactions)
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>DATE</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>FARMER</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>QUANTITY (L)</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>FAT / SNF %</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>RATE / L</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>TOTAL PAYOUT</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>DATE</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>FARMER</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>QUANTITY (L)</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>FAT / SNF %</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>RATE / L</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>TOTAL PAYOUT</th>
               </tr>
             </thead>
             <tbody>
               {displayProcurements.map((p) => (
                 <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B', fontWeight: 600 }}>{formatDay(p.date)}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{p.farmerName} ({p.farmerCode})</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#166534' }}>{p.quantityLiters} L</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{p.farmerName} ({p.farmerCode})</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{p.quantityLiters} L</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>Fat {p.fatPercent}% | SNF {p.snfPercent}%</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>₹{p.ratePerLiter}</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>₹{p.totalPayout.toLocaleString()}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>₹{p.ratePerLiter}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#166534' }}>₹{p.totalPayout.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -439,17 +439,17 @@ export default function FarmerProcurementPage({
 
       {selectedTab === 'collection-persons' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Milk Procurement Collection Staff Directory
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>STAFF NAME</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>ASSIGNED ROUTE</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>PHONE NUMBER</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>DAILY MILK COLLECTED</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>STAFF NAME</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>ASSIGNED ROUTE</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>PHONE NUMBER</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>DAILY MILK COLLECTED</th>
               </tr>
             </thead>
             <tbody>
@@ -459,10 +459,10 @@ export default function FarmerProcurementPage({
               {[...collectors
 ].map((c) => (
                 <tr key={c.name} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{c.name}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{c.name}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{c.route}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{c.phone}</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>{c.qty}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{c.qty}</td>
                 </tr>
               ))}
             </tbody>
@@ -472,18 +472,18 @@ export default function FarmerProcurementPage({
 
       {selectedTab === 'rate-chart' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Quality Milk Purchase Rate Matrix (Fat % &amp; SNF %)
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'center' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569' }}>
-                <th style={{ padding: '0.75rem', fontWeight: 800, textAlign: 'left' }}>FAT % \ SNF %</th>
-                <th style={{ padding: '0.75rem', fontWeight: 800 }}>8.0% SNF</th>
-                <th style={{ padding: '0.75rem', fontWeight: 800 }}>8.3% SNF</th>
-                <th style={{ padding: '0.75rem', fontWeight: 800 }}>8.5% SNF</th>
-                <th style={{ padding: '0.75rem', fontWeight: 800 }}>8.8% SNF</th>
+                <th style={{ padding: '0.75rem', fontWeight: 700, textAlign: 'left' }}>FAT % \ SNF %</th>
+                <th style={{ padding: '0.75rem', fontWeight: 700 }}>8.0% SNF</th>
+                <th style={{ padding: '0.75rem', fontWeight: 700 }}>8.3% SNF</th>
+                <th style={{ padding: '0.75rem', fontWeight: 700 }}>8.5% SNF</th>
+                <th style={{ padding: '0.75rem', fontWeight: 700 }}>8.8% SNF</th>
               </tr>
             </thead>
             <tbody>
@@ -494,11 +494,11 @@ export default function FarmerProcurementPage({
                 { fat: '5.0% FAT', r1: 41.5, r2: 42.5, r3: 43.0, r4: 44.0 },
               ].map((row) => (
                 <tr key={row.fat} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 800, color: '#166534', textAlign: 'left' }}>{row.fat}</td>
-                  <td style={{ padding: '0.75rem', fontWeight: 700 }}>₹{row.r1.toFixed(1)}</td>
-                  <td style={{ padding: '0.75rem', fontWeight: 700 }}>₹{row.r2.toFixed(1)}</td>
-                  <td style={{ padding: '0.75rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5' }}>₹{row.r3.toFixed(1)}</td>
-                  <td style={{ padding: '0.75rem', fontWeight: 700 }}>₹{row.r4.toFixed(1)}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: 700, color: '#166534', textAlign: 'left' }}>{row.fat}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: 600 }}>₹{row.r1.toFixed(1)}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: 600 }}>₹{row.r2.toFixed(1)}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: 700, color: '#059669', backgroundColor: '#ECFDF5' }}>₹{row.r3.toFixed(1)}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: 600 }}>₹{row.r4.toFixed(1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -508,44 +508,44 @@ export default function FarmerProcurementPage({
 
       {selectedTab === 'farmer-payments' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Farmer Payout Transaction &amp; Settlement Log
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>TRANSACTION ID</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>FARMER</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>PAYMENT METHOD</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>STATUS</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>AMOUNT PAID</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>TRANSACTION ID</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>FARMER</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>PAYMENT METHOD</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>STATUS</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>AMOUNT PAID</th>
               </tr>
             </thead>
             <tbody>
               {displayFarmers.filter((f) => dues[f.id]).map((f) => (
                 <tr key={`due-${f.id}`} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#D97706' }}>{dues[f.id].count} unpaid purchase(s)</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{f.name} ({f.code})</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#D97706' }}>{dues[f.id].count} unpaid purchase(s)</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{f.name} ({f.code})</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{f.bankAccount ? `A/c ${f.bankAccount}` : '—'}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>
                     <button type="button" disabled={busy} onClick={() => handlePayFarmer(f.id, f.name)}
-                      style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem', border: '1px solid #FDE68A', cursor: 'pointer' }}>
+                      style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 700, fontSize: '0.75rem', border: '1px solid #FDE68A', cursor: 'pointer' }}>
                       PENDING · Mark paid
                     </button>
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#D97706' }}>₹{(dues[f.id].amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>₹{(dues[f.id].amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
               {payments.data.map((p) => (
                 <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#166534' }}>{p.paidAt ? formatDateTime(p.paidAt) : '—'}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{p.farmerName} ({p.farmerId})</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{p.paidAt ? formatDateTime(p.paidAt) : '—'}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{p.farmerName} ({p.farmerId})</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{p.method}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>
-                    <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem' }}>SETTLED</span>
+                    <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '3px 8px', borderRadius: '8px', fontWeight: 700, fontSize: '0.75rem' }}>SETTLED</span>
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>₹{(p.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#166534' }}>₹{(p.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
               {payments.data.length === 0 && Object.keys(dues).length === 0 && (
@@ -561,7 +561,7 @@ export default function FarmerProcurementPage({
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
           <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.75rem', width: '100%', maxWidth: '480px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#166534' }}>Register New Partner Farmer</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#166534' }}>Register New Partner Farmer</div>
               <button type="button" onClick={() => setIsAddFarmerModalOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#64748B' }}>
                 <X size={20} />
               </button>
@@ -569,33 +569,33 @@ export default function FarmerProcurementPage({
 
             <form onSubmit={handleSaveFarmer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Farmer Code</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Farmer Code</label>
                 <input type="text" value={farmerCode} readOnly onChange={(e) => setFarmerCode(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Farmer Full Name</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Farmer Full Name</label>
                 <input type="text" placeholder="e.g. Ramesh Gowda" value={farmerName} onChange={(e) => setFarmerName(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Phone Number</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Phone Number</label>
                 <input type="text" placeholder="10-digit mobile number" value={farmerPhone} onChange={(e) => setFarmerPhone(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Village / Center</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Village / Center</label>
                 <input type="text" value={farmerVillage} onChange={(e) => setFarmerVillage(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Expected Daily Supply (Liters)</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Expected Daily Supply (Liters)</label>
                 <input type="number" value={dailySupply} onChange={(e) => setDailySupply(e.target.value)} style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }} />
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setIsAddFarmerModalOpen(false)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', border: 'none', backgroundColor: '#166534', color: '#FFFFFF', fontWeight: 800, cursor: 'pointer' }}>Save Farmer</button>
+                <button type="button" onClick={() => setIsAddFarmerModalOpen(false)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', border: 'none', backgroundColor: '#166534', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}>Save Farmer</button>
               </div>
             </form>
           </div>

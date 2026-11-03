@@ -128,10 +128,10 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, color: '#1E3A8A', margin: 0 }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, color: '#1E3A8A', margin: 0 }}>
                 ⏳ Upcoming Prepaid Subscriptions Console
               </h3>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#0284C7', backgroundColor: '#DBEAFE', padding: '2px 8px', borderRadius: '10px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284C7', backgroundColor: '#DBEAFE', padding: '2px 8px', borderRadius: '10px' }}>
                 Strict Future Start Dates Only
               </span>
             </div>
@@ -141,7 +141,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#1E40AF', fontWeight: 700, backgroundColor: '#DBEAFE', padding: '6px 12px', borderRadius: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#1E40AF', fontWeight: 600, backgroundColor: '#DBEAFE', padding: '6px 12px', borderRadius: '10px' }}>
           <Clock size={15} /> System Date: <strong>{formatDay(today)}</strong>
         </div>
       </div>
@@ -160,10 +160,10 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             TOTAL UPCOMING STARTS
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {totalUpcoming}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -182,10 +182,10 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             STARTING NEXT 7 DAYS
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {startingNext7Days}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -204,10 +204,10 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             UPCOMING PREPAID REVENUE
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             ₹{totalPrepaidRevenue.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -226,10 +226,10 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             AVG PREPAID VALUE
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#9333EA', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#9333EA', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             ₹{avgPrepaidAmount.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -258,7 +258,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                 border: '1px solid var(--border-color)',
                 backgroundColor: timeframeFilter === t.id ? '#047857' : 'var(--bg-main)',
                 color: timeframeFilter === t.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -283,7 +283,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                 border: '1px solid var(--border-color)',
                 backgroundColor: frequencyFilter === f.id ? '#0284C7' : 'var(--bg-main)',
                 color: frequencyFilter === f.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -344,7 +344,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                         borderRadius: '50%',
                         animation: 'spinPrepaid 0.8s linear infinite'
                       }} />
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#047857' }}>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#047857' }}>
                         Syncing &amp; Fetching Upcoming Prepaid Subscriptions...
                       </div>
                       <style>{`@keyframes spinPrepaid { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
@@ -366,27 +366,27 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                   return (
                     <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem' }}>
                           {s.userName || (s as any).customerName || (s as any).name || 'Customer'}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '1px' }}>
                           🕒 Subscribed: {formatSubscribedTime(s)}
                         </div>
-                        <div style={{ fontSize: '0.73rem', color: '#047857', fontWeight: 700, marginTop: '2px' }}>{s.id}</div>
+                        <div style={{ fontSize: '0.73rem', color: '#047857', fontWeight: 600, marginTop: '2px' }}>{s.id}</div>
                       </td>
                       
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.85rem' }}>{s.productName || s.product?.name}</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>{s.productName || s.product?.name}</div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Qty: {s.quantity} unit(s)</div>
                       </td>
 
-                      <td style={{ padding: '0.85rem 1rem', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      <td style={{ padding: '0.85rem 1rem', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <Calendar size={14} style={{ color: '#047857' }} />
                           <span>{formatDateLabel(s.startDate)}</span>
                         </div>
                         {isSkipped && (
-                          <div style={{ fontSize: '0.71rem', fontWeight: 800, color: '#D97706', marginTop: '3px', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', padding: '2px 6px', borderRadius: '6px', width: 'fit-content' }}>
+                          <div style={{ fontSize: '0.71rem', fontWeight: 700, color: '#D97706', marginTop: '3px', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', padding: '2px 6px', borderRadius: '6px', width: 'fit-content' }}>
                             ⏸️ Start Skipped (Dispatch: {formatDateLabel(effectiveStartKey(s))})
                           </div>
                         )}
@@ -395,7 +395,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <span style={{
                           fontSize: '0.74rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           color: daysToGo <= 7 ? '#D97706' : '#0284C7',
                           backgroundColor: daysToGo <= 7 ? '#FEF3C7' : '#EFF6FF',
                           border: daysToGo <= 7 ? '1px solid #FDE68A' : '1px solid #BFDBFE',
@@ -413,7 +413,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                         {s.frequency}
                       </td>
 
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#047857', fontSize: '0.9rem' }}>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#047857', fontSize: '0.9rem' }}>
                         ₹{s.prepaidAmountPaid?.toLocaleString('en-IN') || '2,700'}
                       </td>
 
@@ -426,7 +426,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                             backgroundColor: '#047857',
                             color: '#FFFFFF',
                             border: 'none',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontSize: '0.76rem',
                             cursor: 'pointer'
                           }}
@@ -470,10 +470,10 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               <div>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                   Upcoming Prepaid Details
                 </h3>
-                <span style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 700 }}>ID: {selectedSub.id}</span>
+                <span style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 600 }}>ID: {selectedSub.id}</span>
               </div>
               <button 
                 onClick={() => setSelectedSub(null)}
@@ -485,19 +485,19 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.85rem', color: 'var(--text-main)' }}>
               <div><strong>Customer Name:</strong> {selectedSub.userName || (selectedSub as any).customerName || (selectedSub as any).name || 'Customer'}</div>
-              <div><strong>Subscribed On (Time):</strong> <span style={{ color: '#047857', fontWeight: 800 }}>{formatSubscribedTime(selectedSub)}</span></div>
+              <div><strong>Subscribed On (Time):</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{formatSubscribedTime(selectedSub)}</span></div>
               <div><strong>Product Plan:</strong> {selectedSub.productName || selectedSub.product?.name}</div>
               <div><strong>Delivery Address:</strong> {selectedSub.deliveryAddress || 'Hosur Main Route'}</div>
-              <div><strong>Prepaid Advance Paid:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>₹{selectedSub.prepaidAmountPaid}</span></div>
+              <div><strong>Prepaid Advance Paid:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>₹{selectedSub.prepaidAmountPaid}</span></div>
               <div><strong>Scheduled Start Date:</strong> {formatDateLabel(selectedSub.startDate)}</div>
               <div><strong>Calculated End Date:</strong> {selectedSub.endDate ? formatDateLabel(selectedSub.endDate) : '—'}</div>
               <div><strong>Frequency:</strong> {selectedSub.frequency}</div>
-              <div><strong>Countdown:</strong> <span style={{ color: '#D97706', fontWeight: 800 }}>Starts in {getDaysUntilStart(selectedSub)} days</span></div>
+              <div><strong>Countdown:</strong> <span style={{ color: '#D97706', fontWeight: 700 }}>Starts in {getDaysUntilStart(selectedSub)} days</span></div>
               
               {/* Skip & Vacation History Log */}
               {selectedSub.historyLog && selectedSub.historyLog.length > 0 && (
                 <div style={{ marginTop: '0.5rem', backgroundColor: '#FEF3C7', padding: '0.85rem', borderRadius: '12px', border: '1px solid #FDE68A' }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#B45309', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#B45309', marginBottom: '6px' }}>
                     📋 Customer Activity &amp; Skip Log:
                   </div>
                   {selectedSub.historyLog.map((log: any, idx: number) => (
@@ -510,7 +510,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
               
               {/* Modify Start Date Input Box */}
               <div style={{ marginTop: '0.5rem', backgroundColor: '#F8FAFC', padding: '0.85rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
                   📅 Select New Scheduled Start Date:
                 </label>
                 <input
@@ -523,7 +523,7 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                     borderRadius: '8px',
                     border: '1px solid #CBD5E1',
                     fontSize: '0.85rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#0F172A'
                   }}
                 />
@@ -558,13 +558,13 @@ export default function PrepaidSubscriptionsPage({ showToast }: PrepaidSubscript
                     setIsSavingDate(false);
                   }
                 }}
-                style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, border: 'none', cursor: 'pointer' }}
               >
                 {isSavingDate ? 'Saving Date...' : 'Save New Start Date'}
               </button>
               <button
                 onClick={() => { setSelectedSub(null); setEditingStartDate(''); }}
-                style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 700, border: '1px solid var(--border-color)', cursor: 'pointer' }}
+                style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 600, border: '1px solid var(--border-color)', cursor: 'pointer' }}
               >
                 Close
               </button>

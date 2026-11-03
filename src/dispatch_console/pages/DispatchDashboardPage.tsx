@@ -73,15 +73,15 @@ export default function DispatchDashboardPage({
     : 'Hosur Central Hub';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Header Card */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {hubLabel} • Dispatch Center
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827', margin: '2px 0 0 0' }}>
             🚚 Delivery Fleet Overview
           </h2>
         </div>
@@ -91,7 +91,7 @@ export default function DispatchDashboardPage({
           style={{
             backgroundColor: '#044E35',
             color: '#FFFFFF',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             padding: '0.6rem 1.2rem',
             borderRadius: '10px',
@@ -111,32 +111,32 @@ export default function DispatchDashboardPage({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
         
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.05em' }}>TOTAL DISPATCHES TODAY</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E293B', marginTop: '6px' }}>{totalDispatchesToday}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>TOTAL DISPATCHES TODAY</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#1E293B', marginTop: '6px' }}>{totalDispatchesToday}</div>
           <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>Scheduled for route</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#D97706', letterSpacing: '0.05em' }}>PENDING DISPATCH</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#D97706', marginTop: '6px' }}>{pendingDispatch}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#D97706', letterSpacing: '0.05em' }}>PENDING DISPATCH</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#D97706', marginTop: '6px' }}>{pendingDispatch}</div>
           <div style={{ fontSize: '0.75rem', color: '#B45309', marginTop: '2px' }}>Awaiting driver route</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#2563EB', letterSpacing: '0.05em' }}>OUT FOR DELIVERY</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#2563EB', marginTop: '6px' }}>{outForDelivery}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#2563EB', letterSpacing: '0.05em' }}>OUT FOR DELIVERY</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#2563EB', marginTop: '6px' }}>{outForDelivery}</div>
           <div style={{ fontSize: '0.75rem', color: '#1D4ED8', marginTop: '2px' }}>Live on-road packages</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', letterSpacing: '0.05em' }}>DELIVERED TODAY</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#059669', marginTop: '6px' }}>{deliveredToday}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#059669', letterSpacing: '0.05em' }}>DELIVERED TODAY</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#059669', marginTop: '6px' }}>{deliveredToday}</div>
           <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '2px' }}>Successful dropoffs</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.05em' }}>ACTIVE RIDERS ONLINE</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#047857', marginTop: '6px' }}>{onlineRiders} <span style={{ fontSize: '1rem', color: '#94A3B8' }}>/ {totalRiders}</span></div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>ACTIVE RIDERS ONLINE</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#047857', marginTop: '6px' }}>{onlineRiders} <span style={{ fontSize: '1rem', color: '#94A3B8' }}>/ {totalRiders}</span></div>
           <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>Drivers on duty status</div>
         </div>
 
@@ -147,7 +147,7 @@ export default function DispatchDashboardPage({
         
         {/* Left Card: Today's Delivery Stages Bar Chart */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
             Today's Delivery Stages
           </h3>
 
@@ -155,28 +155,28 @@ export default function DispatchDashboardPage({
             
             {/* Packed / Pending Bar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#D97706' }}>{pendingDispatch}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#D97706' }}>{pendingDispatch}</span>
               <div style={{ width: '60px', height: `${Math.max((pendingDispatch / (totalDispatchesToday || 1)) * 130, 12)}px`, backgroundColor: '#D97706', borderRadius: '6px 6px 0 0', transition: 'all 0.3s ease' }} />
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Packed</span>
             </div>
 
             {/* Out for Delivery Bar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#2563EB' }}>{outForDelivery}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2563EB' }}>{outForDelivery}</span>
               <div style={{ width: '60px', height: `${Math.max((outForDelivery / (totalDispatchesToday || 1)) * 130, 12)}px`, backgroundColor: '#2563EB', borderRadius: '6px 6px 0 0', transition: 'all 0.3s ease' }} />
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Out for Delivery</span>
             </div>
 
             {/* Delivered Bar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#059669' }}>{deliveredToday}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#059669' }}>{deliveredToday}</span>
               <div style={{ width: '60px', height: `${Math.max((deliveredToday / (totalDispatchesToday || 1)) * 130, 12)}px`, backgroundColor: '#059669', borderRadius: '6px 6px 0 0', transition: 'all 0.3s ease' }} />
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Delivered</span>
             </div>
 
             {/* Cancelled Bar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#EF4444' }}>{cancelledToday}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#EF4444' }}>{cancelledToday}</span>
               <div style={{ width: '60px', height: `${Math.max((cancelledToday / (totalDispatchesToday || 1)) * 130, 12)}px`, backgroundColor: '#EF4444', borderRadius: '6px 6px 0 0', transition: 'all 0.3s ease' }} />
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Cancelled</span>
             </div>
@@ -186,15 +186,15 @@ export default function DispatchDashboardPage({
 
         {/* Right Card: Riders Fleet Availability Gauge */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.5rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
             Riders Fleet Availability
           </h3>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '1.5rem 0' }}>
             <div style={{ position: 'relative', width: '130px', height: '130px', borderRadius: '50%', border: '12px solid #E2E8F0', borderTopColor: '#059669', borderRightColor: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'rotate(-45deg)' }}>
               <div style={{ transform: 'rotate(45deg)', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E293B' }}>{onlinePercentage}%</div>
-                <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700 }}>Online</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1E293B' }}>{onlinePercentage}%</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>Online</div>
               </div>
             </div>
           </div>
@@ -219,7 +219,7 @@ export default function DispatchDashboardPage({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
             <BarChart3 size={18} style={{ color: '#047857' }} />
             <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                 Hourly Dispatch Velocity
               </h4>
               <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Peak morning milk dropoff time slots</div>
@@ -229,7 +229,7 @@ export default function DispatchDashboardPage({
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '140px', paddingTop: '1rem', borderBottom: '1px solid #F1F5F9' }}>
             {slots.map((sl, i) => (
               <div key={sl.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: sl.text }}>{slotPct[i]}%</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: sl.text }}>{slotPct[i]}%</span>
                 <div style={{ width: '28px', height: `${Math.max(4, Math.round(slotPct[i] * 0.9))}px`, backgroundColor: sl.color, borderRadius: '4px 4px 0 0' }} />
                 <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>{sl.label}</span>
               </div>
@@ -245,7 +245,7 @@ export default function DispatchDashboardPage({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <TrendingUp size={18} style={{ color: '#047857' }} />
             <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                 Fulfillment Success Rate
               </h4>
               <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Successful doorstep fulfillment ratio</div>
@@ -253,11 +253,11 @@ export default function DispatchDashboardPage({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', margin: '1rem 0' }}>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#047857', lineHeight: 1 }}>
+            <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#047857', lineHeight: 1 }}>
               {successRate}%
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 700 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 600 }}>
                 <span style={{ color: '#059669' }}>Fulfilled ({deliveredToday})</span>
                 <span style={{ color: '#EF4444' }}>Failed / cancelled ({failedToday + cancelledToday})</span>
               </div>
@@ -277,7 +277,7 @@ export default function DispatchDashboardPage({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
             <MapPin size={18} style={{ color: '#047857' }} />
             <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                 Zone Distribution
               </h4>
               <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Today's drops by rider route ({selectedHubId.includes('bengaluru') ? 'Bengaluru' : 'Hosur'})</div>
@@ -290,7 +290,7 @@ export default function DispatchDashboardPage({
             )}
             {routeShares.map((r, i) => (
               <div key={r.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>
                   <span>{r.name} ({r.n} drops)</span>
                   <span>{r.pct}%</span>
                 </div>
@@ -307,10 +307,10 @@ export default function DispatchDashboardPage({
       {/* Bottom Table: Active Rider Roster with View Profile Button */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
         <div style={{ padding: '1.15rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ShieldCheck size={18} style={{ color: '#047857' }} /> Active Rider Roster
           </h3>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
             Hub: {selectedHubId}
           </span>
         </div>
@@ -336,7 +336,7 @@ export default function DispatchDashboardPage({
               ) : (
                 displayAgents.map(agent => (
                   <tr key={agent.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700, color: '#1E293B', fontSize: '0.85rem' }}>
+                    <td style={{ padding: '0.85rem 1.25rem', fontWeight: 600, color: '#1E293B', fontSize: '0.85rem' }}>
                       {agent.name}
                     </td>
                     <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.82rem', color: '#475569' }}>
@@ -348,7 +348,7 @@ export default function DispatchDashboardPage({
                     <td style={{ padding: '0.85rem 1.25rem' }}>
                       <span style={{
                         fontSize: '0.72rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         padding: '3px 10px',
                         borderRadius: '12px',
                         backgroundColor: agent.isOnline ? '#DCFCE7' : '#F1F5F9',
@@ -367,7 +367,7 @@ export default function DispatchDashboardPage({
                           borderRadius: '6px',
                           cursor: 'pointer',
                           fontSize: '0.75rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: '#334155',
                           display: 'inline-flex',
                           alignItems: 'center',

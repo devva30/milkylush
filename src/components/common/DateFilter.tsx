@@ -36,7 +36,7 @@ const pill = (active: boolean): React.CSSProperties => ({
   border: '1px solid var(--border-color)',
   backgroundColor: active ? '#0284C7' : 'var(--bg-main)',
   color: active ? '#FFFFFF' : 'var(--text-main)',
-  fontWeight: 700,
+  fontWeight: 600,
   fontSize: '0.78rem',
   cursor: 'pointer',
 });
@@ -47,7 +47,7 @@ const dateInput = (active: boolean): React.CSSProperties => ({
   border: '1px solid var(--border-color)',
   backgroundColor: active ? '#ECFDF5' : 'var(--bg-main)',
   color: active ? '#047857' : 'var(--text-main)',
-  fontWeight: 700,
+  fontWeight: 600,
   fontSize: '0.78rem',
   outline: 'none',
   cursor: 'pointer',

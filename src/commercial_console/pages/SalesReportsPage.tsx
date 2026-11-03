@@ -156,7 +156,7 @@ export default function SalesReportsPage({
       {/* Header Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             {info.title}
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
@@ -174,7 +174,7 @@ export default function SalesReportsPage({
             backgroundColor: '#047857',
             color: '#FFFFFF',
             fontSize: '0.85rem',
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -252,20 +252,20 @@ export default function SalesReportsPage({
               <tbody>
                 {filteredOrders.map((order) => (
                   <tr key={order.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#047857' }}>{order.id.slice(11)}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>{order.id.slice(11)}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{order.customerName || 'Customer'}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{order.customerName || 'Customer'}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formatDay(order.orderDate)} · {order.deliveryAddress?.slice(0, 28) || '—'}</div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-main)' }}>
                       {order.items && order.items.length > 0 ? order.items.map((i: any) => `${i.productName || i.product?.name || 'Milk'} (x${i.quantity || 1})`).join(', ') : '—'}
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ backgroundColor: order.status === 'delivered' ? '#ECFDF5' : '#FEF3C7', color: order.status === 'delivered' ? '#047857' : '#D97706', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 800 }}>
+                      <span style={{ backgroundColor: order.status === 'delivered' ? '#ECFDF5' : '#FEF3C7', color: order.status === 'delivered' ? '#047857' : '#D97706', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
                         {order.status.toUpperCase()}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-main)' }}>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)' }}>
                       ₹{order.totalAmount ?? 0}
                     </td>
                   </tr>
@@ -285,20 +285,20 @@ export default function SalesReportsPage({
             {/* Metric Overview */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>TOTAL AGGREGATED SALES</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>TOTAL AGGREGATED SALES</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
                   ₹{salesSummaryList.reduce((acc, s) => acc + s.totalRevenue, 0).toLocaleString('en-IN')}
                 </div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>SUBSCRIPTION REVENUE</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0284C7', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>SUBSCRIPTION REVENUE</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0284C7', marginTop: '4px' }}>
                   ₹{salesSummaryList.reduce((acc, s) => acc + s.subRevenue, 0).toLocaleString('en-IN')}
                 </div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>ONE-TIME SALES</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#8B5CF6', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>ONE-TIME SALES</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#8B5CF6', marginTop: '4px' }}>
                   ₹{salesSummaryList.reduce((acc, s) => acc + s.oneTimeRevenue, 0).toLocaleString('en-IN')}
                 </div>
               </div>
@@ -318,11 +318,11 @@ export default function SalesReportsPage({
                 <tbody>
                   {salesSummaryList.map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-main)' }}>{row.date}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#0284C7' }}>{row.totalOrders} Drops</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>₹{row.subRevenue.toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#8B5CF6' }}>₹{row.oneTimeRevenue.toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857', fontSize: '0.9rem' }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{row.date}</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0284C7' }}>{row.totalOrders} Drops</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#047857' }}>₹{row.subRevenue.toLocaleString('en-IN')}</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#8B5CF6' }}>₹{row.oneTimeRevenue.toLocaleString('en-IN')}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#047857', fontSize: '0.9rem' }}>
                         ₹{row.totalRevenue.toLocaleString('en-IN')}
                       </td>
                     </tr>
@@ -348,10 +348,10 @@ export default function SalesReportsPage({
               <tbody>
                 {soldProductsList.map((prod, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{prod.name}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--text-main)' }}>{prod.name}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>₹{prod.price} / {prod.unit}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>{prod.soldQty} units</td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{prod.revenue.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#047857' }}>{prod.soldQty} units</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#047857' }}>₹{prod.revenue.toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -374,14 +374,14 @@ export default function SalesReportsPage({
               <tbody>
                 {customerLedgerList.map((user) => (
                   <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{user.name}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--text-main)' }}>{user.name}</td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{user.phone}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
+                      <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '3px 8px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem' }}>
                         {user.walletBalance}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857' }}>₹{user.totalSpent.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#047857' }}>₹{user.totalSpent.toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -394,20 +394,20 @@ export default function SalesReportsPage({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>DELIVERY FEES COLLECTED</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>DELIVERY FEES COLLECTED</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
                   ₹{deliveryChargeList.reduce((acc, r) => acc + r.feeCollected, 0)}
                 </div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>RIDER PAYOUT COMMISSIONS</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>RIDER PAYOUT COMMISSIONS</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#DC2626', marginTop: '4px' }}>
                   ₹{deliveryChargeList.reduce((acc, r) => acc + r.riderPayout, 0)}
                 </div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>NET LOGISTICS MARGIN</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0284C7', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>NET LOGISTICS MARGIN</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0284C7', marginTop: '4px' }}>
                   ₹{deliveryChargeList.reduce((acc, r) => acc + r.netMargin, 0)}
                 </div>
               </div>
@@ -428,12 +428,12 @@ export default function SalesReportsPage({
                 <tbody>
                   {deliveryChargeList.map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-main)' }}>{row.route}</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{row.route}</td>
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#047857' }}>{row.rider}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#0284C7' }}>{row.totalDrops} Drops</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>₹{row.feeCollected}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#DC2626' }}>₹{row.riderPayout}</td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#0284C7', fontSize: '0.9rem' }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0284C7' }}>{row.totalDrops} Drops</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#047857' }}>₹{row.feeCollected}</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#DC2626' }}>₹{row.riderPayout}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#0284C7', fontSize: '0.9rem' }}>
                         ₹{row.netMargin}
                       </td>
                     </tr>
@@ -466,14 +466,14 @@ export default function SalesReportsPage({
                 ) : (
                   pausedSubscriptions.map((sub, idx) => (
                     <tr key={sub.id || idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.customerName || 'Subscriber'}</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--text-main)' }}>{sub.customerName || 'Subscriber'}</td>
                       <td style={{ padding: '0.75rem 1rem', color: '#047857', fontWeight: 600 }}>{sub.productName || '—'}</td>
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.75rem' }}>
+                        <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '3px 8px', borderRadius: '8px', fontWeight: 700, fontSize: '0.75rem' }}>
                           ON VACATION HOLD
                         </span>
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#D97706' }}>
                         {sub.pauseStartDate} - {sub.pauseEndDate}
                       </td>
                     </tr>

@@ -140,7 +140,7 @@ export default function DispatchPartnerDetailPage({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Action Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -154,7 +154,7 @@ export default function DispatchPartnerDetailPage({
             borderRadius: '10px',
             backgroundColor: '#FFFFFF',
             border: '1px solid #E2E8F0',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.82rem',
             color: '#334155',
             cursor: 'pointer'
@@ -174,7 +174,7 @@ export default function DispatchPartnerDetailPage({
               borderRadius: '8px',
               backgroundColor: '#044E35',
               color: '#FFFFFF',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.82rem',
               border: 'none',
               cursor: 'pointer'
@@ -193,7 +193,7 @@ export default function DispatchPartnerDetailPage({
               borderRadius: '8px',
               backgroundColor: '#EF4444',
               color: '#FFFFFF',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.82rem',
               border: 'none',
               cursor: 'pointer'
@@ -211,16 +211,16 @@ export default function DispatchPartnerDetailPage({
           
           {/* Avatar & Info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <div style={{ width: '58px', height: '58px', borderRadius: '50%', backgroundColor: '#044E35', color: '#EBC154', fontSize: '1.4rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '58px', height: '58px', borderRadius: '50%', backgroundColor: '#044E35', color: '#EBC154', fontSize: '1.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {partnerName.substring(0, 1).toUpperCase()}
             </div>
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                   {partnerName}
                 </h3>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#044E35', padding: '2px 8px', borderRadius: '6px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#044E35', padding: '2px 8px', borderRadius: '6px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0' }}>
                   {riderId}
                 </span>
               </div>
@@ -233,9 +233,9 @@ export default function DispatchPartnerDetailPage({
           {/* Account Status Switch & Duty Status Badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACCOUNT STATUS</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACCOUNT STATUS</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isActive ? '#059669' : '#EF4444' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: isActive ? '#059669' : '#EF4444' }}>
                   {isActive ? 'Active' : 'Suspended'}
                 </span>
                 <input
@@ -248,10 +248,10 @@ export default function DispatchPartnerDetailPage({
             </div>
 
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DUTY STATUS</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DUTY STATUS</div>
               <span style={{
                 fontSize: '0.75rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 padding: '3px 10px',
                 borderRadius: '12px',
                 backgroundColor: partner?.isOnline ? '#DCFCE7' : '#FEE2E2',
@@ -293,23 +293,23 @@ export default function DispatchPartnerDetailPage({
       {/* 4 Performance Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0', borderLeft: '4px solid #044E35' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>ASSIGNED JOBS</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E293B', marginTop: '4px' }}>{assignedJobsCount}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>ASSIGNED JOBS</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#1E293B', marginTop: '4px' }}>{assignedJobsCount}</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0', borderLeft: '4px solid #059669' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>COMPLETED DROPS</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#059669', marginTop: '4px' }}>{completedDropsCount}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>COMPLETED DROPS</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#059669', marginTop: '4px' }}>{completedDropsCount}</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0', borderLeft: '4px solid #EF4444' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>CANCELLED DROPS</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#EF4444', marginTop: '4px' }}>{cancelledDropsCount}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>CANCELLED DROPS</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#EF4444', marginTop: '4px' }}>{cancelledDropsCount}</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0', borderLeft: '4px solid #8B5CF6' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>SUCCESS RATE</div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#8B5CF6', marginTop: '4px' }}>{successRate}%</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>SUCCESS RATE</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#8B5CF6', marginTop: '4px' }}>{successRate}%</div>
         </div>
       </div>
 
@@ -317,7 +317,7 @@ export default function DispatchPartnerDetailPage({
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem 1.5rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
               Assigned Deliveries & Shift History
             </h3>
             <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>
@@ -337,7 +337,7 @@ export default function DispatchPartnerDetailPage({
                   backgroundColor: dateFilter === d ? '#044E35' : '#FFFFFF',
                   color: dateFilter === d ? '#FFFFFF' : '#475569',
                   fontSize: '0.78rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer'
                 }}
               >
@@ -350,7 +350,7 @@ export default function DispatchPartnerDetailPage({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
             <thead>
-              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 600 }}>
                 <th style={{ padding: '0.75rem 1rem' }}>ORDER ID</th>
                 <th style={{ padding: '0.75rem 1rem' }}>CUSTOMER & ADDRESS</th>
                 <th style={{ padding: '0.75rem 1rem' }}>TYPE</th>
@@ -369,11 +369,11 @@ export default function DispatchPartnerDetailPage({
 
                   return (
                     <tr key={o.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#044E35' }}>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#044E35' }}>
                         #{o.id}
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ fontWeight: 700, color: '#1E293B' }}>{o.customerName || 'Customer'}</div>
+                        <div style={{ fontWeight: 600, color: '#1E293B' }}>{o.customerName || 'Customer'}</div>
                         <div style={{ fontSize: '0.74rem', color: '#64748B', marginTop: '2px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           📍 {o.deliveryAddress || o.address || 'Hosur Central'}
                         </div>
@@ -383,7 +383,7 @@ export default function DispatchPartnerDetailPage({
                           padding: '3px 8px',
                           borderRadius: '6px',
                           fontSize: '0.72rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           backgroundColor: o.isSubscriptionDelivery || o.orderType === 'subscription' ? '#FEF3C7' : '#EFF6FF',
                           color: o.isSubscriptionDelivery || o.orderType === 'subscription' ? '#B45309' : '#1D4ED8',
                           border: o.isSubscriptionDelivery || o.orderType === 'subscription' ? '1px solid #FDE68A' : '1px solid #BFDBFE'
@@ -391,7 +391,7 @@ export default function DispatchPartnerDetailPage({
                           {o.isSubscriptionDelivery || o.orderType === 'subscription' ? 'Subscription' : 'One-Time'}
                         </span>
                       </td>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#1E293B' }}>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#1E293B' }}>
                         ₹{o.totalAmount ?? 0}
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
@@ -399,7 +399,7 @@ export default function DispatchPartnerDetailPage({
                           padding: '4px 10px',
                           borderRadius: '12px',
                           fontSize: '0.75rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           backgroundColor: isDel ? '#DCFCE7' : isCanc ? '#FEE2E2' : o.status === 'outForDelivery' ? '#DBEAFE' : '#FEF3C7',
                           color: isDel ? '#047857' : isCanc ? '#DC2626' : o.status === 'outForDelivery' ? '#1E40AF' : '#B45309',
                           textTransform: 'capitalize'
@@ -409,11 +409,11 @@ export default function DispatchPartnerDetailPage({
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         {isDel ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '8px', color: '#047857', fontSize: '0.74rem', fontWeight: 700 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '8px', color: '#047857', fontSize: '0.74rem', fontWeight: 600 }}>
                             <Camera size={13} /> Photo Verified ✓
                           </div>
                         ) : isCanc ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', padding: '3px 8px', borderRadius: '8px', color: '#991B1B', fontSize: '0.74rem', fontWeight: 700 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', padding: '3px 8px', borderRadius: '8px', color: '#991B1B', fontSize: '0.74rem', fontWeight: 600 }}>
                             <AlertTriangle size={13} /> {reasonNote || 'Gate Locked'}
                           </div>
                         ) : (
@@ -429,7 +429,7 @@ export default function DispatchPartnerDetailPage({
                             backgroundColor: '#044E35',
                             color: '#FFFFFF',
                             border: 'none',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontSize: '0.76rem',
                             cursor: 'pointer',
                             display: 'inline-flex',
@@ -467,7 +467,7 @@ export default function DispatchPartnerDetailPage({
             width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', textAlign: 'left'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Edit3 size={18} style={{ color: '#044E35' }} /> Edit Delivery Partner Profile
               </h3>
               <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
@@ -594,7 +594,7 @@ export default function DispatchPartnerDetailPage({
                 </button>
                 <button
                   type="submit"
-                  style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#044E35', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#044E35', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >
                   <Save size={16} /> Save Changes & Sync to App
                 </button>
@@ -617,7 +617,7 @@ export default function DispatchPartnerDetailPage({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#DC2626', marginBottom: '0.85rem' }}>
               <ShieldAlert size={22} />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Suspend Delivery Partner Account</h3>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Suspend Delivery Partner Account</h3>
             </div>
 
             <p style={{ fontSize: '0.85rem', color: '#475569', marginTop: 0 }}>
@@ -676,7 +676,7 @@ export default function DispatchPartnerDetailPage({
                   setIsReasonModalOpen(false);
                   executeStatusUpdate(false, inactivationReason || 'Vehicle Maintenance under review');
                 }}
-                style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 600 }}
               >
                 Confirm Account Suspension
               </button>

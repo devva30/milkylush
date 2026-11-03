@@ -133,7 +133,7 @@ export default function DispatchSystemControlsPage({
   if (isLoading) return <PageLoader label="Loading rider app settings…" />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* 2-Column Grid Layout matching Image 1 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 0.75fr)', gap: '1.5rem', alignItems: 'start' }}>
@@ -143,7 +143,7 @@ export default function DispatchSystemControlsPage({
           
           {/* Card Title */}
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               ⚙️ App Operational Hours &amp; Status
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '4px 0 0 0', lineHeight: 1.45 }}>
@@ -153,7 +153,7 @@ export default function DispatchSystemControlsPage({
 
           {/* Status Mode Override Selector */}
           <div>
-            <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E293B', display: 'block', marginBottom: '8px' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: '8px' }}>
               Status Mode Override
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
@@ -167,7 +167,7 @@ export default function DispatchSystemControlsPage({
                   border: statusMode === 'auto' ? '2px solid #044E35' : '1px solid #CBD5E1',
                   backgroundColor: statusMode === 'auto' ? '#044E35' : '#FFFFFF',
                   color: statusMode === 'auto' ? '#FFFFFF' : '#334155',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '0.82rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -189,7 +189,7 @@ export default function DispatchSystemControlsPage({
                   border: statusMode === 'force-open' ? '2px solid #059669' : '1px solid #CBD5E1',
                   backgroundColor: statusMode === 'force-open' ? '#ECFDF5' : '#FFFFFF',
                   color: statusMode === 'force-open' ? '#047857' : '#334155',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '0.82rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -210,7 +210,7 @@ export default function DispatchSystemControlsPage({
                   border: statusMode === 'force-closed' ? '2px solid #DC2626' : '1px solid #CBD5E1',
                   backgroundColor: statusMode === 'force-closed' ? '#FEF2F2' : '#FFFFFF',
                   color: statusMode === 'force-closed' ? '#B91C1C' : '#334155',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '0.82rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -228,7 +228,7 @@ export default function DispatchSystemControlsPage({
           {/* Daily Operating Hours Inputs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
             <div>
-              <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
                 Daily Open Time
               </label>
               <div style={{ position: 'relative' }}>
@@ -243,7 +243,7 @@ export default function DispatchSystemControlsPage({
                     borderRadius: '10px',
                     border: '1px solid #CBD5E1',
                     fontSize: '0.88rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#1E293B',
                     outline: 'none',
                     backgroundColor: '#F8FAFC'
@@ -254,7 +254,7 @@ export default function DispatchSystemControlsPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
                 Daily Close Time
               </label>
               <div style={{ position: 'relative' }}>
@@ -269,7 +269,7 @@ export default function DispatchSystemControlsPage({
                     borderRadius: '10px',
                     border: '1px solid #CBD5E1',
                     fontSize: '0.88rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#1E293B',
                     outline: 'none',
                     backgroundColor: '#F8FAFC'
@@ -282,7 +282,7 @@ export default function DispatchSystemControlsPage({
 
           {/* Custom Closure Warning Message & Template Chips */}
           <div>
-            <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
               Custom Closure Warning Message
             </label>
             <textarea
@@ -309,7 +309,7 @@ export default function DispatchSystemControlsPage({
 
             {/* Template Suggestions Chips */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '10px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>Use Template Suggestions:</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Use Template Suggestions:</span>
               
               <button
                 type="button"
@@ -320,7 +320,7 @@ export default function DispatchSystemControlsPage({
                   border: '1px solid #E2E8F0',
                   backgroundColor: '#F8FAFC',
                   fontSize: '0.74rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#334155',
                   cursor: 'pointer'
                 }}
@@ -337,7 +337,7 @@ export default function DispatchSystemControlsPage({
                   border: '1px solid #E2E8F0',
                   backgroundColor: '#F8FAFC',
                   fontSize: '0.74rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#334155',
                   cursor: 'pointer'
                 }}
@@ -354,7 +354,7 @@ export default function DispatchSystemControlsPage({
                   border: '1px solid #E2E8F0',
                   backgroundColor: '#F8FAFC',
                   fontSize: '0.74rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#334155',
                   cursor: 'pointer'
                 }}
@@ -368,7 +368,7 @@ export default function DispatchSystemControlsPage({
 
           {/* Custom Access Override (Rider Exceptions) */}
           <div>
-            <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
               👤 Custom Access Override (Rider Exceptions)
             </h4>
             <p style={{ fontSize: '0.76rem', color: '#64748B', margin: '3px 0 10px 0' }}>
@@ -387,7 +387,7 @@ export default function DispatchSystemControlsPage({
                 borderRadius: '10px',
                 border: '1px solid #CBD5E1',
                 fontSize: '0.82rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: '#334155',
                 outline: 'none',
                 backgroundColor: '#FFFFFF',
@@ -422,7 +422,7 @@ export default function DispatchSystemControlsPage({
                           border: '1px solid #A7F3D0',
                           color: '#047857',
                           fontSize: '0.78rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px'
@@ -452,7 +452,7 @@ export default function DispatchSystemControlsPage({
             style={{
               backgroundColor: '#044E35',
               color: '#FFFFFF',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '0.92rem',
               padding: '0.85rem',
               borderRadius: '12px',
@@ -475,7 +475,7 @@ export default function DispatchSystemControlsPage({
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.65rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               🔔 Send In-App Notification (Rider Alert)
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '4px 0 0 0', lineHeight: 1.45 }}>
@@ -486,7 +486,7 @@ export default function DispatchSystemControlsPage({
           <form onSubmit={handleBroadcastAlert} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
             <div>
-              <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
                 Alert Title
               </label>
               <input
@@ -508,7 +508,7 @@ export default function DispatchSystemControlsPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: '6px' }}>
                 Message Text
               </label>
               <textarea
@@ -536,7 +536,7 @@ export default function DispatchSystemControlsPage({
               style={{
                 backgroundColor: '#F59E0B',
                 color: '#FFFFFF',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '0.92rem',
                 padding: '0.85rem',
                 borderRadius: '12px',

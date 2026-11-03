@@ -133,7 +133,7 @@ export default function ProfitLossPage({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#047857', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#047857', margin: 0 }}>
               My Products Revenue &amp; Sales Analytics
             </h1>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -150,7 +150,7 @@ export default function ProfitLossPage({
               backgroundColor: '#ECFDF5',
               color: '#047857',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -164,20 +164,20 @@ export default function ProfitLossPage({
         {/* 3 Metric Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.15rem', borderRadius: '14px', border: '1px solid var(--border-color)', borderLeft: '4px solid #047857' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>CATALOG PRODUCTS</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '4px 0', fontFamily: 'var(--font-title)' }}>{productAnalyticsList.length} Items</div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>CATALOG PRODUCTS</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '4px 0', fontFamily: 'var(--font-title)' }}>{productAnalyticsList.length} Items</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active dairy SKUs</div>
           </div>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.15rem', borderRadius: '14px', border: '1px solid var(--border-color)', borderLeft: '4px solid #0284C7' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TOTAL UNITS SOLD</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TOTAL UNITS SOLD</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0284C7', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
               {productAnalyticsList.reduce((acc, p) => acc + p.unitsSold, 0)} Units
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Fulfilled drops</div>
           </div>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.15rem', borderRadius: '14px', border: '1px solid var(--border-color)', borderLeft: '4px solid #8B5CF6' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>GROSS PRODUCT REVENUE</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#8B5CF6', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>GROSS PRODUCT REVENUE</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#8B5CF6', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
               ₹{realTotalRevenue.toLocaleString('en-IN')}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Realtime Firestore sales</div>
@@ -203,18 +203,18 @@ export default function ProfitLossPage({
                   const share = realTotalRevenue > 0 ? ((p.totalRev / (realTotalRevenue || 1)) * 100).toFixed(1) : '0.0';
                   return (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <Package size={16} style={{ color: '#047857' }} />
                           {p.name}
                         </div>
                       </td>
                       <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.category}</td>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.85rem' }}>₹{p.price}</td>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#0284C7', fontSize: '0.88rem' }}>{p.unitsSold} units</td>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#047857', fontSize: '0.9rem' }}>₹{p.totalRev.toLocaleString('en-IN')}</td>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>₹{p.price}</td>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0284C7', fontSize: '0.88rem' }}>{p.unitsSold} units</td>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#047857', fontSize: '0.9rem' }}>₹{p.totalRev.toLocaleString('en-IN')}</td>
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '10px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '10px' }}>
                           {share}%
                         </span>
                       </td>
@@ -246,7 +246,7 @@ export default function ProfitLossPage({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#DC2626', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#DC2626', margin: 0 }}>
               Expenses &amp; Cost Categories Ledger
             </h1>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -263,7 +263,7 @@ export default function ProfitLossPage({
               backgroundColor: '#FEF2F2',
               color: '#DC2626',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -277,22 +277,22 @@ export default function ProfitLossPage({
         {/* 3 Metric Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.15rem', borderRadius: '14px', border: '1px solid var(--border-color)', borderLeft: '4px solid #DC2626' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TOTAL OPERATIONAL EXPENSES</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#DC2626', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TOTAL OPERATIONAL EXPENSES</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#DC2626', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
               ₹{totalExpenseSum.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>COGS + Operating Expenses</div>
           </div>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.15rem', borderRadius: '14px', border: '1px solid var(--border-color)', borderLeft: '4px solid #D97706' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>MILK PROCUREMENT SHARE</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>MILK PROCUREMENT SHARE</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
               ₹{cogsProcurement.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Farmer payouts</div>
           </div>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.15rem', borderRadius: '14px', border: '1px solid var(--border-color)', borderLeft: '4px solid #2563EB' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>FLEET &amp; LOGISTICS FEE</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#2563EB', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>FLEET &amp; LOGISTICS FEE</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#2563EB', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
               ₹{cogsLogistics.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rider route commissions</div>
@@ -315,18 +315,18 @@ export default function ProfitLossPage({
               <tbody>
                 {expenseCategories.map((exp, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <CreditCard size={16} style={{ color: '#DC2626' }} />
                         {exp.category}
                       </div>
                     </td>
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{exp.vendor}</td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#D97706', fontSize: '0.8rem' }}>{exp.type}</td>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#D97706', fontSize: '0.8rem' }}>{exp.type}</td>
                     <td onClick={() => exp.field && editExpense(exp.field, exp.category)} title={exp.field ? 'Click to set this month\'s amount' : 'From milk purchases'}
-                      style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#DC2626', fontSize: '0.9rem', cursor: exp.field ? 'pointer' : 'default', textDecoration: exp.field ? 'underline dotted' : 'none' }}>₹{exp.monthlyCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                      style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#DC2626', fontSize: '0.9rem', cursor: exp.field ? 'pointer' : 'default', textDecoration: exp.field ? 'underline dotted' : 'none' }}>₹{exp.monthlyCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '10px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '10px' }}>
                         {exp.status}
                       </span>
                     </td>
@@ -346,7 +346,7 @@ export default function ProfitLossPage({
       {/* Header & Date Range Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '1.6rem', fontWeight: 800, color: '#047857', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '1.6rem', fontWeight: 700, color: '#047857', margin: 0 }}>
             Profit &amp; Loss Statement (P&amp;L)
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
@@ -366,7 +366,7 @@ export default function ProfitLossPage({
                   borderRadius: '8px',
                   border: 'none',
                   fontSize: '0.78rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
                   backgroundColor: dateRange === r ? '#047857' : 'transparent',
                   color: dateRange === r ? '#FFFFFF' : 'var(--text-main)',
@@ -388,7 +388,7 @@ export default function ProfitLossPage({
               backgroundColor: '#ECFDF5',
               color: '#047857',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -404,103 +404,103 @@ export default function ProfitLossPage({
       {/* Metric Cards Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--border-color)', borderLeft: '4px solid #047857' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>TOTAL GROSS INCOME</div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>TOTAL GROSS INCOME</div>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
             ₹{realTotalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700 }}>Subscriptions + One-Time orders</div>
+          <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>Subscriptions + One-Time orders</div>
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--border-color)', borderLeft: '4px solid #DC2626' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>COST OF GOODS SOLD (COGS)</div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#DC2626', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>COST OF GOODS SOLD (COGS)</div>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#DC2626', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
             ₹{totalCogs.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 700 }}>Milk purchase, bottles &amp; rider fee</div>
+          <div style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 600 }}>Milk purchase, bottles &amp; rider fee</div>
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--border-color)', borderLeft: '4px solid #D97706' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>OPERATING EXPENSES</div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>OPERATING EXPENSES</div>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
             ₹{totalOpex.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#D97706', fontWeight: 700 }}>Salaries, electricity &amp; marketing</div>
+          <div style={{ fontSize: '0.75rem', color: '#D97706', fontWeight: 600 }}>Salaries, electricity &amp; marketing</div>
         </div>
 
         <div style={{ backgroundColor: '#ECFDF5', padding: '1.25rem', borderRadius: '16px', border: '1px solid #A7F3D0' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857' }}>NET OPERATING PROFIT</div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#047857' }}>NET OPERATING PROFIT</div>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '4px 0', fontFamily: 'var(--font-title)' }}>
             ₹{netProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 800 }}>Net Margin: {netMargin}%</div>
+          <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>Net Margin: {netMargin}%</div>
         </div>
       </div>
 
       {/* Itemized P&L Table */}
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.5rem', border: '1px solid var(--border-color)' }}>
-        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '1rem' }}>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem' }}>
           Financial Statement Breakdown
         </div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--bg-main)', borderBottom: '2px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '0.85rem 1rem', fontWeight: 800 }}>ACCOUNT / CATEGORY</th>
-              <th style={{ padding: '0.85rem 1rem', fontWeight: 800 }}>TYPE</th>
-              <th style={{ padding: '0.85rem 1rem', fontWeight: 800, textAlign: 'right' }}>AMOUNT (₹)</th>
-              <th style={{ padding: '0.85rem 1rem', fontWeight: 800, textAlign: 'right' }}>% OF REVENUE</th>
+              <th style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>ACCOUNT / CATEGORY</th>
+              <th style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>TYPE</th>
+              <th style={{ padding: '0.85rem 1rem', fontWeight: 700, textAlign: 'right' }}>AMOUNT (₹)</th>
+              <th style={{ padding: '0.85rem 1rem', fontWeight: 700, textAlign: 'right' }}>% OF REVENUE</th>
             </tr>
           </thead>
           <tbody>
-            <tr style={{ backgroundColor: 'rgba(4, 120, 87, 0.1)', fontWeight: 800, color: '#047857' }}>
+            <tr style={{ backgroundColor: 'rgba(4, 120, 87, 0.1)', fontWeight: 700, color: '#047857' }}>
               <td colSpan={4} style={{ padding: '0.75rem 1rem' }}>1. REVENUE STREAMS (INCOME)</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Fulfilled Milk Drops Revenue</td>
-              <td style={{ padding: '0.75rem 1rem', color: '#047857', fontWeight: 700 }}>Income</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)' }}>₹{realTotalRevenue.toLocaleString('en-IN')}</td>
+              <td style={{ padding: '0.75rem 1rem', color: '#047857', fontWeight: 600 }}>Income</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-main)' }}>₹{realTotalRevenue.toLocaleString('en-IN')}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>100.0%</td>
             </tr>
 
-            <tr style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)', fontWeight: 800, color: '#DC2626' }}>
+            <tr style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)', fontWeight: 700, color: '#DC2626' }}>
               <td colSpan={4} style={{ padding: '0.75rem 1rem' }}>2. DIRECT COST OF GOODS SOLD (COGS)</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Farmer Milk Procurement Payouts (Raw Milk)</td>
-              <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 700 }}>Direct Cost</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>- ₹{cogsProcurement.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+              <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 600 }}>Direct Cost</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#DC2626' }}>- ₹{cogsProcurement.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsProcurement / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Glass Bottles &amp; Packaging</td>
-              <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 700 }}>Direct Cost</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>- ₹{cogsPackaging.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+              <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 600 }}>Direct Cost</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#DC2626' }}>- ₹{cogsPackaging.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsPackaging / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Delivery Fleet Rider Drop Fee</td>
-              <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 700 }}>Direct Cost</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>- ₹{cogsLogistics.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+              <td style={{ padding: '0.75rem 1rem', color: '#DC2626', fontWeight: 600 }}>Direct Cost</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#DC2626' }}>- ₹{cogsLogistics.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((cogsLogistics / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
 
-            <tr style={{ backgroundColor: 'rgba(217, 119, 6, 0.1)', fontWeight: 800, color: '#D97706' }}>
+            <tr style={{ backgroundColor: 'rgba(217, 119, 6, 0.1)', fontWeight: 700, color: '#D97706' }}>
               <td colSpan={4} style={{ padding: '0.75rem 1rem' }}>3. OPERATING EXPENSES (OPEX)</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Hub Operations Staff Salaries</td>
-              <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 700 }}>Expense</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>- ₹{opexSalaries.toLocaleString()}</td>
+              <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 600 }}>Expense</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#D97706' }}>- ₹{opexSalaries.toLocaleString()}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((opexSalaries / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '0.75rem 1rem 0.75rem 2rem', fontWeight: 600, color: 'var(--text-main)' }}>Hub Cold Storage Refrigeration</td>
-              <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 700 }}>Expense</td>
-              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#D97706' }}>- ₹{opexElectricity.toLocaleString()}</td>
+              <td style={{ padding: '0.75rem 1rem', color: '#D97706', fontWeight: 600 }}>Expense</td>
+              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#D97706' }}>- ₹{opexElectricity.toLocaleString()}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-main)' }}>{((opexElectricity / (realTotalRevenue || 1)) * 100).toFixed(1)}%</td>
             </tr>
 
-            <tr style={{ backgroundColor: '#ECFDF5', fontSize: '1rem', fontWeight: 800, color: '#047857' }}>
+            <tr style={{ backgroundColor: '#ECFDF5', fontSize: '1rem', fontWeight: 700, color: '#047857' }}>
               <td colSpan={2} style={{ padding: '1rem' }}>FINAL NET OPERATING PROFIT</td>
               <td style={{ padding: '1rem', textAlign: 'right' }}>₹{netProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
               <td style={{ padding: '1rem', textAlign: 'right' }}>{netMargin}% Net Margin</td>

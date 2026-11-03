@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
           margin: '1.5rem auto',
           maxWidth: '640px',
           textAlign: 'center',
-          fontFamily: "'Poppins', sans-serif",
+          fontFamily: "var(--font-body)",
           boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)'
         }}>
           <div style={{
@@ -56,7 +56,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle size={24} />
           </div>
 
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: '0 0 0.5rem 0' }}>
             {this.props.fallbackTitle || 'Component Render Issue'}
           </h3>
           
@@ -74,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
               borderRadius: '10px',
               backgroundColor: '#047857',
               color: '#FFFFFF',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.82rem',
               border: 'none',
               cursor: 'pointer'

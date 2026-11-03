@@ -93,7 +93,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
       {/* Page Title Header matching Screenshot 2 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             User Control Hub
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '2px' }}>
@@ -108,7 +108,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
             alignItems: 'center',
             gap: '6px',
             fontSize: '0.85rem',
-            fontWeight: 700,
+            fontWeight: 600,
             padding: '0.65rem 1.25rem',
             borderRadius: '10px',
             backgroundColor: '#047857',
@@ -131,7 +131,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
             border: 'none',
             backgroundColor: activeRoleTab === 'customers' ? '#044E35' : '#FFFFFF',
             color: activeRoleTab === 'customers' ? '#FFFFFF' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             display: 'flex',
@@ -150,7 +150,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
             border: activeRoleTab === 'delivery' ? 'none' : '1px solid #E5E7EB',
             backgroundColor: activeRoleTab === 'delivery' ? '#044E35' : '#FFFFFF',
             color: activeRoleTab === 'delivery' ? '#FFFFFF' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             display: 'flex',
@@ -169,7 +169,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
             border: activeRoleTab === 'caterers' ? 'none' : '1px solid #E5E7EB',
             backgroundColor: activeRoleTab === 'caterers' ? '#044E35' : '#FFFFFF',
             color: activeRoleTab === 'caterers' ? '#FFFFFF' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             display: 'flex',
@@ -195,7 +195,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
               backgroundColor: activeTypeFilter === 'all' ? '#044E35' : '#FFFFFF',
               color: activeTypeFilter === 'all' ? '#FFFFFF' : '#374151',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer'
             }}
           >
@@ -210,7 +210,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
               backgroundColor: activeTypeFilter === 'subscription' ? '#044E35' : '#FFFFFF',
               color: activeTypeFilter === 'subscription' ? '#FFFFFF' : '#374151',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer'
             }}
           >
@@ -225,7 +225,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
               backgroundColor: activeTypeFilter === 'normal' ? '#044E35' : '#FFFFFF',
               color: activeTypeFilter === 'normal' ? '#FFFFFF' : '#374151',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer'
             }}
           >
@@ -240,7 +240,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
               backgroundColor: activeTypeFilter === 'deleted' ? '#DC2626' : '#FEF2F2',
               color: activeTypeFilter === 'deleted' ? '#FFFFFF' : '#DC2626',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer'
             }}
           >
@@ -290,7 +290,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
                 const isSubUser = isSub(u);
                 return (
                   <tr key={u.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#111827', fontSize: '0.88rem' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#111827', fontSize: '0.88rem' }}>
                       {u.name}
                       {u.customerId && <div style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>{u.customerId}</div>}
                     </td>
@@ -310,7 +310,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span style={{
                         fontSize: '0.72rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         color: isSubUser ? '#059669' : '#B45309',
                         backgroundColor: isSubUser ? '#DCFCE7' : '#FEF3C7',
                         padding: '3px 10px',
@@ -381,7 +381,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', color: '#374151', cursor: 'pointer', fontSize: '0.78rem' }}>Prev</button>
-            <span style={{ fontWeight: 700, color: '#111827' }}>Page 1 of 1</span>
+            <span style={{ fontWeight: 600, color: '#111827' }}>Page 1 of 1</span>
             <button style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', color: '#374151', cursor: 'pointer', fontSize: '0.78rem' }}>Next</button>
           </div>
         </div>
@@ -413,21 +413,21 @@ export default function UserControlPage(_props: UserControlPageProps) {
             width: '100%',
             boxShadow: 'var(--shadow-lg)'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, marginBottom: '0.5rem' }}>+ Register New Customer</h3>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, marginBottom: '0.5rem' }}>+ Register New Customer</h3>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1.25rem' }}>
               Customers sign up in the MilkyLush app with phone OTP, which creates their account and HSR-CUS id. An account made here would not match their login.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>FULL NAME</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>FULL NAME</label>
                 <input type="text" placeholder="e.g. Ramesh Kumar" style={{ width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1px solid #E5E7EB', marginTop: '4px', outline: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>MOBILE NUMBER</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>MOBILE NUMBER</label>
                 <input type="text" placeholder="+91 98765 43210" style={{ width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1px solid #E5E7EB', marginTop: '4px', outline: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>DELIVERY ADDRESS &amp; FLAT</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>DELIVERY ADDRESS &amp; FLAT</label>
                 <input type="text" placeholder="Flat 204, Green Heights, Hosur" style={{ width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1px solid #E5E7EB', marginTop: '4px', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: '0.85rem', marginTop: '1rem' }}>
@@ -443,7 +443,7 @@ export default function UserControlPage(_props: UserControlPageProps) {
                     setShowAddModal(false);
                     showToast("Customers register themselves in the MilkyLush app with their phone number (OTP). Use Add Order for phone orders once they have signed up.", "info");
                   }}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Save Account
                 </button>

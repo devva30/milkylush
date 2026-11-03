@@ -107,7 +107,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header Toolbar */}
       <div>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#166534', margin: 0 }}>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#166534', margin: 0 }}>
           {selectedTab === 'counter-sales' && 'Counter Sales POS & Direct Billing'}
           {selectedTab === 'daily-sales-load' && 'Daily Fleet Sales Load Sheet'}
           {selectedTab === 'sales-requirement' && 'Sales Requirement & Demand Forecast'}
@@ -123,7 +123,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {/* Products Grid */}
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
               Select Dairy Products
             </div>
 
@@ -145,8 +145,8 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', marginBottom: '4px' }}>{prod.name}</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#166534' }}>₹{prod.price}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B', marginBottom: '4px' }}>{prod.name}</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#166534' }}>₹{prod.price}</div>
                   <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '2px' }}>{prod.unit || '—'}</div>
                 </div>
               ))}
@@ -155,7 +155,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
 
           {/* Cart & Billing Checkout Panel */}
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
               Current Cart &amp; Checkout
             </div>
 
@@ -170,11 +170,11 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
                   {cart.map((item) => (
                     <div key={item.product.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem', borderRadius: '10px', backgroundColor: '#F8FAFC' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>{item.product.name}</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>{item.product.name}</div>
                         <div style={{ fontSize: '0.75rem', color: '#64748B' }}>₹{item.product.price} x {item.qty}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 800, color: '#166534', fontSize: '0.9rem' }}>₹{(item.product.price * item.qty).toFixed(2)}</span>
+                        <span style={{ fontWeight: 700, color: '#166534', fontSize: '0.9rem' }}>₹{(item.product.price * item.qty).toFixed(2)}</span>
                         <button type="button" onClick={() => removeFromCart(item.product.id)} style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer' }}>
                           <Trash2 size={16} />
                         </button>
@@ -185,7 +185,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
 
                 <div style={{ borderTop: '2px solid #E2E8F0', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>Customer Phone (Optional)</label>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Customer Phone (Optional)</label>
                     <input
                       type="text"
                       placeholder="Enter customer 10-digit phone..."
@@ -208,7 +208,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
                           border: paymentMode === m ? '2px solid #166534' : '1px solid #CBD5E1',
                           backgroundColor: paymentMode === m ? '#ECFDF5' : '#FFFFFF',
                           color: paymentMode === m ? '#166534' : '#475569',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.8rem',
                           cursor: 'pointer',
                         }}
@@ -218,7 +218,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
                     ))}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem', fontWeight: 800, color: '#166534' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem', fontWeight: 700, color: '#166534' }}>
                     <span>Grand Total:</span>
                     <span>₹{cartTotal.toFixed(2)}</span>
                   </div>
@@ -249,7 +249,7 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
                       backgroundColor: '#166534',
                       color: '#FFFFFF',
                       border: 'none',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       fontSize: '0.9rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -270,18 +270,18 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
 
       {selectedTab === 'daily-sales-load' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Daily Dispatch Route Vehicle Loading Manifest · {formatDay(today)}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>ROUTE / VEHICLE</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>RIDER PARTNER</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>MILK BOTTLES LOADED</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>CRATES</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>LOAD STATUS</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>ROUTE / VEHICLE</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>RIDER PARTNER</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>MILK BOTTLES LOADED</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>CRATES</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>LOAD STATUS</th>
               </tr>
             </thead>
             <tbody>
@@ -291,12 +291,12 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
               {[...loadRows
 ].map((r) => (
                 <tr key={r.route} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{r.route}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{r.route}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>{r.rider}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{r.bottles}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#166534' }}>{r.bottles}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{r.crates}</td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                    <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '4px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
+                    <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '4px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>
                       {r.status}
                     </span>
                   </td>
@@ -309,17 +309,17 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
 
       {selectedTab === 'sales-requirement' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Tomorrow's Projected Sales Requirement &amp; Stock Demand · {formatDay(tomorrow)}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>PRODUCT</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>SUBSCRIPTION DROPS</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>STORE COUNTER BUFFER</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>TOTAL REQUIRED STOCK</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>PRODUCT</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>SUBSCRIPTION DROPS</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>STORE COUNTER BUFFER</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>TOTAL REQUIRED STOCK</th>
               </tr>
             </thead>
             <tbody>
@@ -328,10 +328,10 @@ export default function CounterSalesPage({ selectedTab, selectedHubId }: Counter
               )}
               {requirementRows.map((p) => (
                 <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{p.name}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{p.qty} units</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{p.name}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#166534' }}>{p.qty} units</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{p.buffer} units buffer ({loadSettings.counterBufferPercent}%)</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>{p.total} units</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#166534' }}>{p.total} units</td>
                 </tr>
               ))}
             </tbody>

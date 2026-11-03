@@ -83,7 +83,7 @@ export function DeliveriesRangeShell({ hubId, deliveryAgents, showToast, default
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)' }}>
           Period: {formatDay(range.from)} – {formatDay(range.to)}
         </span>
         <DateFilter value={range} onChange={setRange} presets={DELIVERY_PRESETS} allowRange />
@@ -153,7 +153,7 @@ export function DeliveriesDayShell({ hubId, deliveryAgents, showToast, allowGene
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {!fixedToday && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)' }}>Deliveries for {formatDay(date)}</span>
+          <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)' }}>Deliveries for {formatDay(date)}</span>
           <DateFilter value={range} onChange={setRange} />
         </div>
         {allowGenerate && <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

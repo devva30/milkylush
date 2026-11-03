@@ -83,10 +83,10 @@ export default function CommercialDashboardPage({
         }}
       >
         <div>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.9, fontWeight: 700 }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.9, fontWeight: 600 }}>
             COMMERCIAL &amp; MARKETING CONSOLE • {hubName.toUpperCase()}
           </div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '4px 0 6px', fontFamily: "'Poppins', sans-serif" }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '4px 0 6px', fontFamily: "var(--font-body)" }}>
             Sales, Profit &amp; Procurement Insights
           </h1>
           <p style={{ fontSize: '0.88rem', margin: 0, opacity: 0.9 }}>
@@ -105,7 +105,7 @@ export default function CommercialDashboardPage({
               backgroundColor: '#FFFFFF',
               color: '#166534',
               fontSize: '0.85rem',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -137,15 +137,15 @@ export default function CommercialDashboardPage({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>TOTAL GROSS SALES</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>TOTAL GROSS SALES</span>
             <div style={{ backgroundColor: '#DCFCE7', color: '#166534', borderRadius: '10px', padding: '6px' }}>
               <DollarSign size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1E293B' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1E293B' }}>
             ₹{totalGrossRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#166534', marginTop: '6px', fontWeight: 700 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#166534', marginTop: '6px', fontWeight: 600 }}>
             <ArrowUpRight size={14} />
             <span>This month (closed days + counter sales)</span>
           </div>
@@ -162,15 +162,15 @@ export default function CommercialDashboardPage({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>ESTIMATED NET PROFIT</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>ESTIMATED NET PROFIT</span>
             <div style={{ backgroundColor: '#ECFDF5', color: '#059669', borderRadius: '10px', padding: '6px' }}>
               <TrendingUp size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#059669' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#059669' }}>
             ₹{estimatedNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#059669', marginTop: '6px', fontWeight: 700 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#059669', marginTop: '6px', fontWeight: 600 }}>
             <span>Net Margin: {totalGrossRevenue > 0 ? ((estimatedNetProfit / totalGrossRevenue) * 100).toFixed(1) : '0.0'}%</span>
           </div>
         </div>
@@ -186,15 +186,15 @@ export default function CommercialDashboardPage({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>FARMER MILK PROCURED</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>FARMER MILK PROCURED</span>
             <div style={{ backgroundColor: '#FEF3C7', color: '#D97706', borderRadius: '10px', padding: '6px' }}>
               <Milk size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1E293B' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1E293B' }}>
             {totalMilkLiters > 0 ? `${totalMilkLiters.toLocaleString()} Liters` : '0 Liters'}
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#D97706', marginTop: '6px', fontWeight: 700 }}>
+          <div style={{ fontSize: '0.78rem', color: '#D97706', marginTop: '6px', fontWeight: 600 }}>
             Avg Fat: 4.2% | Avg SNF: 8.5%
           </div>
         </div>
@@ -210,15 +210,15 @@ export default function CommercialDashboardPage({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>WHATSAPP BROADCASTS</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>WHATSAPP BROADCASTS</span>
             <div style={{ backgroundColor: '#DCFCE7', color: '#166534', borderRadius: '10px', padding: '6px' }}>
               <MessageSquare size={18} />
             </div>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1E293B' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1E293B' }}>
             {extra.customers} Recipient Alerts
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#166534', marginTop: '6px', fontWeight: 700 }}>
+          <div style={{ fontSize: '0.78rem', color: '#166534', marginTop: '6px', fontWeight: 600 }}>
             98.4% Delivery Success Rate
           </div>
         </div>
@@ -236,7 +236,7 @@ export default function CommercialDashboardPage({
             boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
           }}
         >
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Commercial Modules
           </div>
 
@@ -270,7 +270,7 @@ export default function CommercialDashboardPage({
                       <IconComp size={20} />
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#1E293B' }}>{item.title}</div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1E293B' }}>{item.title}</div>
                       <div style={{ fontSize: '0.78rem', color: '#64748B' }}>{item.sub}</div>
                     </div>
                   </div>
@@ -292,13 +292,13 @@ export default function CommercialDashboardPage({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B' }}>
               Top Selling Dairy Products
             </div>
             <button
               type="button"
               onClick={() => onNavigateTab('products-analytics')}
-              style={{ fontSize: '0.8rem', fontWeight: 700, color: '#166534', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontSize: '0.8rem', fontWeight: 600, color: '#166534', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               View All Products
             </button>
@@ -313,19 +313,19 @@ export default function CommercialDashboardPage({
               return (
                 <div key={prod.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #F1F5F9' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem' }}>
                       #{idx + 1}
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E293B' }}>{prod.name}</div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1E293B' }}>{prod.name}</div>
                       <div style={{ fontSize: '0.76rem', color: '#64748B' }}>₹{(prod.qty ? prod.value / prod.qty / 100 : 0).toFixed(2)} per {prod.unit || 'pack'}</div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#166534' }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#166534' }}>
                       ₹{(prod.value / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
+                    <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
                       {estShare} units sold
                     </div>
                   </div>

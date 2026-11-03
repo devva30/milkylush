@@ -42,38 +42,69 @@ export default function Header({
 
   const getTabTitle = (tab: string) => {
     switch (tab) {
-      case 'dashboard': return 'Dashboard Overview';
-      case 'todays-deliveries': return "Today's Deliveries Schedule";
-      case 'all-deliveries': return 'All Deliveries Log';
-      case 'analysis': return 'Analysis & Insights';
-      case 'orders': return 'Orders Management';
-      case 'subscriptions': return 'Subscriptions & Recurring Delivery';
-      case 'customers': return 'Customers Directory & Dues';
-      case 'service-area': return 'Service Areas & GPS Config';
-      case 'products': return 'Products & Catalog Inventory';
-      case 'delivery': return 'Delivery Fleet & Drivers';
-      case 'user-control': return 'User Access Control';
-      case 'payments': return 'Payments Ledger & Wallet';
-      case 'mobile-control': return 'Mobile App Control & Banners';
-      case 'refer-earn': return 'Refer & Earn Rewards';
-      case 'prepaid-subscriptions': return 'Prepaid Subscription Plans';
-      case 'audit-logs': return 'Audit Logs & Admin Actions';
-      case 'delivered-history': return 'Delivered Proof History';
-      case 'admin-access': return 'Admin Access & Roles';
+      case 'dashboard': return 'Dashboard';
+      case 'todays-deliveries': return "Today's Deliveries";
+      case 'all-deliveries': return 'All Deliveries';
+      case 'analysis': return 'Analytics & Reports';
+      case 'orders': return 'Orders';
+      case 'subscriptions': return 'Subscriptions';
+      case 'customers': return 'Customers';
+      case 'service-area': return 'Service Areas & Map';
+      case 'products': return 'Products & Stock';
+      case 'delivery': return 'Delivery Fleet';
+      case 'user-control': return 'User Control';
+      case 'payments': return 'Payments';
+      case 'mobile-control': return 'Mobile App Control';
+      case 'refer-earn': return 'Refer & Earn';
+      case 'prepaid-subscriptions': return 'Prepaid Plans';
+      case 'audit-logs': return 'Activity Log';
+      case 'delivered-history': return 'Delivered History';
+      case 'admin-access': return 'Admin Access';
       case 'settings': return 'System Settings';
       case 'portal-gateway': return 'Hub Portal Gateway';
-      case 'dispatch-dashboard': return 'Delivery & Dispatch Overview';
-      case 'dispatch-board': return 'Active Dispatch Board';
-      case 'delivery-partners': return 'Delivery Partners Fleet';
-      case 'register-partner': return 'Register Delivery Partner';
-      case 'partner-detail': return 'Delivery Partner Profile & Details';
-      case 'live-tracking': return 'Live Fleet GPS Tracking';
-      case 'bottle-reclamation': return 'Bottle Reclamation & Logs';
-      case 'deliveries-archive': return 'Deliveries History & Archive';
-      case 'delivery-history': return 'Delivery Partner Logs';
-      case 'customer-assignments': return 'Customer Rider Auto-Assignment & Shift Manager';
-      case 'system-controls': return 'Dispatch System Controls';
-      default: return 'MilkyLush Admin Console';
+      case 'dispatch-dashboard': return 'Dashboard';
+      case 'dispatch-board': return 'Live Dispatch Board';
+      case 'delivery-partners': return 'Delivery Partners';
+      case 'register-partner': return 'Add a Rider';
+      case 'partner-detail': return 'Rider Profile';
+      case 'live-tracking': return 'Live Rider Map';
+      case 'bottle-reclamation': return 'Bottle Returns';
+      case 'deliveries-archive': return 'Deliveries Archive';
+      case 'delivery-history': return 'Delivery History';
+      case 'customer-assignments': return 'Customer-Rider Mapping';
+      case 'system-controls': return 'System Controls';
+      case 'promo-codes': return 'Promo Codes';
+      case 'free-samples': return 'Free Samples';
+      case 'manage-subscriptions': return 'Plan Packages & Analytics';
+      case 'bottle-management': return 'Bottles';
+      case 'quality-reports': return 'Quality & Lab Reports';
+      case 'rider-attendance': return 'Rider Attendance';
+      case 'route-grouping': return 'Routes & Sequence';
+      case 'delivery-photos': return 'Delivery Photos';
+      case 'hub-contacts': return 'Hub Contacts & Help';
+      case 'whatsapp-campaigns': return 'WhatsApp Broadcasts';
+      case 'whatsapp-notifications': return 'Automatic Messages';
+      case 'customer-cohorts': return 'Customer Groups';
+      case 'sales-detail': return 'Sales Report';
+      case 'sales-summary': return 'Summary Report';
+      case 'sold-products': return 'Products Sold';
+      case 'customer-ledger': return 'Customer Ledger';
+      case 'delivery-charge-report': return 'Delivery Charges';
+      case 'leaves-report': return 'Subscription Leaves';
+      case 'profit-loss': return 'Profit & Loss';
+      case 'products-analytics': return 'Product Analytics';
+      case 'expenses': return 'Expenses';
+      case 'farmers': return 'Farmers (Sellers)';
+      case 'collection-persons': return 'Collection Persons';
+      case 'milk-purchase': return 'Buy Milk';
+      case 'purchase-reports': return 'Purchase Reports';
+      case 'rate-chart': return 'Fat & SNF Rate Chart';
+      case 'farmer-payments': return 'Farmer Payments';
+      case 'daily-sales-load': return 'Daily Load Sheet';
+      case 'sales-requirement': return 'Sales Requirement';
+      case 'invoice-details': return 'Tax Invoices';
+      case 'invoice-summary': return 'Monthly Customer Summary';
+      default: return 'MilkyLush';
     }
   };
 
@@ -100,14 +131,19 @@ export default function Header({
           <Menu size={22} />
         </button>
 
-        <div>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            MILKYLUSH PORTAL • {activeHub.name.toUpperCase()}
-          </div>
-          <h1 className="header-page-title" style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: '1px 0 0 0', lineHeight: 1.1 }}>
-            {getTabTitle(activeTab)}
-          </h1>
-        </div>
+        <h1 className="header-page-title" style={{ fontFamily: "var(--font-body)", fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', margin: 0, lineHeight: 1.2 }}>
+          {getTabTitle(activeTab)}
+        </h1>
+        <button
+          type="button"
+          onClick={onOpenHubModal}
+          title="Switch hub"
+          className="header-hub-pill"
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-color)', background: 'var(--nav-active-bg)', color: 'var(--primary)', borderRadius: '999px', padding: '4px 12px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          <MapPin size={14} />
+          {activeHub.name}
+        </button>
       </div>
 
       {/* Center: Search Box if enabled */}
@@ -203,7 +239,7 @@ export default function Header({
               backgroundColor: '#EF4444',
               color: '#FFFFFF',
               fontSize: '0.6rem',
-              fontWeight: 800,
+              fontWeight: 700,
               padding: '1px 5px',
               borderRadius: '10px',
               border: '2px solid var(--bg-card)'
@@ -241,13 +277,13 @@ export default function Header({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: 800,
+            fontWeight: 700,
             fontSize: '0.8rem'
           }}>
             {adminUsername.substring(0, 2).toUpperCase()}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.1 }}>
               {adminUsername}
             </span>
             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -256,25 +292,13 @@ export default function Header({
           </div>
         </div>
 
-        {/* Sign Out Button (Matching Screenshots) */}
         <button
           onClick={onLogout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: '#EF4444',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
+          title="Sign out"
+          aria-label="Sign out"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '36px', height: '36px', color: 'var(--danger)', cursor: 'pointer' }}
         >
-          <LogOut size={14} />
-          <span>Sign Out</span>
+          <LogOut size={16} />
         </button>
 
       </div>

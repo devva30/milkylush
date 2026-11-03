@@ -138,12 +138,12 @@ export default function DispatchTodaysDeliveriesPage({
 
   // Default Today's Deliveries Table View
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             🚚 Today's Scheduled Deliveries
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -156,7 +156,7 @@ export default function DispatchTodaysDeliveriesPage({
           style={{
             backgroundColor: '#FFFFFF',
             color: '#1E293B',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             padding: '0.55rem 1.1rem',
             borderRadius: '10px',
@@ -191,7 +191,7 @@ export default function DispatchTodaysDeliveriesPage({
                 border: statusView === s.id ? 'none' : '1px solid #E2E8F0',
                 backgroundColor: statusView === s.id ? '#044E35' : '#FFFFFF',
                 color: statusView === s.id ? '#FFFFFF' : '#475569',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -271,12 +271,12 @@ export default function DispatchTodaysDeliveriesPage({
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.85rem 1.25rem', fontWeight: 800, color: '#044E35', fontSize: '0.88rem' }}>
+                      <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700, color: '#044E35', fontSize: '0.88rem' }}>
                         {order.id}
                       </td>
 
                       <td style={{ padding: '0.85rem 1.25rem' }}>
-                        <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.85rem' }}>{customerName}</div>
+                        <div style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.85rem' }}>{customerName}</div>
                         <div style={{ fontSize: '0.75rem', color: '#64748B' }}>📞 {customerPhone}</div>
                       </td>
 
@@ -324,7 +324,7 @@ export default function DispatchTodaysDeliveriesPage({
                             border: '1px solid #CBD5E1',
                             backgroundColor: '#FFFFFF',
                             fontSize: '0.75rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: agent ? '#047857' : '#D97706',
                             outline: 'none'
                           }}
@@ -346,7 +346,7 @@ export default function DispatchTodaysDeliveriesPage({
                             border: '1px solid #CBD5E1',
                             backgroundColor: '#FFFFFF',
                             fontSize: '0.75rem',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             color: order.status === 'delivered' ? '#047857' : (order.status === 'skipped' || order.status === 'cancelled') ? '#DC2626' : order.status === 'outForDelivery' ? '#1E40AF' : '#B45309',
                             outline: 'none'
                           }}
@@ -374,7 +374,7 @@ export default function DispatchTodaysDeliveriesPage({
                             borderRadius: '6px',
                             cursor: 'pointer',
                             fontSize: '0.75rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: '#334155',
                             display: 'inline-flex',
                             alignItems: 'center',

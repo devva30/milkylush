@@ -247,10 +247,10 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
               <ArrowLeft size={18} />
             </button>
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 CUSTOMER PROFILE &amp; REGISTRY
               </div>
-              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.4rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.4rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                 {selectedCustomer.name}
               </h2>
             </div>
@@ -259,7 +259,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{
               fontSize: '0.75rem',
-              fontWeight: 800,
+              fontWeight: 700,
               padding: '4px 12px',
               borderRadius: '20px',
               backgroundColor: selectedCustomer.status === 'active' ? '#DCFCE7' : selectedCustomer.status === 'vacation' ? '#FEF3C7' : selectedCustomer.status === 'skipped' ? '#DBEAFE' : '#F3F4F6',
@@ -269,7 +269,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             </span>
             <span style={{
               fontSize: '0.75rem',
-              fontWeight: 800,
+              fontWeight: 700,
               padding: '4px 12px',
               borderRadius: '20px',
               backgroundColor: selectedCustomer.customerType === 'new' ? '#EFF6FF' : '#F3F4F6',
@@ -290,7 +290,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
               backgroundColor: '#ECFDF5',
               color: '#047857',
               border: '1.5px solid #A7F3D0',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '1.4rem',
               display: 'flex',
               alignItems: 'center',
@@ -300,20 +300,20 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             </div>
 
             <div>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                 {selectedCustomer.name}
               </h3>
               <div style={{ fontSize: '0.85rem', color: '#4B5563', marginTop: '6px', display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
                 <a
                   href={`tel:${selectedCustomer.phone}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 700, textDecoration: 'none' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 600, textDecoration: 'none' }}
                 >
                   <Phone size={14} /> {selectedCustomer.phone}
                 </a>
                 {selectedCustomer.email && (
                   <a
                     href={`mailto:${selectedCustomer.email}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 700, textDecoration: 'none' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#047857', fontWeight: 600, textDecoration: 'none' }}
                   >
                     <Mail size={14} /> {selectedCustomer.email}
                   </a>
@@ -328,7 +328,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button 
               onClick={() => handleOpenDeleteCustomerModal(selectedCustomer.id, selectedCustomer.name)}
-              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', border: '1px solid #FCA5A5', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '0.55rem 1rem', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', border: '1px solid #FCA5A5', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Trash2 size={15} /> Delete Customer
             </button>
@@ -340,20 +340,20 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
           
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '14px', border: '1px solid #E5E7EB' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>BOTTLES RETURNED</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>BOTTLES RETURNED</span>
               <CheckCircle2 size={18} style={{ color: '#059669' }} />
             </div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#111827', marginTop: '6px' }}>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#111827', marginTop: '6px' }}>
               {selectedCustomer.emptyBottlesReturned || 0} units
             </div>
           </div>
 
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '14px', border: '1px solid #E5E7EB' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>BOTTLES AT HOME</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>BOTTLES AT HOME</span>
               <Clock size={18} style={{ color: '#D97706' }} />
             </div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#111827', marginTop: '6px' }}>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#111827', marginTop: '6px' }}>
               {selectedCustomer.bottlesAtHome || 0} units
             </div>
           </div>
@@ -368,7 +368,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             
             {/* Top Left: Order & Delivery History Card */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Package size={18} style={{ color: '#047857' }} /> Order &amp; Delivery History
               </div>
 
@@ -393,15 +393,15 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           <td>
                             <button 
                               onClick={() => onNavigateTab('orders', order.id)}
-                              style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
+                              style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
                             >
                               {order.id} →
                             </button>
                           </td>
                           <td style={{ color: '#6B7280' }}>{order.orderDate}</td>
-                          <td style={{ fontWeight: 800, color: '#111827' }}>₹{order.totalAmount}</td>
+                          <td style={{ fontWeight: 700, color: '#111827' }}>₹{order.totalAmount}</td>
                           <td>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
                               {order.status.toUpperCase()}
                             </span>
                           </td>
@@ -413,7 +413,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
               )}
 
               <div style={{ marginTop: '1.25rem', padding: '1rem', borderRadius: '12px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>
                   Customer Account Notes
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#6B7280', lineHeight: '1.4' }}>
@@ -442,7 +442,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
 
             {/* Bottom Left: Delivery Address Registry Card with Cover Button */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <MapPin size={18} style={{ color: '#047857' }} /> Delivery Address Registry ({addresses.length})
               </div>
 
@@ -456,7 +456,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <MapPin size={16} style={{ color: '#047857' }} />
-                          <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>
+                          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>
                             ADDRESS {idx + 1} {idx === 0 ? '· PRIMARY' : ''}
                           </span>
                         </div>
@@ -464,7 +464,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         <button 
                           onClick={() => handleDeleteAddress(idx)}
                           title="Delete Address"
-                          style={{ fontSize: '0.75rem', fontWeight: 700, color: '#DC2626', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}
+                          style={{ fontSize: '0.75rem', fontWeight: 600, color: '#DC2626', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}
                         >
                           <Trash2 size={14} /> Delete
                         </button>
@@ -475,43 +475,43 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         {formatted.doorNo && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Door no.</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.doorNo}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatted.doorNo}</span>
                           </div>
                         )}
                         {formatted.street && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Street / road</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.street}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatted.street}</span>
                           </div>
                         )}
                         {formatted.building && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Building</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.building}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatted.building}</span>
                           </div>
                         )}
                         {formatted.floor && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Floor</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.floor}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatted.floor}</span>
                           </div>
                         )}
                         {formatted.area && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Area / locality</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.area}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatted.area}</span>
                           </div>
                         )}
                         {formatted.landmark && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>Landmark</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatted.landmark}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatted.landmark}</span>
                           </div>
                         )}
                         {(formatted.city || formatted.pincode) && (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', fontWeight: 600 }}>City / PIN</span>
-                            <span style={{ fontWeight: 800, color: '#0F172A' }}>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>
                               {[formatted.city, formatted.pincode].filter(Boolean).join(' · ')}
                             </span>
                           </div>
@@ -533,7 +533,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           borderRadius: '10px', 
                           backgroundColor: '#047857', 
                           color: '#FFFFFF', 
-                          fontWeight: 800, 
+                          fontWeight: 700, 
                           fontSize: '0.8rem', 
                           textDecoration: 'none', 
                           display: 'flex', 
@@ -555,8 +555,8 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <UserIcon size={18} style={{ color: (selectedCustomer as any).riderName || (selectedCustomer as any).routeId ? '#047857' : '#D97706' }} />
                   <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>ASSIGNED RIDER / DELIVERY PERSON</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>ASSIGNED RIDER / DELIVERY PERSON</div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', marginTop: '2px' }}>
                       {(selectedCustomer as any).riderName
                         ? `${(selectedCustomer as any).riderName} (${(selectedCustomer as any).riderPhone || 'Assigned'})`
                         : (selectedCustomer as any).routeId
@@ -566,7 +566,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                   </div>
                 </div>
                 {!((selectedCustomer as any).riderName || (selectedCustomer as any).routeId) && (
-                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D97706', backgroundColor: '#FEF3C7', padding: '3px 8px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#D97706', backgroundColor: '#FEF3C7', padding: '3px 8px', borderRadius: '8px' }}>
                     UNASSIGNED
                   </span>
                 )}
@@ -589,7 +589,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                       backgroundColor: '#ECFDF5',
                       color: '#047857',
                       fontSize: '0.82rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -601,14 +601,14 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                   </button>
                 ) : (
                   <div style={{ backgroundColor: '#F9FAFB', border: '1px solid #D1D5DB', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>📍 Add New Address (App Fields)</span>
-                      <button onClick={() => setShowAddAddressForm(false)} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>✕ Cancel</button>
+                      <button onClick={() => setShowAddAddressForm(false)} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>✕ Cancel</button>
                     </div>
 
                     {/* Field 1: City Dropdown */}
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>City *</label>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>City *</label>
                       <select
                         value={addCity}
                         onChange={(e) => setAddCity(e.target.value as any)}
@@ -622,7 +622,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                     {/* Field 2 & 3: Area & PIN Code */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Area / Locality *</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Area / Locality *</label>
                         <input
                           type="text"
                           placeholder="e.g. Darga / E-City"
@@ -632,7 +632,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>PIN Code *</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>PIN Code *</label>
                         <input
                           type="text"
                           placeholder="6-digit PIN code"
@@ -647,7 +647,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                     {/* Field 4 & 5: Flat/Door No & Street */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Flat / House / Door No</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Flat / House / Door No</label>
                         <input
                           type="text"
                           placeholder="e.g. Flat 301"
@@ -657,7 +657,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Street / Main / Cross</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Street / Main / Cross</label>
                         <input
                           type="text"
                           placeholder="e.g. 2nd Cross"
@@ -671,7 +671,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                     {/* Field 6 & 7: Building & Floor */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Building / Apartment</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Building / Apartment</label>
                         <input
                           type="text"
                           placeholder="e.g. Oakwood Hills"
@@ -681,7 +681,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Floor</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Floor</label>
                         <input
                           type="text"
                           placeholder="e.g. 3rd Floor"
@@ -694,7 +694,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
 
                     {/* Field 8: Landmark */}
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Landmark</label>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Landmark</label>
                       <input
                         type="text"
                         placeholder="e.g. Opp Infosys Gate 4 / Near Water Tank"
@@ -707,7 +707,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                     {/* Field 9 & 10: Contact Name & Contact Phone */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Receiver Name</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Receiver Name</label>
                         <input
                           type="text"
                           placeholder="Receiver Name"
@@ -717,7 +717,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Receiver Phone</label>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '3px' }}>Receiver Phone</label>
                         <input
                           type="text"
                           placeholder="10-digit mobile"
@@ -731,7 +731,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
 
                     {/* Field 11: Save Address As (Tag) */}
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>Save Address As</label>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>Save Address As</label>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         {(['Home', 'Work', 'Hotel', 'Other'] as const).map((t) => (
                           <button
@@ -745,7 +745,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                               backgroundColor: addAddressType === t ? '#ECFDF5' : '#FFFFFF',
                               color: addAddressType === t ? '#047857' : '#374151',
                               fontSize: '0.76rem',
-                              fontWeight: 700,
+                              fontWeight: 600,
                               cursor: 'pointer'
                             }}
                           >
@@ -767,7 +767,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           backgroundColor: '#047857',
                           color: '#FFFFFF',
                           border: 'none',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.82rem',
                           cursor: isSavingAddress ? 'not-allowed' : 'pointer'
                         }}
@@ -785,7 +785,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
 
           {/* RIGHT COLUMN: Active Subscriptions Card */}
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E5E7EB', minWidth: 0, height: 'fit-content' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Calendar size={18} style={{ color: '#047857' }} /> Active Subscriptions ({displaySubs.length})
             </div>
 
@@ -810,15 +810,15 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                         <td>
                           <button 
                             onClick={() => onNavigateTab('subscriptions', sub.id)}
-                            style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
+                            style={{ padding: '3px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', color: '#047857' }}
                           >
                             {sub.id} →
                           </button>
                         </td>
-                        <td style={{ fontWeight: 700, color: '#111827' }}>{sub.productName}</td>
+                        <td style={{ fontWeight: 600, color: '#111827' }}>{sub.productName}</td>
                         <td style={{ color: '#6B7280' }}>{sub.frequency}</td>
                         <td>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '10px' }}>
                             ACTIVE
                           </span>
                         </td>
@@ -843,7 +843,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
       {/* Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             Customer Directory
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '2px' }}>
@@ -866,10 +866,10 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               TOTAL REGISTERED CUSTOMERS
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
               {totalRegistered}
             </div>
           </div>
@@ -889,10 +889,10 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               ACTIVE SUBSCRIPTION CUSTOMERS
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
               {activeSubsCount}
             </div>
           </div>
@@ -911,7 +911,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
           
           {/* Status Filter Pills */}
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', backgroundColor: '#F9FAFB', padding: '4px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>STATUS:</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>STATUS:</span>
             <button 
               onClick={() => setActiveStatusFilter('all')}
               style={{
@@ -921,7 +921,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeStatusFilter === 'all' ? '#047857' : 'transparent',
                 color: activeStatusFilter === 'all' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -936,7 +936,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeStatusFilter === 'active' ? '#047857' : 'transparent',
                 color: activeStatusFilter === 'active' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -954,7 +954,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeStatusFilter === 'vacation' ? '#047857' : 'transparent',
                 color: activeStatusFilter === 'vacation' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -972,7 +972,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeStatusFilter === 'skipped' ? '#047857' : 'transparent',
                 color: activeStatusFilter === 'skipped' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -990,7 +990,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeStatusFilter === 'inactive' ? '#047857' : 'transparent',
                 color: activeStatusFilter === 'inactive' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1003,7 +1003,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
 
           {/* Type Filter Pills */}
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', backgroundColor: '#F9FAFB', padding: '4px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>TYPE:</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>TYPE:</span>
             <button 
               onClick={() => setActiveTypeFilter('all')}
               style={{
@@ -1013,7 +1013,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeTypeFilter === 'all' ? '#0284C7' : 'transparent',
                 color: activeTypeFilter === 'all' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -1028,7 +1028,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeTypeFilter === 'subscription' ? '#0284C7' : 'transparent',
                 color: activeTypeFilter === 'subscription' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -1043,7 +1043,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeTypeFilter === 'onetime' ? '#0284C7' : 'transparent',
                 color: activeTypeFilter === 'onetime' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -1058,7 +1058,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeTypeFilter === 'both' ? '#0284C7' : 'transparent',
                 color: activeTypeFilter === 'both' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -1073,7 +1073,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 backgroundColor: activeTypeFilter === 'new' ? '#0284C7' : 'transparent',
                 color: activeTypeFilter === 'new' ? '#FFFFFF' : '#374151',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -1083,7 +1083,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
 
           {/* Free Sample Filter Pills */}
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', backgroundColor: '#F9FAFB', padding: '4px', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>FREE SAMPLE:</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', padding: '0 6px', textTransform: 'uppercase' }}>FREE SAMPLE:</span>
             {[
               { id: 'all', label: 'All' },
               { id: 'claimed', label: 'Claimed Sample' },
@@ -1099,7 +1099,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                   backgroundColor: activeFreeSampleFilter === f.id ? '#D97706' : 'transparent',
                   color: activeFreeSampleFilter === f.id ? '#FFFFFF' : '#374151',
                   fontSize: '0.78rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer'
                 }}
               >
@@ -1138,7 +1138,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
               alignItems: 'center',
               gap: '6px',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               padding: '0.45rem 1rem',
               borderRadius: '8px',
               backgroundColor: '#047857',
@@ -1181,7 +1181,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           borderRadius: '50%',
                           backgroundColor: '#047857',
                           color: '#FFFFFF',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.85rem',
                           display: 'flex',
                           alignItems: 'center',
@@ -1190,7 +1190,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           {user.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem' }}>{user.name}</div>
+                          <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.88rem' }}>{user.name}</div>
                           <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '1px' }}>{user.phone}</div>
                         </div>
                       </div>
@@ -1201,7 +1201,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                         <span style={{
                           fontSize: '0.72rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: user.customerType === 'new' ? '#2563EB' : user.customerType === 'subscription' ? '#0369A1' : '#475569',
                           backgroundColor: user.customerType === 'new' ? '#EFF6FF' : user.customerType === 'subscription' ? '#E0F2FE' : '#F1F5F9',
                           padding: '3px 8px',
@@ -1210,11 +1210,11 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           {user.customerType === 'new' ? 'New Customer' : user.customerType === 'subscription' ? 'Subscription' : user.customerType === 'onetime' ? 'One-Time' : 'Both'}
                         </span>
                         {user.hasClaimedFreeSample ? (
-                          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#D97706', backgroundColor: '#FEF3C7', padding: '2px 6px', borderRadius: '6px' }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#D97706', backgroundColor: '#FEF3C7', padding: '2px 6px', borderRadius: '6px' }}>
                             🎁 Free Sample Claimed
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '6px' }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '6px' }}>
                             ⭕ Sample Not Claimed
                           </span>
                         )}
@@ -1242,7 +1242,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span style={{
                         fontSize: '0.72rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         color: user.status === 'active' ? '#059669' : user.status === 'vacation' ? '#D97706' : user.status === 'skipped' ? '#2563EB' : '#6B7280',
                         backgroundColor: user.status === 'active' ? '#DCFCE7' : user.status === 'vacation' ? '#FEF3C7' : user.status === 'skipped' ? '#DBEAFE' : '#F3F4F6',
                         padding: '3px 10px',
@@ -1260,7 +1260,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           style={{
                             padding: '0.45rem 0.75rem',
                             fontSize: '0.78rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             borderRadius: '8px',
                             backgroundColor: '#FFFFFF',
                             color: '#111827',
@@ -1275,7 +1275,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                           style={{
                             padding: '0.45rem 0.75rem',
                             fontSize: '0.78rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             borderRadius: '8px',
                             backgroundColor: '#FEE2E2',
                             color: '#DC2626',
@@ -1363,7 +1363,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button
@@ -1410,21 +1410,21 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             width: '100%',
             boxShadow: 'var(--shadow-lg)'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, marginBottom: '0.5rem' }}>+ Register New Customer Account</h3>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, marginBottom: '0.5rem' }}>+ Register New Customer Account</h3>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '1.25rem' }}>
               Add a new subscriber account to the selected hub directory.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>FULL NAME</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>FULL NAME</label>
                 <input type="text" placeholder="e.g. Ramesh Kumar" style={{ width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1px solid #E5E7EB', marginTop: '4px', outline: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>MOBILE NUMBER</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>MOBILE NUMBER</label>
                 <input type="text" placeholder="+91 98765 43210" style={{ width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1px solid #E5E7EB', marginTop: '4px', outline: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>DELIVERY ADDRESS &amp; FLAT</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280' }}>DELIVERY ADDRESS &amp; FLAT</label>
                 <input type="text" placeholder="Flat 204, Green Heights, Hosur" style={{ width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1px solid #E5E7EB', marginTop: '4px', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: '0.85rem', marginTop: '1rem' }}>
@@ -1440,7 +1440,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                     setShowAddModal(false);
                     showToast("New customer account registered successfully!", "success");
                   }}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Save Account
                 </button>
@@ -1479,7 +1479,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                 <Trash2 size={20} />
               </div>
               <div>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
                   Delete Customer Profile
                 </h3>
                 <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -1489,7 +1489,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             </div>
 
             <div style={{ backgroundColor: '#FEF2F2', padding: '1rem', borderRadius: '12px', border: '1px solid #FCA5A5', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#991B1B' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#991B1B' }}>
                 ⚠️ Warning: Deleting Customer "{deleteCustomerModal.name}"
               </div>
               <div style={{ fontSize: '0.78rem', color: '#B91C1C', marginTop: '4px', lineHeight: '1.4' }}>
@@ -1498,11 +1498,11 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
             </div>
 
             {deleteCustCountdown > 0 ? (
-              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', marginBottom: '1.25rem' }}>
                 ⏳ Delete action enabled in {deleteCustCountdown} seconds...
               </div>
             ) : (
-              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', marginBottom: '1.25rem' }}>
                 ✓ Safety countdown complete. You may proceed.
               </div>
             )}
@@ -1516,7 +1516,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                   backgroundColor: '#F3F4F6',
                   color: '#374151',
                   border: '1px solid #E5E7EB',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}
@@ -1533,7 +1533,7 @@ export default function CustomersPage({ targetCustomerId, onNavigateTab }: Custo
                   backgroundColor: deleteCustCountdown > 0 ? '#F3F4F6' : '#DC2626',
                   color: deleteCustCountdown > 0 ? '#9CA3AF' : '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: deleteCustCountdown > 0 ? 'not-allowed' : 'pointer'
                 }}

@@ -103,7 +103,7 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#166534', margin: 0 }}>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#166534', margin: 0 }}>
           {selectedTab === 'invoice-details' ? 'Tax Invoices & Transaction Receipts' : 'Customer Monthly Invoice Summary'}
         </h1>
         <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '4px 0 0 0' }}>
@@ -117,7 +117,7 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {/* Order / Invoice List */}
           <div style={{ backgroundColor: '#FFFFFF', padding: '1.25rem', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
               Recent Invoices
             </div>
 
@@ -140,12 +140,12 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#166534' }}>{o.id}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#166534' }}>{o.id}</div>
                     <div style={{ fontSize: '0.78rem', color: '#475569', fontWeight: 600 }}>{o.customerName} · {formatDay(o.date)}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.9rem' }}>₹{o.totalAmount}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>PAID</div>
+                    <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.9rem' }}>₹{o.totalAmount}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>PAID</div>
                   </div>
                 </div>
               ))}
@@ -158,11 +158,11 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #166534', paddingBottom: '0.85rem' }}>
                   <div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#166534' }}>MILKYLUSH DAIRY PRODUCTS</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#166534' }}>MILKYLUSH DAIRY PRODUCTS</div>
                     <div onClick={handleSetGstin} title="Click to set this hub's GSTIN" style={{ fontSize: '0.75rem', color: '#64748B', cursor: 'pointer' }}>GSTIN: {gstin || 'not set (click to add)'} • {HUB_NAMES[hubId]}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1E293B' }}>{gstin ? 'TAX INVOICE' : 'INVOICE'}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B' }}>{gstin ? 'TAX INVOICE' : 'INVOICE'}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{selectedOrder.id} · {formatDay(selectedOrder.date)}</div>
                   </div>
                 </div>
@@ -185,13 +185,13 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
                     <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
                       <td style={{ padding: '0.5rem', fontWeight: 600 }}>{it.name} ({it.unit})</td>
                       <td style={{ padding: '0.5rem', textAlign: 'center' }}>{it.qty}</td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 700 }}>₹{(it.price * it.qty).toFixed(2)}</td>
+                      <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>₹{(it.price * it.qty).toFixed(2)}</td>
                     </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #E2E8F0', paddingTop: '0.75rem', fontSize: '1rem', fontWeight: 800, color: '#166534' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #E2E8F0', paddingTop: '0.75rem', fontSize: '1rem', fontWeight: 700, color: '#166534' }}>
                   <span>Invoice Total:</span>
                   <span>₹{selectedOrder.totalAmount.toFixed(2)}</span>
                 </div>
@@ -200,7 +200,7 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#166534', color: '#FFFFFF', border: 'none', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#166534', color: '#FFFFFF', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
                     <Printer size={15} />
                     <span>Print Invoice</span>
@@ -209,7 +209,7 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
                   <button
                     type="button"
                     onClick={() => window.print()} title="Choose 'Save as PDF' in the print window"
-                    style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#166534', border: '1px solid #166534', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#166534', border: '1px solid #166534', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
                     <Download size={15} />
                     <span>Download PDF</span>
@@ -225,17 +225,17 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
 
       {selectedTab === 'invoice-summary' && (
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', marginBottom: '1rem' }}>
             Customer Monthly Subscription Billing Statements
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>CUSTOMER NAME</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>BILLING MONTH</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800 }}>DROPS DELIVERED</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, textAlign: 'right' }}>MONTHLY INVOICE TOTAL</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>CUSTOMER NAME</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>BILLING MONTH</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>DROPS DELIVERED</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 700, textAlign: 'right' }}>MONTHLY INVOICE TOTAL</th>
               </tr>
             </thead>
             <tbody>
@@ -244,10 +244,10 @@ export default function InvoicesBillingPage({ selectedTab }: InvoicesBillingPage
               )}
               {statements.map((u) => (
                 <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>{u.name}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1E293B' }}>{u.name}</td>
                   <td style={{ padding: '0.75rem 1rem', color: '#64748B' }}>{monthLabel}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#166534' }}>{u.drops} Drops</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#166534' }}>₹{u.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#166534' }}>{u.drops} Drops</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#166534' }}>₹{u.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
             </tbody>

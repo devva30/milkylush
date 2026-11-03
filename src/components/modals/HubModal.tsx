@@ -49,7 +49,7 @@ export const HubModal: React.FC<HubModalProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
               Operational Hub Scoping
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -86,7 +86,7 @@ export const HubModal: React.FC<HubModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <MapPin size={20} style={{ color: isSelected ? 'var(--primary-light)' : 'var(--text-muted)' }} />
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: isSelected ? 'var(--primary-light)' : 'var(--text-main)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: isSelected ? 'var(--primary-light)' : 'var(--text-main)' }}>
                       {hub.name}
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>

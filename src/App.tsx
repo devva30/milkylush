@@ -215,7 +215,7 @@ function AppContent() {
       />
 
       {/* Main Content Viewport */}
-      <div className="main-content-viewport" style={{ marginLeft: isSidebarCollapsed ? '76px' : '260px', transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+      <div className="main-content-viewport" style={{ marginLeft: isSidebarCollapsed ? '72px' : '264px', transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         <Header
           activeTab={activeTab}
           selectedHubId={selectedHubId}
@@ -242,8 +242,8 @@ function AppContent() {
             alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: '0.82rem',
-            fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif"
+            fontWeight: 600,
+            fontFamily: "var(--font-body)"
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <WifiOff size={16} /> No internet connection detected. Please check your network to sync live updates.
@@ -254,7 +254,7 @@ function AppContent() {
                 display: 'inline-flex', alignItems: 'center', gap: '4px',
                 padding: '0.3rem 0.7rem', borderRadius: '6px',
                 backgroundColor: '#DC2626', color: '#FFFFFF',
-                border: 'none', fontWeight: 700, fontSize: '0.76rem', cursor: 'pointer'
+                border: 'none', fontWeight: 600, fontSize: '0.76rem', cursor: 'pointer'
               }}
             >
               <RefreshCw size={13} /> Retry Connection

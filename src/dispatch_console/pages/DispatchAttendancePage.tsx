@@ -144,7 +144,7 @@ export default function DispatchAttendancePage({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Outfit', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: '#FFFFFF', padding: '1.25rem 1.5rem', borderRadius: '18px', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -154,7 +154,7 @@ export default function DispatchAttendancePage({
               <UserCheck size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                 Rider Shift & Attendance Dispatch Roster
               </h2>
               <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -176,7 +176,7 @@ export default function DispatchAttendancePage({
                 borderRadius: '8px',
                 padding: '7px 16px',
                 fontSize: '0.82rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -195,7 +195,7 @@ export default function DispatchAttendancePage({
                 borderRadius: '8px',
                 padding: '7px 16px',
                 fontSize: '0.82rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -221,7 +221,7 @@ export default function DispatchAttendancePage({
                   borderRadius: '12px',
                   border: '1px solid #CBD5E1',
                   fontSize: '0.85rem',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   color: '#1E293B',
                   cursor: 'pointer',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
@@ -260,19 +260,19 @@ export default function DispatchAttendancePage({
                     padding: '6px 12px',
                     borderRadius: '8px',
                     fontSize: '0.9rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#1E293B'
                   }}>
                     <button
                       onClick={() => setPickerYear(y => y - 1)}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 800, color: '#334155' }}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 700, color: '#334155' }}
                     >
                       ‹
                     </button>
                     <span>{pickerYear}</span>
                     <button
                       onClick={() => setPickerYear(y => y + 1)}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 800, color: '#334155' }}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 700, color: '#334155' }}
                     >
                       ›
                     </button>
@@ -327,7 +327,7 @@ export default function DispatchAttendancePage({
                         setSelectedMonth(todayKey().slice(0, 7));
                         setIsMonthPickerOpen(false);
                       }}
-                      style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
                     >
                       Clear
                     </button>
@@ -339,7 +339,7 @@ export default function DispatchAttendancePage({
                         setPickerYear(parseInt(nowKey.slice(0, 4), 10));
                         setIsMonthPickerOpen(false);
                       }}
-                      style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ border: 'none', background: 'none', color: '#0284C7', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
                     >
                       This month
                     </button>
@@ -348,13 +348,13 @@ export default function DispatchAttendancePage({
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F8FAFC', padding: '0.5rem 0.9rem', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '0.85rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F8FAFC', padding: '0.5rem 0.9rem', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '0.85rem', fontWeight: 600 }}>
               <Calendar size={17} style={{ color: '#166534' }} />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.85rem', fontWeight: 800, color: '#1E293B', cursor: 'pointer' }}
+                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.85rem', fontWeight: 700, color: '#1E293B', cursor: 'pointer' }}
               />
             </div>
           )}
@@ -367,45 +367,45 @@ export default function DispatchAttendancePage({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL FLEET</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL FLEET</span>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#334155' }}>
               <UserCheck size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E293B', marginTop: '6px' }}>{filteredAgents.length} Riders</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#1E293B', marginTop: '6px' }}>{filteredAgents.length} Riders</div>
           <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>Assigned to {selectedHubId === 'bengaluru' ? 'Bangalore' : 'Hosur'} Hub</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #86EFAC', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ON SHIFT NOW</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ON SHIFT NOW</span>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534' }}>
               <CheckCircle size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#166534', marginTop: '6px' }}>{presentCount} Active</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#166534', marginTop: '6px' }}>{presentCount} Active</div>
           <div style={{ fontSize: '0.78rem', color: '#166534', marginTop: '2px' }}>Punched in & on duty</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #FCA5A5', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MARKED ABSENT</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MARKED ABSENT</span>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626' }}>
               <UserX size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#DC2626', marginTop: '6px' }}>{absentCount} Absent</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#DC2626', marginTop: '6px' }}>{absentCount} Absent</div>
           <div style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: '2px' }}>Off-duty or leave today</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #93C5FD', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PUNCTUALITY RATE</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PUNCTUALITY RATE</span>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF' }}>
               <Clock size={16} />
             </div>
           </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1E40AF', marginTop: '6px' }}>{punctualityRate}%</div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#1E40AF', marginTop: '6px' }}>{punctualityRate}%</div>
           <div style={{ fontSize: '0.78rem', color: '#1E40AF', marginTop: '2px' }}>On-time morning shift check-ins</div>
         </div>
       </div>
@@ -416,7 +416,7 @@ export default function DispatchAttendancePage({
           {/* Table Toolbar */}
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: '#F8FAFC' }}>
             <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                 Monthly Rider Attendance Roster ({selectedMonth})
               </h3>
               <p style={{ fontSize: '0.78rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -462,15 +462,15 @@ export default function DispatchAttendancePage({
                     return (
                       <tr key={agent.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
-                          <div style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.9rem' }}>🚴 {agent.name}</div>
+                          <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.9rem' }}>🚴 {agent.name}</div>
                           <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px' }}>📞 {agent.phone || 'N/A'}</div>
                         </td>
 
-                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center', fontWeight: 800, color: '#166534' }}>
+                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center', fontWeight: 700, color: '#166534' }}>
                           {stats.presentDays} d
                         </td>
 
-                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center', fontWeight: 800, color: '#DC2626' }}>
+                        <td style={{ padding: '0.9rem 0.75rem', textAlign: 'center', fontWeight: 700, color: '#DC2626' }}>
                           {stats.absentDays} d
                         </td>
 
@@ -478,7 +478,7 @@ export default function DispatchAttendancePage({
                           <span style={{
                             padding: '4px 10px',
                             borderRadius: '12px',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             fontSize: '0.8rem',
                             backgroundColor: stats.attendancePct >= 85 ? '#DCFCE7' : stats.attendancePct >= 70 ? '#FEF3C7' : '#FEE2E2',
                             color: stats.attendancePct >= 85 ? '#166534' : stats.attendancePct >= 70 ? '#B45309' : '#DC2626',
@@ -505,7 +505,7 @@ export default function DispatchAttendancePage({
                                     height: '20px',
                                     borderRadius: '5px',
                                     fontSize: '0.68rem',
-                                    fontWeight: 800,
+                                    fontWeight: 700,
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -533,7 +533,7 @@ export default function DispatchAttendancePage({
                               borderRadius: '10px',
                               padding: '0.5rem 0.9rem',
                               fontSize: '0.8rem',
-                              fontWeight: 800,
+                              fontWeight: 700,
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -555,7 +555,7 @@ export default function DispatchAttendancePage({
         /* VIEW 2: DAILY OVERRIDE LOG TABLE */
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: '#F8FAFC' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
               Daily Shift Attendance Override ({selectedDate})
             </h3>
 
@@ -598,7 +598,7 @@ export default function DispatchAttendancePage({
 
                     return (
                       <tr key={agent.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '0.9rem 1.25rem', fontWeight: 800, color: '#1E293B', fontSize: '0.9rem', textAlign: 'left' }}>
+                        <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700, color: '#1E293B', fontSize: '0.9rem', textAlign: 'left' }}>
                           🚴 {agent.name}
                         </td>
 
@@ -613,7 +613,7 @@ export default function DispatchAttendancePage({
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
                           <span style={{
                             fontSize: '0.76rem',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             padding: '4px 12px',
                             borderRadius: '14px',
                             backgroundColor: agent.isOnline ? '#DCFCE7' : '#F1F5F9',
@@ -626,7 +626,7 @@ export default function DispatchAttendancePage({
                         <td style={{ padding: '0.9rem 1.25rem', textAlign: 'left' }}>
                           <span style={{
                             fontSize: '0.78rem',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             padding: '4px 12px',
                             borderRadius: '14px',
                             backgroundColor: isPresent ? '#DCFCE7' : isAbsent ? '#FEF2F2' : '#FFFBEB',
@@ -649,7 +649,7 @@ export default function DispatchAttendancePage({
                                 borderRadius: '10px',
                                 padding: '0.45rem 0.85rem',
                                 fontSize: '0.8rem',
-                                fontWeight: 800,
+                                fontWeight: 700,
                                 cursor: isUpdating || isPresent ? 'not-allowed' : 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -669,7 +669,7 @@ export default function DispatchAttendancePage({
                                 borderRadius: '10px',
                                 padding: '0.45rem 0.85rem',
                                 fontSize: '0.8rem',
-                                fontWeight: 800,
+                                fontWeight: 700,
                                 cursor: isUpdating || isAbsent ? 'not-allowed' : 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -717,7 +717,7 @@ export default function DispatchAttendancePage({
             {/* Modal Header */}
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                   📊 Shift Attendance Audit — {selectedRiderForModal.name}
                 </h3>
                 <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -733,7 +733,7 @@ export default function DispatchAttendancePage({
                   borderRadius: '50%',
                   width: '34px',
                   height: '34px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   color: '#475569'
                 }}
@@ -750,22 +750,22 @@ export default function DispatchAttendancePage({
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                     <div style={{ backgroundColor: '#DCFCE7', borderRadius: '14px', padding: '1rem', textAlign: 'center', border: '1px solid #86EFAC' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>PRESENT DAYS</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534', marginTop: '2px' }}>{stats.presentDays} Days</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>PRESENT DAYS</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#166534', marginTop: '2px' }}>{stats.presentDays} Days</div>
                     </div>
                     <div style={{ backgroundColor: '#FEF2F2', borderRadius: '14px', padding: '1rem', textAlign: 'center', border: '1px solid #FCA5A5' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase' }}>ABSENT DAYS</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#DC2626', marginTop: '2px' }}>{stats.absentDays} Days</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#DC2626', textTransform: 'uppercase' }}>ABSENT DAYS</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#DC2626', marginTop: '2px' }}>{stats.absentDays} Days</div>
                     </div>
                     <div style={{ backgroundColor: '#DBEAFE', borderRadius: '14px', padding: '1rem', textAlign: 'center', border: '1px solid #93C5FD' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase' }}>ATTENDANCE RATE</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E40AF', marginTop: '2px' }}>{stats.attendancePct}%</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase' }}>ATTENDANCE RATE</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1E40AF', marginTop: '2px' }}>{stats.attendancePct}%</div>
                     </div>
                   </div>
                 );
               })()}
 
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: '0.25rem 0 0 0' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', margin: '0.25rem 0 0 0' }}>
                 Daily Punch In / Punch Out Timestamps:
               </h4>
 
@@ -789,7 +789,7 @@ export default function DispatchAttendancePage({
 
                       return (
                         <tr key={dayStr} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#1E293B' }}>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#1E293B' }}>
                             {dayStr}
                           </td>
                           <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
@@ -803,7 +803,7 @@ export default function DispatchAttendancePage({
                               padding: '3px 10px',
                               borderRadius: '10px',
                               fontSize: '0.75rem',
-                              fontWeight: 800,
+                              fontWeight: 700,
                               backgroundColor: isPresent ? '#DCFCE7' : isAbsent ? '#FEF2F2' : '#F1F5F9',
                               color: isPresent ? '#166534' : isAbsent ? '#DC2626' : '#64748B',
                             }}>

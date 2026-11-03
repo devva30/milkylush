@@ -36,12 +36,12 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
   const currentLng = selectedAgent ? selectedAgent.lng : defaultLng;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             📍 Live Rider GPS Tracking & Telemetry
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -59,7 +59,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
           border: onlineCount > 0 ? '1px solid #A7F3D0' : '1px solid #E2E8F0'
         }}>
           <Radio size={16} style={{ color: onlineCount > 0 ? '#047857' : '#64748B' }} className={onlineCount > 0 ? 'animate-pulse' : ''} />
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: onlineCount > 0 ? '#047857' : '#64748B' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: onlineCount > 0 ? '#047857' : '#64748B' }}>
             {onlineCount} {onlineCount === 1 ? 'Rider' : 'Riders'} Online (On Duty)
           </span>
         </div>
@@ -71,11 +71,11 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
         {/* Map Container */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Navigation size={18} style={{ color: '#047857' }} /> Live GPS Map View — {selectedAgent ? selectedAgent.name : selectedHubId}
             </span>
             {selectedAgent && (
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 10px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 10px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
                 GPS Coords: {currentLat.toFixed(5)}, {currentLng.toFixed(5)}
               </span>
             )}
@@ -98,7 +98,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <ShieldCheck size={18} style={{ color: '#047857' }} />
                 <div>
-                  <div style={{ fontWeight: 800, color: '#1E293B' }}>{selectedAgent.name} ({selectedAgent.phone || '—'})</div>
+                  <div style={{ fontWeight: 700, color: '#1E293B' }}>{selectedAgent.name} ({selectedAgent.phone || '—'})</div>
                   <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Assigned Zone: {selectedAgent.assignedZone || selectedHubId}</div>
                 </div>
               </div>
@@ -106,7 +106,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <a
                   href={`tel:${selectedAgent.phone || ''}`}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: '#047857', color: '#FFFFFF', padding: '4px 12px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '0.76rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: '#047857', color: '#FFFFFF', padding: '4px 12px', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '0.76rem' }}
                 >
                   <Phone size={13} /> Call Rider
                 </a>
@@ -118,7 +118,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
         {/* Online Riders Sidebar */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.25rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
               Fleet Telemetry ({activeAgents.length})
             </h3>
           </div>
@@ -149,13 +149,13 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E293B' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1E293B' }}>
                         🚴 {agent.name}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
                         Zone: {agent.assignedZone || 'Hosur Central'}
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 700, marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 600, marginTop: '2px' }}>
                         GPS: {agent.lat.toFixed(4)}, {agent.lng.toFixed(4)}
                       </div>
                     </div>
@@ -163,7 +163,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                       <span style={{
                         fontSize: '0.68rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         color: agent.isOnline ? '#047857' : '#64748B',
                         backgroundColor: agent.isOnline ? '#DCFCE7' : '#F1F5F9',
                         padding: '2px 8px',
@@ -172,7 +172,7 @@ export default function DispatchLiveTrackingPage({ hubDeliveryAgents, selectedHu
                         {agent.isOnline ? '🟢 Live GPS' : '⚪ Off Duty'}
                       </span>
                       {isSelected && (
-                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#047857' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#047857' }}>
                           ✓ Tracking
                         </span>
                       )}

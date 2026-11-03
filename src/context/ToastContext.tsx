@@ -62,7 +62,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               justifyContent: 'space-between',
               gap: '12px',
               animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-              fontFamily: "'Poppins', sans-serif"
+              fontFamily: "var(--font-body)"
             }}
           >
             <span>{t.message}</span>

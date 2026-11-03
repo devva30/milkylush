@@ -98,14 +98,14 @@ export default function DispatchDeliveryPhotosPage({ selectedHubId, showToast }:
   const card = { backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '1.5rem', border: '1px solid #E2E8F0' } as const;
   const btn = (danger = false) => ({
     padding: '0.6rem 1rem', borderRadius: '12px', border: danger ? '1px solid #FCA5A5' : '1px solid #CBD5E1',
-    backgroundColor: danger ? '#FEF2F2' : '#FFFFFF', color: danger ? '#B91C1C' : '#334155', fontWeight: 800,
+    backgroundColor: danger ? '#FEF2F2' : '#FFFFFF', color: danger ? '#B91C1C' : '#334155', fontWeight: 700,
     fontSize: '0.82rem', cursor: busy ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
   }) as const;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left' }}>
       <div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Camera size={22} style={{ color: '#044E35' }} /> Delivery Photos
         </h2>
         <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '6px 0 0 0' }}>
@@ -116,17 +116,17 @@ export default function DispatchDeliveryPhotosPage({ selectedHubId, showToast }:
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <div style={card}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748B' }}>PHOTOS STORED</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827' }}>{stats.count}</div>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B' }}>PHOTOS STORED</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#111827' }}>{stats.count}</div>
           <div style={{ fontSize: '0.78rem', color: '#64748B' }}>about {Math.round(stats.count * 12 / 1024 * 10) / 10} MB</div>
         </div>
         <div style={card}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748B' }}>OLDEST PHOTO</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111827' }}>{stats.oldest ?? '—'}</div>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B' }}>OLDEST PHOTO</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#111827' }}>{stats.oldest ?? '—'}</div>
           <div style={{ fontSize: '0.78rem', color: '#64748B' }}>auto-delete after {addDays(todayKey(), -PROOF_PHOTO_DAYS)}</div>
         </div>
         <div style={card}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748B', marginBottom: 8 }}>DELETE OLDER PHOTOS</div>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: 8 }}>DELETE OLDER PHOTOS</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input type="date" value={olderThan} max={todayKey()} onChange={(e) => setOlderThan(e.target.value)}
               style={{ padding: '0.5rem', borderRadius: 10, border: '1px solid #CBD5E1' }} />
@@ -140,7 +140,7 @@ export default function DispatchDeliveryPhotosPage({ selectedHubId, showToast }:
       <div style={card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.9rem' }}>Day</span>
+            <span style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.9rem' }}>Day</span>
             <input type="date" value={date} max={todayKey()} onChange={(e) => setDate(e.target.value)}
               style={{ padding: '0.5rem', borderRadius: 10, border: '1px solid #CBD5E1' }} />
             <button type="button" onClick={reload} style={btn()}><RefreshCw size={14} /> Refresh</button>
@@ -161,7 +161,7 @@ export default function DispatchDeliveryPhotosPage({ selectedHubId, showToast }:
                 <img src={p.dataUrl} alt={p.id} onClick={() => setPreview(p)}
                   style={{ width: '100%', height: 140, objectFit: 'cover', cursor: 'zoom-in', display: 'block' }} />
                 <div style={{ padding: '0.55rem 0.65rem' }}>
-                  <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#111827', wordBreak: 'break-all' }}>{p.id.replace(`${p.date}_`, '')}</div>
+                  <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#111827', wordBreak: 'break-all' }}>{p.id.replace(`${p.date}_`, '')}</div>
                   <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{p.source} • {p.sizeKb} KB</div>
                   <button type="button" disabled={busy} onClick={() => deleteOne(p)} style={{ ...btn(true), marginTop: 6, padding: '0.35rem 0.6rem', fontSize: '0.74rem' }}>
                     <Trash2 size={12} /> Delete

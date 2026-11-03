@@ -252,7 +252,7 @@ export default function ManageSubscriptionsPage({
             <BarChart2 size={24} />
           </div>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 800, margin: 0, color: '#064E3B' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#064E3B' }}>
               📊 Subscription Analytics &amp; Plans Console
             </h2>
             <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: '3px' }}>
@@ -296,7 +296,7 @@ export default function ManageSubscriptionsPage({
               borderRadius: '10px',
               backgroundColor: '#FFFFFF',
               color: '#047857',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.8rem',
               border: '1px solid #A7F3D0',
               cursor: 'pointer',
@@ -315,7 +315,7 @@ export default function ManageSubscriptionsPage({
               borderRadius: '10px',
               backgroundColor: '#047857',
               color: '#FFFFFF',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.8rem',
               border: 'none',
               cursor: 'pointer',
@@ -336,10 +336,10 @@ export default function ManageSubscriptionsPage({
         <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>RETENTION &amp; CHURN</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '8px' }}>{a ? `${totalActive} active` : '…'}</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>RETENTION &amp; CHURN</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '8px' }}>{a ? `${totalActive} active` : '…'}</span>
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
               {a ? `${retention}%` : '…'}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -349,7 +349,7 @@ export default function ManageSubscriptionsPage({
 
           {/* Retention Progress Bar */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 700, marginBottom: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 600, marginBottom: '4px' }}>
               <span style={{ color: '#047857' }}>Active Retained ({retention}%)</span>
               <span style={{ color: '#DC2626' }}>Churn ({churn}%)</span>
             </div>
@@ -363,10 +363,10 @@ export default function ManageSubscriptionsPage({
         <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PACKAGE PREFERENCE</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#0284C7', backgroundColor: '#EFF6FF', padding: '2px 8px', borderRadius: '8px' }}>Top: {top && top.n > 0 ? top.title : '—'}</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PACKAGE PREFERENCE</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#0284C7', backgroundColor: '#EFF6FF', padding: '2px 8px', borderRadius: '8px' }}>Top: {top && top.n > 0 ? top.title : '—'}</span>
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
               {top ? `${top.pct}%` : '0%'}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -382,7 +382,7 @@ export default function ManageSubscriptionsPage({
                 <div style={{ flex: 1, backgroundColor: 'var(--bg-main)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{ width: `${p.pct}%`, backgroundColor: ['#047857', '#0284C7', '#9333EA'][i], height: '100%' }}></div>
                 </div>
-                <span style={{ fontWeight: 800, width: '30px' }}>{p.pct}%</span>
+                <span style={{ fontWeight: 700, width: '30px' }}>{p.pct}%</span>
               </div>
             ))}
           </div>
@@ -392,10 +392,10 @@ export default function ManageSubscriptionsPage({
         <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FORECAST REVENUE</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#9333EA', backgroundColor: '#F3E8FF', padding: '2px 8px', borderRadius: '8px' }}>MRR Growth</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FORECAST REVENUE</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#9333EA', backgroundColor: '#F3E8FF', padding: '2px 8px', borderRadius: '8px' }}>MRR Growth</span>
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#047857', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#047857', marginTop: '0.4rem', fontFamily: 'var(--font-title)' }}>
               ₹{revenue30.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -414,7 +414,7 @@ export default function ManageSubscriptionsPage({
       <div className="card-panel" style={{ padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               🎁 Prepaid Subscription Packages (Offered in Customer App Checkout for All Hubs)
             </h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -422,7 +422,7 @@ export default function ManageSubscriptionsPage({
             </p>
           </div>
 
-          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 10px', borderRadius: '12px' }}>
+          <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#047857', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 10px', borderRadius: '12px' }}>
             {displayedPackages.filter((p: PrepaidPackage) => p.isActive).length} Active Checkout Packages ({hubCodeName})
           </span>
         </div>
@@ -452,7 +452,7 @@ export default function ManageSubscriptionsPage({
                   backgroundColor: '#047857',
                   color: '#FFFFFF',
                   fontSize: '0.66rem',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   padding: '2px 8px',
                   borderRadius: '8px',
                   letterSpacing: '0.05em'
@@ -463,12 +463,12 @@ export default function ManageSubscriptionsPage({
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                  <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                  <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
                     {pkg.title}
                   </h4>
                   <span style={{
                     fontSize: '0.74rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     backgroundColor: (pkg.discountPercent || 0) > 0 ? '#ECFDF5' : '#F1F5F9',
                     color: (pkg.discountPercent || 0) > 0 ? '#047857' : '#64748B',
                     border: (pkg.discountPercent || 0) > 0 ? '1px solid #A7F3D0' : '1px solid #E2E8F0',
@@ -487,7 +487,7 @@ export default function ManageSubscriptionsPage({
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                   <span style={{
                     fontSize: '0.72rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     backgroundColor: '#F3F4F6',
                     color: '#374151',
                     padding: '2px 7px',
@@ -498,7 +498,7 @@ export default function ManageSubscriptionsPage({
                   </span>
                   <span style={{
                     fontSize: '0.72rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     backgroundColor: '#EFF6FF',
                     color: '#1D4ED8',
                     padding: '2px 7px',
@@ -509,7 +509,7 @@ export default function ManageSubscriptionsPage({
                   </span>
                 </div>
 
-                <div style={{ fontSize: '0.74rem', color: pkg.isActive ? '#047857' : '#DC2626', fontWeight: 700, marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.74rem', color: pkg.isActive ? '#047857' : '#DC2626', fontWeight: 600, marginTop: '0.5rem' }}>
                   {pkg.isActive ? '🟢 Active in App Checkout' : '🔴 Hidden from Checkout'}
                 </div>
               </div>
@@ -527,7 +527,7 @@ export default function ManageSubscriptionsPage({
                       backgroundColor: 'var(--bg-card)',
                       color: 'var(--text-main)',
                       fontSize: '0.74rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -545,7 +545,7 @@ export default function ManageSubscriptionsPage({
                       backgroundColor: '#FEE2E2',
                       color: '#EF4444',
                       fontSize: '0.74rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       cursor: 'pointer'
                     }}
                   >
@@ -562,7 +562,7 @@ export default function ManageSubscriptionsPage({
       <div className="card-panel" style={{ padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               ⚠️ Expiring Subscriptions &amp; Customer Retention Track
             </h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -570,7 +570,7 @@ export default function ManageSubscriptionsPage({
             </p>
           </div>
 
-          <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#D97706', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', padding: '4px 12px', borderRadius: '14px' }}>
+          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#D97706', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', padding: '4px 12px', borderRadius: '14px' }}>
             {expiringList.length} Plans Expiring Soon
           </span>
         </div>
@@ -593,7 +593,7 @@ export default function ManageSubscriptionsPage({
                   border: '1px solid var(--border-color)',
                   backgroundColor: riskFilter === r.id ? '#047857' : 'var(--bg-card)',
                   color: riskFilter === r.id ? '#FFFFFF' : 'var(--text-main)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.76rem',
                   cursor: 'pointer',
                 }}
@@ -641,13 +641,13 @@ export default function ManageSubscriptionsPage({
               {filteredExpiring.map((exp: ExpiringSubscription) => (
                 <tr key={exp.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '0.75rem 0.85rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)' }}>{exp.customerName}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)' }}>{exp.customerName}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📞 {exp.phone}</div>
                   </td>
 
                   <td style={{ padding: '0.75rem 0.85rem' }}>
                     <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>{exp.productName}</div>
-                    <div style={{ fontSize: '0.74rem', color: '#047857', fontWeight: 700 }}>{exp.planDuration}</div>
+                    <div style={{ fontSize: '0.74rem', color: '#047857', fontWeight: 600 }}>{exp.planDuration}</div>
                   </td>
 
                   <td style={{ padding: '0.75rem 0.85rem', fontSize: '0.8rem', color: 'var(--text-main)' }}>
@@ -659,7 +659,7 @@ export default function ManageSubscriptionsPage({
                       padding: '4px 10px',
                       borderRadius: '12px',
                       fontSize: '0.72rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       backgroundColor: exp.daysLeft <= 3 ? '#FEF2F2' : '#FFFBEB',
                       color: exp.daysLeft <= 3 ? '#DC2626' : '#D97706',
                       border: exp.daysLeft <= 3 ? '1px solid #FCA5A5' : '1px solid #FDE68A'
@@ -673,7 +673,7 @@ export default function ManageSubscriptionsPage({
                       padding: '3px 8px',
                       borderRadius: '10px',
                       fontSize: '0.72rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       backgroundColor: exp.churnRisk === 'High' ? '#FEE2E2' : exp.churnRisk === 'Medium' ? '#FEF3C7' : '#D1FAE5',
                       color: exp.churnRisk === 'High' ? '#991B1B' : exp.churnRisk === 'Medium' ? '#92400E' : '#065F46'
                     }}>
@@ -701,7 +701,7 @@ export default function ManageSubscriptionsPage({
                           backgroundColor: 'var(--bg-main)',
                           color: 'var(--text-main)',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -727,7 +727,7 @@ export default function ManageSubscriptionsPage({
                           color: '#FFFFFF',
                           border: 'none',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           cursor: 'pointer'
                         }}
                       >
@@ -777,7 +777,7 @@ export default function ManageSubscriptionsPage({
             textAlign: 'left'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
                 {editingPackage ? 'Edit Prepaid Package' : 'Create New Prepaid Package'}
               </h3>
               <button
@@ -790,7 +790,7 @@ export default function ManageSubscriptionsPage({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Package Title</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Package Title</label>
                 <input
                   type="text"
                   placeholder="e.g. 30 Days Gold Plan"
@@ -802,7 +802,7 @@ export default function ManageSubscriptionsPage({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Duration (Days)</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Duration (Days)</label>
                   <input
                     type="number"
                     value={pkgDuration}
@@ -811,7 +811,7 @@ export default function ManageSubscriptionsPage({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Discount Percent (%)</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Discount Percent (%)</label>
                   <input
                     type="number"
                     value={pkgDiscount}
@@ -823,7 +823,7 @@ export default function ManageSubscriptionsPage({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Target Operating Hub</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Target Operating Hub</label>
                   <select
                     value={pkgHubId}
                     onChange={(e) => setPkgHubId(e.target.value)}
@@ -835,7 +835,7 @@ export default function ManageSubscriptionsPage({
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Target Specific Product</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Target Specific Product</label>
                   <select
                     value={pkgProductId}
                     onChange={(e) => setPkgProductId(e.target.value)}
@@ -853,7 +853,7 @@ export default function ManageSubscriptionsPage({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Badge Label</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Badge Label</label>
                   <input
                     type="text"
                     placeholder="e.g. 10% OFF"
@@ -863,7 +863,7 @@ export default function ManageSubscriptionsPage({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Display Order</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>Display Order</label>
                   <input
                     type="number"
                     value={pkgOrder}
@@ -896,13 +896,13 @@ export default function ManageSubscriptionsPage({
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.85rem' }}>
                 <button
                   onClick={() => setIsPackageModalOpen(false)}
-                  style={{ padding: '0.55rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', color: 'var(--text-main)' }}
+                  style={{ padding: '0.55rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', color: 'var(--text-main)' }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSavePackage}
-                  style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Save Package
                 </button>

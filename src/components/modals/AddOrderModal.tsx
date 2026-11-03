@@ -34,7 +34,7 @@ const fieldStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 const labelStyle: React.CSSProperties = {
-  fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem',
+  fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem',
 };
 
 export const AddOrderModal: React.FC<AddOrderModalProps> = (props) => {
@@ -143,7 +143,7 @@ function AddOrderForm({ onClose, deliveryAgents, selectedHubId, showToast }: Add
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
             Create New Doorstep Order
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -218,7 +218,7 @@ function AddOrderForm({ onClose, deliveryAgents, selectedHubId, showToast }: Add
             style={{
               padding: '0.85rem',
               borderRadius: '12px',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '0.95rem',
               marginTop: '0.5rem',
               opacity: saving ? 0.7 : 1,

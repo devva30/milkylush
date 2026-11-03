@@ -161,7 +161,7 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
             <CreditCard size={24} />
           </div>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 800, margin: 0, color: '#064E3B' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#064E3B' }}>
               Payments Ledger
             </h2>
             <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: '3px' }}>
@@ -177,7 +177,7 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
             borderRadius: '10px',
             backgroundColor: '#FFFFFF',
             color: '#047857',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.8rem',
             border: '1px solid #A7F3D0',
             cursor: 'pointer',
@@ -202,10 +202,10 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
           borderRight: '1px solid var(--border-color)',
           borderBottom: '1px solid var(--border-color)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             TOTAL REVENUE CASHFLOW
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             ₹{totalDeliveredRevenue.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -222,10 +222,10 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
           borderRight: '1px solid var(--border-color)',
           borderBottom: '1px solid var(--border-color)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             SUBSCRIPTION PAYMENTS
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             ₹{totalSubscriptionPayments.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -242,10 +242,10 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
           borderRight: '1px solid var(--border-color)',
           borderBottom: '1px solid var(--border-color)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             REFUNDED
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#8B5CF6', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#8B5CF6', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             ₹{totalRefunded.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -262,10 +262,10 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
           borderRight: '1px solid var(--border-color)',
           borderBottom: '1px solid var(--border-color)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             TRANSACTIONS RECORDED
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {liveTransactions.length} Txns
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -294,7 +294,7 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
                 border: '1px solid var(--border-color)',
                 backgroundColor: filterType === f.id ? '#047857' : 'var(--bg-main)',
                 color: filterType === f.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -347,24 +347,24 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
             <tbody>
               {filteredTransactions.map((t) => (
                 <tr key={t.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.82rem' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)', fontSize: '0.82rem' }}>
                     {t.id}
                   </td>
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>{t.customerName}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem' }}>{t.customerName}</div>
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '1px' }}>Ph: {t.customerPhone}</div>
                   </td>
                   <td style={{ padding: '0.85rem 1rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     <div>{t.date}</div>
                     <div style={{ fontSize: '0.72rem' }}>{t.time}</div>
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: 700, color: '#047857' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>
                     {t.paymentMethod}
                   </td>
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <span style={{
                       fontSize: '0.72rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: t.type === 'Subscription Payment' ? '#0284C7' : '#047857',
                       backgroundColor: t.type === 'Subscription Payment' ? '#E0F2FE' : '#ECFDF5',
                       padding: '3px 8px',
@@ -377,13 +377,13 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
                       {t.type}
                     </span>
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                     ₹{t.amount.toLocaleString('en-IN')}
                   </td>
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <span style={{
                       fontSize: '0.72rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: t.status === 'SUCCESS' ? '#047857' : t.status === 'FAILED' ? '#DC2626' : '#D97706',
                       backgroundColor: t.status === 'SUCCESS' ? '#ECFDF5' : '#FEF3C7',
                       border: t.status === 'SUCCESS' ? '1px solid #A7F3D0' : '1px solid #FDE68A',
@@ -394,13 +394,13 @@ export default function PaymentsPage({ selectedHubId, showToast }: PaymentsPageP
                     </span>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                       <button disabled={busyId === t.id} onClick={() => handleChecked(t.id, !t.reconciled)}
-                        style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', cursor: 'pointer',
+                        style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 8px', borderRadius: '8px', cursor: 'pointer',
                           border: '1px solid var(--border-color)', backgroundColor: t.reconciled ? '#ECFDF5' : 'var(--bg-main)', color: t.reconciled ? '#047857' : 'var(--text-muted)' }}>
                         {t.reconciled ? '✓ Checked' : 'Mark checked'}
                       </button>
                       {t.status === 'SUCCESS' && (
                         <button disabled={busyId === t.id} onClick={() => handleRefunded(t.id)}
-                          style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', cursor: 'pointer',
+                          style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 8px', borderRadius: '8px', cursor: 'pointer',
                             border: '1px solid #FCA5A5', backgroundColor: '#FEF2F2', color: '#DC2626' }}>
                           Mark refunded
                         </button>

@@ -251,7 +251,7 @@ export default function TodaysDeliveriesPage({
       {/* Date + Generate */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>Deliveries for {formatDay(date)}</span>
+          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>Deliveries for {formatDay(date)}</span>
           <DateFilter value={range} onChange={(r) => { setRange(r); setCurrentPage(1); }} />
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -282,10 +282,10 @@ export default function TodaysDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             {isToday ? "TODAY'S" : formatDay(date).toUpperCase()} SCHEDULED DELIVERIES
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: 'var(--text-main)', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {totalTodayCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -304,10 +304,10 @@ export default function TodaysDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             SUBSCRIPTION SCHEDULED
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {subScheduledCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -326,10 +326,10 @@ export default function TodaysDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             ONE-TIME SCHEDULED
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {oneTimeScheduledCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -352,7 +352,7 @@ export default function TodaysDeliveriesPage({
           flexWrap: 'wrap',
           gap: '0.85rem'
         }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             📱 Today's Delivery Pipeline
           </h3>
 
@@ -393,7 +393,7 @@ export default function TodaysDeliveriesPage({
                 border: statusView === s.id ? 'none' : '1px solid var(--border-color)',
                 backgroundColor: statusView === s.id ? '#047857' : 'var(--bg-main)',
                 color: statusView === s.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -418,7 +418,7 @@ export default function TodaysDeliveriesPage({
                   border: '1px solid var(--border-color)',
                   backgroundColor: filterType === f.id ? '#047857' : 'var(--bg-main)',
                   color: filterType === f.id ? '#FFFFFF' : 'var(--text-main)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.76rem',
                   cursor: 'pointer',
                 }}
@@ -436,7 +436,7 @@ export default function TodaysDeliveriesPage({
                   backgroundColor: '#047857',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.76rem',
                   cursor: 'pointer',
                 }}
@@ -456,7 +456,7 @@ export default function TodaysDeliveriesPage({
                 border: '1px solid var(--border-color)',
                 backgroundColor: 'var(--bg-main)',
                 color: 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -471,14 +471,14 @@ export default function TodaysDeliveriesPage({
           <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>ORDER ID</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>CUSTOMER NAME</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>DELIVERY ADDRESS</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>PRODUCTS</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>ORDER TYPE</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>DRIVER ASSIGNED</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>STATUS</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'left' }}>ACTIONS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>ORDER ID</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>CUSTOMER NAME</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>DELIVERY ADDRESS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>PRODUCTS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>ORDER TYPE</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>DRIVER ASSIGNED</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>STATUS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'left' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -525,12 +525,12 @@ export default function TodaysDeliveriesPage({
                     style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }}
                   >
                     {/* ORDER ID */}
-                    <td style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-main)', verticalAlign: 'middle', padding: '0.85rem 0.85rem' }}>
+                    <td style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-main)', verticalAlign: 'middle', padding: '0.85rem 0.85rem' }}>
                       {o.id}
                     </td>
 
                     {/* Customer Name */}
-                    <td style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)', verticalAlign: 'middle', padding: '0.85rem 0.85rem' }}>
+                    <td style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-main)', verticalAlign: 'middle', padding: '0.85rem 0.85rem' }}>
                       {customerName}
                     </td>
 
@@ -543,7 +543,7 @@ export default function TodaysDeliveriesPage({
                         </div>
                       )}
                       {o.deliveryInstructions && (
-                        <div style={{ marginTop: '4px', fontSize: '0.71rem', fontWeight: 700, color: '#B45309', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', padding: '2px 6px', display: 'inline-block' }}>
+                        <div style={{ marginTop: '4px', fontSize: '0.71rem', fontWeight: 600, color: '#B45309', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', padding: '2px 6px', display: 'inline-block' }}>
                           📝 Note: {o.deliveryInstructions}
                         </div>
                       )}
@@ -557,7 +557,7 @@ export default function TodaysDeliveriesPage({
                             const unitVal = it.product?.unit || '500ml';
                             return (
                               <div key={idx} style={{ color: 'var(--text-main)', fontWeight: 600 }}>
-                                • {it.product?.name || 'Milk Product'} - <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{unitVal}</span> (x{it.quantity})
+                                • {it.product?.name || 'Milk Product'} - <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{unitVal}</span> (x{it.quantity})
                               </div>
                             );
                           })}
@@ -579,7 +579,7 @@ export default function TodaysDeliveriesPage({
                           padding: '3px 9px',
                           borderRadius: '8px',
                           fontSize: '0.72rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
                         }}
@@ -626,7 +626,7 @@ export default function TodaysDeliveriesPage({
                           padding: '4px 10px',
                           borderRadius: '12px',
                           fontSize: '0.74rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           display: 'inline-block',
                           textTransform: 'capitalize',
                         }}
@@ -646,7 +646,7 @@ export default function TodaysDeliveriesPage({
                           backgroundColor: 'var(--bg-main)',
                           color: 'var(--text-main)',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           cursor: 'pointer',
                           whiteSpace: 'nowrap'
                         }}
@@ -670,7 +670,7 @@ export default function TodaysDeliveriesPage({
                         borderRadius: '50%',
                         animation: 'spinToday 0.8s linear infinite'
                       }} />
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#047857' }}>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#047857' }}>
                         Syncing &amp; Fetching Today's Live Deliveries...
                       </div>
                       <style>{`@keyframes spinToday { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
@@ -749,7 +749,7 @@ export default function TodaysDeliveriesPage({
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button

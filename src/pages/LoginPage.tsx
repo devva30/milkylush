@@ -64,7 +64,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      fontFamily: "'Poppins', sans-serif",
+      fontFamily: "var(--font-body)",
       boxSizing: 'border-box',
       padding: '2.5rem 1.5rem',
       overflowX: 'hidden'
@@ -83,29 +83,16 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
         textAlign: 'center'
       }}>
         
-        {/* Logo Badge */}
+        {/* Logo: transparent PNG, so it sits straight on the card */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-          <div style={{
-            width: '200px',
-            height: '64px',
-            borderRadius: '18px',
-            backgroundColor: '#ECFDF5',
-            padding: '8px 16px',
-            border: '2px solid #A7F3D0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(4, 120, 87, 0.12)'
-          }}>
-            <img src={logoImg} alt="MilkyLush" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
+          <img src={logoImg} alt="MilkyLush" style={{ width: '230px', maxWidth: '70%', height: 'auto' }} />
         </div>
 
         {/* Brand Headline */}
         <h2 style={{
-          fontFamily: "'Poppins', sans-serif",
+          fontFamily: "var(--font-body)",
           fontSize: '1.75rem',
-          fontWeight: 700,
+          fontWeight: 600,
           color: '#111827',
           margin: '0 0 0.4rem 0',
           letterSpacing: '-0.02em'
@@ -147,7 +134,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
             <label style={{
               color: '#047857',
               fontSize: '0.75rem',
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               display: 'block',
@@ -195,7 +182,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
                     <Check size={12} strokeWidth={3} />
                   </div>
                 )}
-                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: isHosur ? '#047857' : '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: isHosur ? '#047857' : '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {/* Green Location Pin Icon */}
                   <MapPin size={16} style={{ color: '#059669' }} /> Hosur
                 </div>
@@ -242,7 +229,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
                     <Check size={12} strokeWidth={3} />
                   </div>
                 )}
-                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: !isHosur ? '#047857' : '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: !isHosur ? '#047857' : '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {/* Green Location Pin Icon */}
                   <MapPin size={16} style={{ color: '#059669' }} /> Bangalore
                 </div>
@@ -259,7 +246,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
             <label style={{
               color: '#475569',
               fontSize: '0.75rem',
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               display: 'block',
@@ -301,7 +288,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
             <label style={{
               color: '#475569',
               fontSize: '0.75rem',
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               display: 'block',
@@ -367,7 +354,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
               borderRadius: '16px',
               backgroundColor: btnHover ? '#065F46' : '#047857',
               color: '#FFFFFF',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '1rem',
               border: 'none',
               cursor: isLoading ? 'wait' : 'pointer',
@@ -380,7 +367,7 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
               transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
               transform: btnHover ? 'translateY(-2px)' : 'none',
               opacity: isLoading ? 0.85 : 1,
-              fontFamily: "'Poppins', sans-serif"
+              fontFamily: "var(--font-body)"
             }}
           >
             {isLoading ? (

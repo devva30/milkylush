@@ -162,7 +162,7 @@ export default function NotificationCenter({
         zIndex: 1000,
         overflow: 'hidden',
         animation: 'popoverSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        fontFamily: "'Poppins', sans-serif",
+        fontFamily: "var(--font-body)",
         textAlign: 'left'
       }}
     >
@@ -200,7 +200,7 @@ export default function NotificationCenter({
             <Bell size={15} />
           </div>
           <div>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, lineHeight: 1.1 }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, lineHeight: 1.1 }}>
               Notifications
             </h4>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -216,7 +216,7 @@ export default function NotificationCenter({
               title="Mark all as read"
               style={{
                 fontSize: '0.74rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: '#047857',
                 backgroundColor: '#ECFDF5',
                 border: '1px solid #A7F3D0',
@@ -269,7 +269,7 @@ export default function NotificationCenter({
             backgroundColor: activeFilter === 'all' ? '#047857' : 'var(--bg-card)',
             color: activeFilter === 'all' ? '#FFFFFF' : 'var(--text-main)',
             fontSize: '0.74rem',
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer'
           }}
         >
@@ -285,7 +285,7 @@ export default function NotificationCenter({
             backgroundColor: activeFilter === 'unread' ? '#047857' : 'var(--bg-card)',
             color: activeFilter === 'unread' ? '#FFFFFF' : 'var(--text-main)',
             fontSize: '0.74rem',
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer'
           }}
         >
@@ -353,7 +353,7 @@ export default function NotificationCenter({
                     {getIcon()}
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.25 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.25 }}>
                       {notif.title}
                     </div>
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.35 }}>
@@ -385,7 +385,7 @@ export default function NotificationCenter({
         ) : (
           <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             <Bell size={28} style={{ opacity: 0.4, marginBottom: '8px' }} />
-            <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>No notifications found</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>No notifications found</div>
             <div style={{ fontSize: '0.75rem', marginTop: '2px' }}>You are all caught up!</div>
           </div>
         )}

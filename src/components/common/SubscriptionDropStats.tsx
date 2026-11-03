@@ -62,8 +62,8 @@ export function SubscriptionDropStats({ plan }: { plan: PlanLike }) {
 
   const cell = (label: string, value: string, color: string) => (
     <div>
-      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: '1.15rem', fontWeight: 800, color, marginTop: 2 }}>{value}</div>
+      <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: '1.15rem', fontWeight: 700, color, marginTop: 2 }}>{value}</div>
     </div>
   );
 

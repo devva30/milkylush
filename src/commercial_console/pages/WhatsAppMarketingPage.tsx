@@ -358,7 +358,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
       <div>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
           {selectedTab === 'whatsapp-campaigns' && 'WhatsApp Promotional Campaigns'}
           {selectedTab === 'whatsapp-notifications' && 'Automated Order & Delivery WhatsApp Alerts'}
           {selectedTab === 'customer-cohorts' && 'Customer Cohorts & Segment Analytics'}
@@ -372,7 +372,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
       {selectedTab === 'whatsapp-campaigns' && (
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem 1.5rem', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
             Automated WhatsApp Messages
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 14px 0' }}>
@@ -410,7 +410,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                           disabled={busy}
                           onChange={(e) => editDraft(key, { enabled: e.target.checked })}
                         />
-                        <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                           {AUTOMATION_LABELS[key].title}
                         </span>
                       </label>
@@ -418,7 +418,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       <span
                         style={{
                           fontSize: '0.7rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           padding: '2px 10px',
                           borderRadius: '10px',
                           color: live.enabled ? '#047857' : '#92400E',
@@ -438,7 +438,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                         value={draft.template}
                         disabled={busy || loadingTemplates}
                         onChange={(e) => editDraft(key, { template: e.target.value })}
-                        style={{ flex: '1 1 240px', padding: '0.55rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
+                        style={{ flex: '1 1 240px', padding: '0.55rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.82rem', fontWeight: 600, outline: 'none' }}
                       >
                         {/* Keeps the saved value visible even before the list loads. */}
                         {draft.template && !templates.some((t) => t.name === draft.template) && (
@@ -452,7 +452,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       </select>
 
                       {key === 'subscriptionExpiry' && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 600 }}>
                           Send
                           <input
                             type="number"
@@ -480,14 +480,14 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                           backgroundColor: !changed || !daysValid ? '#94A3B8' : '#047857',
                           color: '#FFFFFF',
                           fontSize: '0.8rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           cursor: busy || !changed || !daysValid ? 'not-allowed' : 'pointer',
                         }}
                       >
                         {busy ? 'Saving…' : 'Save'}
                       </button>
 
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: !daysValid ? '#B91C1C' : changed ? '#92400E' : '#047857' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: !daysValid ? '#B91C1C' : changed ? '#92400E' : '#047857' }}>
                         {!daysValid
                           ? 'Days must be between 1 and 30'
                           : changed
@@ -511,7 +511,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
       {selectedTab === 'whatsapp-campaigns' && (
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem 1.5rem', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
             Staff alert number — {HUBS[selectedHubId]?.name || selectedHubId}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 12px 0' }}>
@@ -520,7 +520,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
           </div>
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>+91</span>
+            <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>+91</span>
             <input
               type="tel"
               inputMode="numeric"
@@ -528,7 +528,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
               disabled={alertLoading || alertSaving}
               placeholder="10-digit mobile number"
               onChange={(e) => setAlertDraft(e.target.value)}
-              style={{ flex: '1 1 200px', maxWidth: '260px', padding: '0.55rem 0.7rem', borderRadius: '10px', border: `1px solid ${alertValid ? 'var(--border-color)' : '#B91C1C'}`, backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }}
+              style={{ flex: '1 1 200px', maxWidth: '260px', padding: '0.55rem 0.7rem', borderRadius: '10px', border: `1px solid ${alertValid ? 'var(--border-color)' : '#B91C1C'}`, backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600, outline: 'none' }}
             />
             <button
               type="button"
@@ -541,13 +541,13 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                 backgroundColor: !alertChanged || !alertValid || alertSaving ? '#94A3B8' : '#047857',
                 color: '#FFFFFF',
                 fontSize: '0.8rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: !alertChanged || !alertValid || alertSaving ? 'not-allowed' : 'pointer',
               }}
             >
               {alertSaving ? 'Saving…' : 'Save'}
             </button>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: alertNote ? (alertNote.ok ? '#047857' : '#B91C1C') : !alertValid ? '#B91C1C' : alertChanged ? '#92400E' : 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: alertNote ? (alertNote.ok ? '#047857' : '#B91C1C') : !alertValid ? '#B91C1C' : alertChanged ? '#92400E' : 'var(--text-muted)' }}>
               {alertLoading
                 ? 'Loading…'
                 : alertNote
@@ -568,19 +568,19 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {/* Message Builder Box */}
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem' }}>
               Create New Broadcast Campaign
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>Approved WhatsApp Template</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>Approved WhatsApp Template</label>
                 <select
                   data-testid="template-select"
                   value={selectedTemplate}
                   onChange={(e) => setSelectedTemplate(e.target.value)}
                   disabled={sending || loadingTemplates}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700, outline: 'none' }}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
                 >
                   {loadingTemplates && <option>Loading templates from Getgabs…</option>}
                   {!loadingTemplates && templates.length === 0 && <option value="">No templates available</option>}
@@ -594,10 +594,10 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                   WhatsApp only delivers pre-approved templates. To change the wording, edit the template in Getgabs and wait for Meta approval.
                 </div>
                 {templatesError && (
-                  <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>{templatesError}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '6px', fontWeight: 600 }}>{templatesError}</div>
                 )}
                 {templateInfoError && (
-                  <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>{templateInfoError}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '6px', fontWeight: 600 }}>{templateInfoError}</div>
                 )}
                 {templateInfo && templateInfo.bodyVariables === 0 && (
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -611,7 +611,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                   </div>
                 )}
                 {templateBlocked && templateInfo && (
-                  <div style={{ fontSize: '0.78rem', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>
+                  <div style={{ fontSize: '0.78rem', color: '#B91C1C', marginTop: '6px', fontWeight: 600 }}>
                     This template needs {templateInfo.bodyVariables} values filled in for every message, which a broadcast
                     can't supply, so it can't be sent from here. Choose a template with no variables, or with only the
                     person's name.
@@ -620,12 +620,12 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>Target Customer Audience</label>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>Target Customer Audience</label>
                 <select
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value as any)}
                   disabled={sending}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700, outline: 'none' }}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
                 >
                   <option value="active_subs">Active Daily Milk Subscribers</option>
                   <option value="all">All Registered MilkyLush App Users</option>
@@ -664,22 +664,22 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                     style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}
                   />
 
-                  {uploadError && <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>{uploadError}</div>}
+                  {uploadError && <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 600 }}>{uploadError}</div>}
 
                   {upload && imported && (
                     <>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 600 }}>
                         {upload.fileName}
                         {upload.sheetName ? ` · sheet “${upload.sheetName}”` : ''} · {imported.rows} row(s)
                       </div>
 
                       {imported.phoneColumn < 0 ? (
-                        <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>
+                        <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 600 }}>
                           No column of phone numbers was found. Check the file has 10-digit mobile numbers, or choose the
                           phone column below.
                         </div>
                       ) : (
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857' }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#047857' }}>
                           {imported.contacts.length} ready to message
                           {imported.duplicates > 0 && (
                             <span style={{ color: '#92400E' }}> · {imported.duplicates} repeated number(s) removed</span>
@@ -694,7 +694,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       )}
 
                       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                        <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '3px', flex: '1 1 180px' }}>
+                        <label style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '3px', flex: '1 1 180px' }}>
                           Phone numbers are in
                           <select
                             data-testid="phone-column"
@@ -709,7 +709,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                             ))}
                           </select>
                         </label>
-                        <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '3px', flex: '1 1 180px' }}>
+                        <label style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '3px', flex: '1 1 180px' }}>
                           Names are in
                           <select
                             data-testid="name-column"
@@ -728,7 +728,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
                       {recipients.length > 0 && (
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                          <div style={{ fontWeight: 700, marginBottom: '2px' }}>First few:</div>
+                          <div style={{ fontWeight: 600, marginBottom: '2px' }}>First few:</div>
                           {recipients.slice(0, 5).map((r) => (
                             <div key={r.id}>{r.name} · +{r.phone.slice(0, 2)} {r.phone.slice(2)}</div>
                           ))}
@@ -737,7 +737,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       )}
 
                       {overUploadLimit && (
-                        <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>
+                        <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 600 }}>
                           That is {recipients.length} people, and one send is limited to {BROADCAST_MAX_UPLOAD}. Split the file
                           into smaller ones, or use the Broadcast section in Getgabs for very large lists.
                         </div>
@@ -762,7 +762,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                         type="button"
                         disabled={sending}
                         onClick={() => { setUpload(null); setUploadColumns({}); setConsent(false); setResults(null); setUploadError(''); }}
-                        style={{ alignSelf: 'flex-start', padding: '0.35rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.74rem', fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer' }}
+                        style={{ alignSelf: 'flex-start', padding: '0.35rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.74rem', fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer' }}
                       >
                         Remove this file
                       </button>
@@ -786,7 +786,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       type="button"
                       disabled={sending}
                       onClick={() => setPickedIds(searchMatches.map((r) => r.id))}
-                      style={{ padding: '0.45rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ padding: '0.45rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                     >
                       Select all
                     </button>
@@ -794,7 +794,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       type="button"
                       disabled={sending}
                       onClick={() => setPickedIds([])}
-                      style={{ padding: '0.45rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ padding: '0.45rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                     >
                       Clear
                     </button>
@@ -818,7 +818,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                           disabled={sending}
                           style={{ cursor: 'inherit' }}
                         />
-                        <span style={{ fontWeight: 700 }}>{r.name}</span>
+                        <span style={{ fontWeight: 600 }}>{r.name}</span>
                         <span style={{ color: 'var(--text-muted)', marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
                           {formatPhoneNumberForWhatsApp(r.phone)}
                         </span>
@@ -839,7 +839,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                   backgroundColor: !canSend ? '#94A3B8' : '#047857',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '0.9rem',
                   cursor: !canSend ? 'not-allowed' : 'pointer',
                   display: 'flex',
@@ -867,7 +867,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                     data-testid="stop"
                     disabled={stopping}
                     onClick={() => { stopRequested.current = true; setStopping(true); }}
-                    style={{ padding: '0.35rem 0.9rem', borderRadius: '8px', border: 'none', backgroundColor: stopping ? '#94A3B8' : '#B91C1C', color: '#FFFFFF', fontSize: '0.74rem', fontWeight: 800, cursor: stopping ? 'not-allowed' : 'pointer' }}
+                    style={{ padding: '0.35rem 0.9rem', borderRadius: '8px', border: 'none', backgroundColor: stopping ? '#94A3B8' : '#B91C1C', color: '#FFFFFF', fontSize: '0.74rem', fontWeight: 700, cursor: stopping ? 'not-allowed' : 'pointer' }}
                   >
                     {stopping ? 'Stopping after the current messages…' : 'Stop'}
                   </button>
@@ -876,7 +876,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
               {results && (
                 <div style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#047857', marginBottom: failedResults.length ? '8px' : 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#047857', marginBottom: failedResults.length ? '8px' : 0 }}>
                     Sent {sentCount} of {results.length}
                     {failedResults.length > 0 && ` · ${failedResults.length} failed`}
                   </div>
@@ -889,7 +889,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>…and {failedResults.length - 8} more</div>
                   )}
                   {skipped > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 700, marginTop: '6px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 600, marginTop: '6px' }}>
                       Stopped: {skipped} were not sent.
                     </div>
                   )}
@@ -898,7 +898,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       type="button"
                       data-testid="download-results"
                       onClick={downloadResults}
-                      style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.74rem', fontWeight: 600, cursor: 'pointer' }}
                     >
                       Download results (CSV)
                     </button>
@@ -907,7 +907,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                         type="button"
                         data-testid="retry-failed"
                         onClick={handleRetryFailed}
-                        style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer' }}
+                        style={{ padding: '0.35rem 0.8rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
                       >
                         Retry the {failedResults.length} that failed
                       </button>
@@ -920,16 +920,16 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
           {/* Live Preview Card */}
           <div style={{ backgroundColor: '#ECFDF5', padding: '1.5rem', borderRadius: '20px', border: '1px solid #A7F3D0' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1rem' }}>
               💬 WhatsApp Customer Phone Screen Preview
             </div>
 
             <div style={{ backgroundColor: '#FFFFFF', padding: '1rem', borderRadius: '16px', border: '1px solid #A7F3D0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#047857', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#047857', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
                   ML
                 </div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#047857' }}>MilkyLush Official Verified</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#047857' }}>MilkyLush Official Verified</div>
               </div>
 
               <div style={{ backgroundColor: '#E2F4E9', padding: '0.85rem', borderRadius: '12px', fontSize: '0.85rem', color: '#1E293B', lineHeight: 1.4 }}>
@@ -943,7 +943,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                 ) : (
                   'Choose an approved template to broadcast.'
                 )}
-                <div style={{ fontSize: '0.7rem', color: '#047857', textAlign: 'right', marginTop: '6px', fontWeight: 700 }}>
+                <div style={{ fontSize: '0.7rem', color: '#047857', textAlign: 'right', marginTop: '6px', fontWeight: 600 }}>
                   Verified WhatsApp Business
                 </div>
               </div>
@@ -954,7 +954,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
       {selectedTab === 'whatsapp-notifications' && (
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.5rem', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem' }}>
             Automated WhatsApp Notification Triggers
           </div>
 
@@ -966,8 +966,8 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
             ].map((t) => (
               <div key={t.title} style={{ padding: '1rem', borderRadius: '14px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-main)' }}>{t.title}</div>
-                  <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>ACTIVE</span>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>{t.title}</div>
+                  <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>ACTIVE</span>
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px' }}>{t.trigger}</div>
                 <div style={{ backgroundColor: 'var(--bg-card)', padding: '0.65rem', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}>
@@ -981,7 +981,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
 
       {selectedTab === 'customer-cohorts' && (
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.5rem', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1rem' }}>
             Live Customer Segments &amp; Cohort Analytics
           </div>
 
@@ -999,11 +999,11 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
               <tbody>
                 {dynamicCohorts.map((c) => (
                   <tr key={c.name} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-main)' }}>{c.name}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#047857' }}>{c.count}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-main)' }}>{c.name}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#047857' }}>{c.count}</td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-main)', fontWeight: 600 }}>{c.avgSpend}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0284C7', backgroundColor: '#E0F2FE', padding: '3px 8px', borderRadius: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7', backgroundColor: '#E0F2FE', padding: '3px 8px', borderRadius: '8px' }}>
                         {c.retentionRate}
                       </span>
                     </td>
@@ -1011,7 +1011,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       <button 
                         type="button" 
                         onClick={() => alert(`Initiated WhatsApp campaign trigger for cohort: ${c.name}`)} 
-                        style={{ padding: '0.4rem 0.85rem', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}
+                        style={{ padding: '0.4rem 0.85rem', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
                       >
                         {c.action}
                       </button>

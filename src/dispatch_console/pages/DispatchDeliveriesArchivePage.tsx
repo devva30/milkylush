@@ -83,7 +83,7 @@ export default function DispatchDeliveriesArchivePage({
 
   // Default Deliveries Archive Table View matching Screenshot #1
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Filter Tabs Bar matching Screenshot #1 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -97,7 +97,7 @@ export default function DispatchDeliveriesArchivePage({
               border: activeTab === 'delivered' ? '1px solid #A7F3D0' : '1px solid #E2E8F0',
               backgroundColor: activeTab === 'delivered' ? '#FFFFFF' : '#F8FAFC',
               color: activeTab === 'delivered' ? '#047857' : '#64748B',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '0.82rem',
               cursor: 'pointer',
               display: 'flex',
@@ -117,7 +117,7 @@ export default function DispatchDeliveriesArchivePage({
               border: activeTab === 'cancelled' ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
               backgroundColor: activeTab === 'cancelled' ? '#FFFFFF' : '#F8FAFC',
               color: activeTab === 'cancelled' ? '#DC2626' : '#64748B',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '0.82rem',
               cursor: 'pointer',
               display: 'flex',
@@ -131,7 +131,7 @@ export default function DispatchDeliveriesArchivePage({
         </div>
 
         {/* Total Payout Floating Right */}
-        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#047857' }}>
+        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#047857' }}>
           Total Payout: ₹{totalPayout}
         </div>
 
@@ -142,7 +142,7 @@ export default function DispatchDeliveriesArchivePage({
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem' }}>
           <span style={{ fontSize: '1.1rem' }}>🟢</span>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', margin: 0 }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#047857', margin: 0 }}>
             Delivered Dispatches Spec List
           </h3>
         </div>
@@ -175,15 +175,15 @@ export default function DispatchDeliveriesArchivePage({
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '1rem 1.25rem', fontWeight: 800, color: '#0F172A', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: '#0F172A', fontSize: '0.85rem' }}>
                         {order.id.length > 12 ? `${order.id.substring(0, 12)}...` : order.id}
                       </td>
 
-                      <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: '#1E293B', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: '#1E293B', fontSize: '0.85rem' }}>
                         {customerName}
                       </td>
 
-                      <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: '#334155', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>
                         {agent?.name || 'Unassigned'}
                       </td>
 
@@ -209,7 +209,7 @@ export default function DispatchDeliveriesArchivePage({
                             borderRadius: '8px',
                             cursor: 'pointer',
                             fontSize: '0.78rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: '#1E293B',
                             boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                           }}

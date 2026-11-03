@@ -154,12 +154,12 @@ export default function DispatchRouteGroupingPage({
 
   return (
     <DataState loading={routesQuery.loading} error={routesQuery.error} onRetry={routesQuery.retry} loadingLabel="Loading routes…">
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Layers size={24} style={{ color: '#047857' }} /> Delivery Route Grouping & Sequence Manager
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -174,7 +174,7 @@ export default function DispatchRouteGroupingPage({
             style={{
               backgroundColor: '#047857',
               color: '#FFFFFF',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '0.84rem',
               padding: '0.6rem 1.25rem',
               borderRadius: '10px',
@@ -195,14 +195,14 @@ export default function DispatchRouteGroupingPage({
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden', padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Truck size={18} style={{ color: '#047857' }} /> Active Delivery Partners & Assigned Customer Counts
             </h3>
             <p style={{ fontSize: '0.78rem', color: '#64748B', margin: '2px 0 0 0' }}>
               Click "Manage Sequence" to view and arrange customer stop sequence for any delivery person.
             </p>
           </div>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, backgroundColor: '#ECFDF5', color: '#047857', padding: '4px 12px', borderRadius: '20px', border: '1px solid #A7F3D0' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, backgroundColor: '#ECFDF5', color: '#047857', padding: '4px 12px', borderRadius: '20px', border: '1px solid #A7F3D0' }}>
             {hubDeliveryAgents.length} Active Fleet Riders
           </span>
         </div>
@@ -239,7 +239,7 @@ export default function DispatchRouteGroupingPage({
                           borderRadius: '50%',
                           backgroundColor: isSelected ? '#047857' : '#E2E8F0',
                           color: isSelected ? '#FFFFFF' : '#334155',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           fontSize: '0.9rem',
                           display: 'flex',
                           alignItems: 'center',
@@ -248,7 +248,7 @@ export default function DispatchRouteGroupingPage({
                           {agent.name ? agent.name.charAt(0).toUpperCase() : 'R'}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.88rem' }}>
+                          <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.88rem' }}>
                             🚴 {agent.name} {isSelected && <span style={{ fontSize: '0.72rem', backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 6px', borderRadius: '6px', marginLeft: '6px' }}>Active</span>}
                           </div>
                           <div style={{ fontSize: '0.74rem', color: '#64748B' }}>
@@ -274,7 +274,7 @@ export default function DispatchRouteGroupingPage({
                         <span style={{
                           backgroundColor: totalCount > 0 ? '#047857' : '#94A3B8',
                           color: '#FFFFFF',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           fontSize: '0.82rem',
                           padding: '3px 10px',
                           borderRadius: '12px'
@@ -295,7 +295,7 @@ export default function DispatchRouteGroupingPage({
                           backgroundColor: isSelected ? '#047857' : '#FFFFFF',
                           color: isSelected ? '#FFFFFF' : '#047857',
                           border: '1px solid #047857',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.78rem',
                           padding: '0.4rem 0.85rem',
                           borderRadius: '8px',
@@ -324,10 +324,10 @@ export default function DispatchRouteGroupingPage({
         {/* Banner Controls */}
         <div style={{ backgroundColor: '#F8FAFC', padding: '1.1rem 1.35rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               CUSTOMER-LEVEL RE-ORDER SEQUENCE BUILDER
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
               🚴 {selectedAgent?.name || 'Rider'} · {selectedAgent?.assignedZone || 'Hosur Route'} ({customerStops.length} Unique Customer Stops)
             </div>
           </div>
@@ -338,7 +338,7 @@ export default function DispatchRouteGroupingPage({
               style={{
                 backgroundColor: '#FFFFFF',
                 color: '#334155',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 padding: '0.45rem 0.85rem',
                 borderRadius: '8px',
@@ -356,7 +356,7 @@ export default function DispatchRouteGroupingPage({
               style={{
                 backgroundColor: '#FFFFFF',
                 color: '#334155',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 padding: '0.45rem 0.85rem',
                 borderRadius: '8px',
@@ -402,7 +402,7 @@ export default function DispatchRouteGroupingPage({
                       border: '1px solid #A7F3D0',
                       borderRadius: '8px',
                       padding: '4px 10px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       fontSize: '0.85rem',
                       display: 'inline-block'
                     }}>
@@ -412,7 +412,7 @@ export default function DispatchRouteGroupingPage({
 
                   {/* Customer Details */}
                   <td style={{ padding: '0.85rem 1.25rem' }}>
-                    <div style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.88rem' }}>
+                    <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.88rem' }}>
                       {stop.customerName}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: '#64748B', marginTop: '2px' }}>
@@ -436,7 +436,7 @@ export default function DispatchRouteGroupingPage({
                         backgroundColor: '#ECFDF5',
                         color: '#047857',
                         border: '1px solid #A7F3D0',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         fontSize: '0.78rem',
                         padding: '0.4rem 0.85rem',
                         borderRadius: '8px',
@@ -525,7 +525,7 @@ export default function DispatchRouteGroupingPage({
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Package size={20} style={{ color: '#047857' }} /> Assigned Products ({selectedItemsModal.allDocItems.length} Total)
                 </h3>
                 <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0 0' }}>
@@ -570,7 +570,7 @@ export default function DispatchRouteGroupingPage({
                   alignItems: 'center'
                 }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.88rem' }}>
+                    <div style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.88rem' }}>
                       #{idx + 1} {item.itemsSummary}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
@@ -581,7 +581,7 @@ export default function DispatchRouteGroupingPage({
                     padding: '3px 9px',
                     borderRadius: '6px',
                     fontSize: '0.72rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     backgroundColor: item.isSubscription ? '#DCFCE7' : '#FEF3C7',
                     color: item.isSubscription ? '#166534' : '#B45309',
                   }}>
@@ -597,7 +597,7 @@ export default function DispatchRouteGroupingPage({
               style={{
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '0.85rem',
                 padding: '0.65rem 1.2rem',
                 borderRadius: '10px',

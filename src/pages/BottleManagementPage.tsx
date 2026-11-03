@@ -206,7 +206,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
             <Wine size={24} />
           </div>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 800, margin: 0, color: '#064E3B' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#064E3B' }}>
               Bottle Management &amp; Return Tracking Console
             </h2>
             <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: '3px' }}>
@@ -222,7 +222,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
             borderRadius: '10px',
             backgroundColor: '#FFFFFF',
             color: '#047857',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.8rem',
             border: '1px solid #A7F3D0',
             cursor: 'pointer',
@@ -249,10 +249,10 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             TOTAL BOTTLES ISSUED
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0284C7', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {totalIssued} Units
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -271,10 +271,10 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             PENDING WITH CUSTOMERS
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {totalPending} Bottles
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -293,10 +293,10 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             COLLECTED TODAY
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {collectedToday} Bottles
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -315,10 +315,10 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             DAMAGED / BROKEN BOTTLES
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#DC2626', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#DC2626', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)' }}>
             {totalDamaged} Units
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -347,7 +347,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                 border: '1px solid var(--border-color)',
                 backgroundColor: statusFilter === f.id ? '#047857' : 'var(--bg-main)',
                 color: statusFilter === f.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 cursor: 'pointer',
               }}
@@ -403,7 +403,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
               {filteredRecords.map((r) => (
                 <tr key={r.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.88rem' }}>{r.customerName}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem' }}>{r.customerName}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>Route: {r.route}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Phone: {r.phone}</div>
                   </td>
@@ -414,32 +414,32 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                     </div>
                   </td>
 
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
                     {r.issuedCount} units
                   </td>
 
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 700, color: '#047857' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: '#047857' }}>
                     {r.returnedCount} units
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <span style={{
                       fontSize: '0.82rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: r.pendingCount > 0 ? '#D97706' : '#047857'
                     }}>
                       {r.pendingCount} Pending
                     </span>
                   </td>
 
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: r.damagedCount > 0 ? '#DC2626' : 'var(--text-muted)', fontSize: '0.88rem' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: r.damagedCount > 0 ? '#DC2626' : 'var(--text-muted)', fontSize: '0.88rem' }}>
                     {r.damagedCount} Units
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <span style={{
                       fontSize: '0.72rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: r.status === 'Collected Today' ? '#047857' : r.status === 'Overdue (> 7 Days)' ? '#DC2626' : '#D97706',
                       backgroundColor: r.status === 'Collected Today' ? '#ECFDF5' : r.status === 'Overdue (> 7 Days)' ? '#FEE2E2' : '#FEF3C7',
                       border: r.status === 'Collected Today' ? '1px solid #A7F3D0' : r.status === 'Overdue (> 7 Days)' ? '1px solid #FCA5A5' : '1px solid #FDE68A',
@@ -457,7 +457,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                         style={{
                           padding: '0.38rem 0.7rem',
                           fontSize: '0.76rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           backgroundColor: 'var(--bg-main)',
                           color: 'var(--text-main)',
                           border: '1px solid var(--border-color)',
@@ -477,7 +477,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                         style={{
                           padding: '0.38rem 0.75rem',
                           fontSize: '0.76rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           backgroundColor: '#047857',
                           color: '#FFFFFF',
                           border: 'none',
@@ -535,10 +535,10 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               <div>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                   Record Empty Bottle Return
                 </h3>
-                <span style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 700 }}>Customer: {selectedRecord.customerName}</span>
+                <span style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 600 }}>Customer: {selectedRecord.customerName}</span>
               </div>
               <button 
                 onClick={() => setIsReturnModalOpen(false)}
@@ -556,7 +556,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
                   Number of Empty Bottles Returned Today
                 </label>
                 <input 
@@ -568,7 +568,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
                   Damaged / Broken Bottles (If Any)
                 </label>
                 <input 
@@ -580,7 +580,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
                   Collector Rider Notes / Remarks
                 </label>
                 <input 
@@ -595,13 +595,13 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   onClick={() => setIsReturnModalOpen(false)}
-                  style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 700, border: '1px solid var(--border-color)', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 600, border: '1px solid var(--border-color)', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveBottleReturn}
-                  style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, border: 'none', cursor: 'pointer' }}
                 >
                   Save Bottle Return
                 </button>
@@ -639,10 +639,10 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
               <div>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   Doorstep Delivery &amp; Empty Bottle History
                 </h3>
-                <div style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span>{selectedRecord.customerName} • 📞 {selectedRecord.phone}</span>
                   {onNavigateTab && (
                     <button
@@ -657,7 +657,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                         backgroundColor: '#ECFDF5',
                         color: '#047857',
                         border: '1px solid #A7F3D0',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         fontSize: '0.74rem',
                         cursor: 'pointer'
                       }}
@@ -678,45 +678,45 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
             {/* Quick Summary Chips */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>TOTAL ISSUED</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0284C7' }}>{selectedRecord.issuedCount} Bottles</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>TOTAL ISSUED</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0284C7' }}>{selectedRecord.issuedCount} Bottles</div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>RETURNED TO DATE</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#047857' }}>{selectedRecord.returnedCount} Bottles</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>RETURNED TO DATE</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#047857' }}>{selectedRecord.returnedCount} Bottles</div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>PENDING PICKUP</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#D97706' }}>{selectedRecord.pendingCount} Bottles</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>PENDING PICKUP</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#D97706' }}>{selectedRecord.pendingCount} Bottles</div>
               </div>
               <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>DAMAGED</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#DC2626' }}>{selectedRecord.damagedCount} Units</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>DAMAGED</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#DC2626' }}>{selectedRecord.damagedCount} Units</div>
               </div>
             </div>
 
             {/* Admin Manual Override Controls */}
             <div style={{ backgroundColor: '#ECFDF5', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #A7F3D0', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', marginBottom: '6px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', marginBottom: '6px' }}>
                 ⚙️ Admin Manual Bottle Counter Override (Syncs directly to Customer Profile)
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '0.75rem', alignItems: 'center' }}>
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '2px' }}>Returned Bottles</label>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#047857', display: 'block', marginBottom: '2px' }}>Returned Bottles</label>
                   <input
                     type="number"
                     value={editReturnedInput}
                     onChange={(e) => setEditReturnedInput(Number(e.target.value))}
-                    style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #A7F3D0', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
+                    style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #A7F3D0', fontSize: '0.82rem', fontWeight: 600, outline: 'none' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#DC2626', display: 'block', marginBottom: '2px' }}>Damaged / Broken</label>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#DC2626', display: 'block', marginBottom: '2px' }}>Damaged / Broken</label>
                   <input
                     type="number"
                     value={editDamagedInput}
                     onChange={(e) => setEditDamagedInput(Number(e.target.value))}
-                    style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #FCA5A5', fontSize: '0.82rem', fontWeight: 700, outline: 'none' }}
+                    style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #FCA5A5', fontSize: '0.82rem', fontWeight: 600, outline: 'none' }}
                   />
                 </div>
                 <button
@@ -743,7 +743,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                   style={{
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     padding: '0.55rem 0.85rem',
                     borderRadius: '8px',
@@ -758,7 +758,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
             </div>
 
             {/* Realtime Order & Return Logs */}
-            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Calendar size={16} style={{ color: '#047857' }} />
               Doorstep Delivery &amp; Pickup Event Trail
             </div>
@@ -804,13 +804,13 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)' }}>
                         <CheckCircle2 size={16} style={{ color: '#047857' }} />
                         <span>Date &amp; Time: {evt.date} • {evt.time}</span>
                       </div>
                       <span style={{
                         fontSize: '0.72rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         backgroundColor: evt.bottlesReturned > 0 ? '#ECFDF5' : '#FEF3C7',
                         color: evt.bottlesReturned > 0 ? '#047857' : '#D97706',
                         border: evt.bottlesReturned > 0 ? '1px solid #A7F3D0' : '1px solid #FDE68A',
@@ -827,8 +827,8 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
 
                     <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.76rem', color: 'var(--text-muted)', paddingTop: '4px', borderTop: '1px solid var(--border-color)' }}>
                       <div>🥛 <strong>Issued:</strong> {evt.bottlesIssued} Bottles</div>
-                      <div>🍾 <strong>Returned:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{evt.bottlesReturned} Empties</span></div>
-                      <div>⏳ <strong>Pending at Home:</strong> <span style={{ color: evt.pendingBalance > 0 ? '#D97706' : '#047857', fontWeight: 700 }}>{evt.pendingBalance} Bottles</span></div>
+                      <div>🍾 <strong>Returned:</strong> <span style={{ color: '#047857', fontWeight: 600 }}>{evt.bottlesReturned} Empties</span></div>
+                      <div>⏳ <strong>Pending at Home:</strong> <span style={{ color: evt.pendingBalance > 0 ? '#D97706' : '#047857', fontWeight: 600 }}>{evt.pendingBalance} Bottles</span></div>
                     </div>
                   </div>
                 ));
@@ -843,7 +843,7 @@ export default function BottleManagementPage({ selectedHubId, onNavigateTab, sho
                   borderRadius: '10px',
                   backgroundColor: '#047857',
                   color: '#FFFFFF',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.82rem',
                   border: 'none',
                   cursor: 'pointer'

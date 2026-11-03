@@ -219,7 +219,7 @@ export default function ProductsPage({
               backgroundColor: '#FFFFFF',
               color: '#111827',
               fontSize: '0.82rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -229,7 +229,7 @@ export default function ProductsPage({
             ← Back to Product Inventory
           </button>
           
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             {titleText}
           </h2>
         </div>
@@ -239,7 +239,7 @@ export default function ProductsPage({
           
           {/* Product Name */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Product Name</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Product Name</label>
             <input 
               type="text" 
               value={formData.name || ''} 
@@ -251,7 +251,7 @@ export default function ProductsPage({
 
           {/* Description */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Description</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Description</label>
             <textarea 
               rows={3}
               value={formData.description || ''} 
@@ -264,11 +264,11 @@ export default function ProductsPage({
           {/* Product Category & New Category Option */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151' }}>Product Category</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151' }}>Product Category</label>
               <button 
                 type="button"
                 onClick={() => setShowAddCategoryModal(true)}
-                style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 ✨ + Create New Category
               </button>
@@ -287,17 +287,17 @@ export default function ProductsPage({
           {/* Price, Stock Quantity, Unit, Rank Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Catalog Price (₹)</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Catalog Price (₹)</label>
               <input 
                 type="number" 
                 value={formData.price || 0} 
                 onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', fontWeight: 700 }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', fontWeight: 600 }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Stock Quantity (Units)</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Stock Quantity (Units)</label>
               <input 
                 type="number" 
                 value={formData.stockQuantity !== undefined ? formData.stockQuantity : 20} 
@@ -312,12 +312,12 @@ export default function ProductsPage({
                   setFormData({ ...formData, stockQuantity: q, stockStatus: st, inStock: q > 0 && st !== 'coming_soon' });
                 }}
                 placeholder="20"
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', fontWeight: 700, color: '#047857' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '0.88rem', outline: 'none', fontWeight: 600, color: '#047857' }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Unit Metric</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Unit Metric</label>
               <input 
                 type="text" 
                 value={formData.unit || ''} 
@@ -328,7 +328,7 @@ export default function ProductsPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Display Sorting Rank</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Display Sorting Rank</label>
               <input 
                 type="number" 
                 value={formData.displayOrder || 1} 
@@ -341,7 +341,7 @@ export default function ProductsPage({
           {/* Fat %, Shelf Life, Farm Source, Offer Tag Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Fat Percentage</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Fat Percentage</label>
               <input 
                 type="text" 
                 value={formData.fatPercentage || ''} 
@@ -352,7 +352,7 @@ export default function ProductsPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Shelf Life</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Shelf Life</label>
               <input 
                 type="text" 
                 value={formData.shelfLife || ''} 
@@ -363,7 +363,7 @@ export default function ProductsPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Dairy Farm Source</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Dairy Farm Source</label>
               <input 
                 type="text" 
                 value={formData.farmSource || ''} 
@@ -374,7 +374,7 @@ export default function ProductsPage({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Offer Tags / Discounts</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Offer Tags / Discounts</label>
               <input 
                 type="text" 
                 value={formData.offerTag || ''} 
@@ -385,7 +385,7 @@ export default function ProductsPage({
             </div>
 
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '4px' }}>🛡️ Guarantee Banner Note (Mobile Product Detail Screen)</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '4px' }}>🛡️ Guarantee Banner Note (Mobile Product Detail Screen)</label>
               <input 
                 type="text" 
                 value={formData.guaranteeNote || ''} 
@@ -398,7 +398,7 @@ export default function ProductsPage({
 
           {/* Product Images (Carousel - up to 4 Images) */}
           <div style={{ backgroundColor: '#F9FAFB', borderRadius: '14px', padding: '1.25rem', border: '1px solid #E5E7EB' }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '0.25rem' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.25rem' }}>
               Product Carousel Images (up to 4 Images for Mobile App)
             </label>
             <div style={{ fontSize: '0.74rem', color: '#6B7280', marginBottom: '0.85rem' }}>
@@ -408,7 +408,7 @@ export default function ProductsPage({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               {/* Image 1 */}
               <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '4px' }}>Image 1 (Primary Cover)</label>
+                <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#047857', display: 'block', marginBottom: '4px' }}>Image 1 (Primary Cover)</label>
                 <input 
                   type="text" 
                   value={formData.imageUrl || ''} 
@@ -420,7 +420,7 @@ export default function ProductsPage({
 
               {/* Image 2 */}
               <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Image 2 (Carousel)</label>
+                <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Image 2 (Carousel)</label>
                 <input 
                   type="text" 
                   value={formData.img2 || ''} 
@@ -432,7 +432,7 @@ export default function ProductsPage({
 
               {/* Image 3 */}
               <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Image 3 (Carousel)</label>
+                <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Image 3 (Carousel)</label>
                 <input 
                   type="text" 
                   value={formData.img3 || ''} 
@@ -444,7 +444,7 @@ export default function ProductsPage({
 
               {/* Image 4 */}
               <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Image 4 (Carousel)</label>
+                <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Image 4 (Carousel)</label>
                 <input 
                   type="text" 
                   value={formData.img4 || ''} 
@@ -458,17 +458,17 @@ export default function ProductsPage({
 
           {/* Feature Checkboxes matching Screenshot 4 */}
           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 
                 checked={formData.isGlassBottle !== false} 
                 onChange={(e) => setFormData({ ...formData, isGlassBottle: e.target.checked })}
                 style={{ width: '16px', height: '16px', accentColor: '#047857' }}
               />
-              <span style={{ color: '#047857', fontWeight: 800 }}>🥛 Glass Bottle Product (Triggers Empty Bottle Return Tracking)</span>
+              <span style={{ color: '#047857', fontWeight: 700 }}>🥛 Glass Bottle Product (Triggers Empty Bottle Return Tracking)</span>
             </label>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 
                 checked={formData.isSubscriptionEnabled !== false} 
@@ -478,7 +478,7 @@ export default function ProductsPage({
               <span>Allow Recurring Subscription Deliveries</span>
             </label>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 
                 checked={formData.isFeatured === true} 
@@ -491,7 +491,7 @@ export default function ProductsPage({
 
           {/* Stock Availability 4-Way Selector */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
               Stock Availability & Catalog Status (Auto-updates with Stock Quantity)
             </label>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -516,7 +516,7 @@ export default function ProductsPage({
                     padding: '0.45rem 0.85rem',
                     borderRadius: '8px',
                     fontSize: '0.8rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: 'pointer',
                     border: formData.stockStatus === st.id ? `2px solid ${st.color}` : `1px solid ${st.border}`,
                     backgroundColor: formData.stockStatus === st.id ? st.bg : '#FFFFFF',
@@ -531,7 +531,7 @@ export default function ProductsPage({
 
           {/* Operating Hub Assignment */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>Operating Hub Assignment</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>Operating Hub Assignment</label>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -542,7 +542,7 @@ export default function ProductsPage({
               border: '1px solid #A7F3D0',
               color: '#047857',
               fontSize: '0.82rem',
-              fontWeight: 800
+              fontWeight: 700
             }}>
               <span>📍 Locked to {selectedHubId === 'hosur' ? 'Hosur Central Hub (hub_hosur_main)' : 'Bangalore Electronic City Hub (hub_blr_ecity)'}</span>
             </div>
@@ -550,13 +550,13 @@ export default function ProductsPage({
 
           {/* Nutritional Profile */}
           <div>
-            <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '0.65rem' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '0.65rem' }}>
               Nutritional Facts Table (Values per 100ml / 100g)
             </label>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
               <div>
-                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700 }}>🥛 Calcium (Optional):</label>
+                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>🥛 Calcium (Optional):</label>
                 <input 
                   type="text" 
                   value={(formData.nutrients as any)?.Calcium ?? (formData.nutrients as any)?.calcium ?? ''} 
@@ -567,7 +567,7 @@ export default function ProductsPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700 }}>⚡ Energy (Optional):</label>
+                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>⚡ Energy (Optional):</label>
                 <input 
                   type="text" 
                   value={(formData.nutrients as any)?.Energy ?? (formData.nutrients as any)?.energy ?? ''} 
@@ -578,7 +578,7 @@ export default function ProductsPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700 }}>🧀 Fat Content (Optional):</label>
+                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>🧀 Fat Content (Optional):</label>
                 <input 
                   type="text" 
                   value={(formData.nutrients as any)?.['Fat Content'] ?? (formData.nutrients as any)?.fat ?? ''} 
@@ -589,7 +589,7 @@ export default function ProductsPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700 }}>🧪 Phosphorus (Optional):</label>
+                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>🧪 Phosphorus (Optional):</label>
                 <input 
                   type="text" 
                   value={(formData.nutrients as any)?.Phosphorus ?? (formData.nutrients as any)?.phosphorus ?? ''} 
@@ -600,7 +600,7 @@ export default function ProductsPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 700 }}>🥩 Protein (Optional):</label>
+                <label style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>🥩 Protein (Optional):</label>
                 <input 
                   type="text" 
                   value={(formData.nutrients as any)?.Protein ?? (formData.nutrients as any)?.protein ?? ''} 
@@ -617,13 +617,13 @@ export default function ProductsPage({
             <button 
               type="button"
               onClick={() => { setEditingProduct(null); setIsCreatingNew(false); }}
-              style={{ padding: '0.65rem 1.25rem', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#374151', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+              style={{ padding: '0.65rem 1.25rem', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#374151', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
             >
               Cancel
             </button>
             <button 
               type="submit"
-              style={{ padding: '0.65rem 1.5rem', borderRadius: '10px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+              style={{ padding: '0.65rem 1.5rem', borderRadius: '10px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
             >
               Save Product Specs
             </button>
@@ -652,7 +652,7 @@ export default function ProductsPage({
       {/* Header Bar matching Screenshot 2 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             Product Inventory
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '2px' }}>
@@ -668,7 +668,7 @@ export default function ProductsPage({
               alignItems: 'center',
               gap: '6px',
               fontSize: '0.85rem',
-              fontWeight: 700,
+              fontWeight: 600,
               padding: '0.65rem 1.25rem',
               borderRadius: '10px',
               backgroundColor: '#047857',
@@ -697,7 +697,7 @@ export default function ProductsPage({
                 border: selectedCategory === cat ? 'none' : '1px solid #E5E7EB',
                 backgroundColor: selectedCategory === cat ? '#DCFCE7' : '#FFFFFF',
                 color: selectedCategory === cat ? '#047857' : '#374151',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.82rem',
                 cursor: 'pointer'
               }}
@@ -714,7 +714,7 @@ export default function ProductsPage({
               border: '1px solid #A7F3D0',
               backgroundColor: '#ECFDF5',
               color: '#047857',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.82rem',
               cursor: 'pointer'
             }}
@@ -782,7 +782,7 @@ export default function ProductsPage({
                     padding: '4px 12px',
                     borderRadius: '20px',
                     fontSize: '0.72rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     letterSpacing: '0.03em',
                     boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
                     zIndex: 2
@@ -800,7 +800,7 @@ export default function ProductsPage({
                   padding: '3px 10px',
                   borderRadius: '6px',
                   fontSize: '0.72rem',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   letterSpacing: '0.05em'
                 }}>
                   {prod.isSubscriptionEnabled ? 'SUBSCRIPTION OK' : 'ONE-TIME ONLY'}
@@ -816,7 +816,7 @@ export default function ProductsPage({
                     padding: '3px 10px',
                     borderRadius: '6px',
                     fontSize: '0.72rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     letterSpacing: '0.05em',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                   }}>
@@ -828,7 +828,7 @@ export default function ProductsPage({
               {/* Tags & Rank Row */}
               <div style={{ padding: '1rem 1.25rem 0.5rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>
                     {prod.category}
                   </span>
                   <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600 }}>
@@ -837,7 +837,7 @@ export default function ProductsPage({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '2px' }}>
                     Rank #{prod.displayOrder || 1}
                   </span>
 
@@ -854,7 +854,7 @@ export default function ProductsPage({
                     return (
                       <span style={{
                         fontSize: '0.72rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         color: b.color,
                         backgroundColor: b.bg,
                         padding: '2px 8px',
@@ -869,7 +869,7 @@ export default function ProductsPage({
 
               {/* Title & Description */}
               <div style={{ padding: '0 1.25rem 0.5rem 1.25rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '4px 0 6px 0' }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: '4px 0 6px 0' }}>
                   {prod.name}
                 </h3>
                 <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
@@ -893,7 +893,7 @@ export default function ProductsPage({
                   const hasDisc = discPrice < prod.price;
                   return (
                     <>
-                      <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#047857', fontFamily: 'var(--font-title)' }}>
+                      <span style={{ fontSize: '1.3rem', fontWeight: 700, color: '#047857', fontFamily: 'var(--font-title)' }}>
                         ₹{discPrice}
                       </span>
                       {hasDisc && (
@@ -924,7 +924,7 @@ export default function ProductsPage({
                     padding: '0.35rem 0.5rem',
                     borderRadius: '6px',
                     fontSize: '0.76rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     border: '1px solid #D1D5DB',
                     backgroundColor: '#FFFFFF',
                     cursor: 'pointer',
@@ -980,7 +980,7 @@ export default function ProductsPage({
       {showAddCategoryModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', maxWidth: '380px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, margin: 0, color: '#111827' }}>+ Add New Product Category</h3>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, margin: 0, color: '#111827' }}>+ Add New Product Category</h3>
             <p style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
               Create a new category for sorting catalog items.
             </p>
@@ -1003,7 +1003,7 @@ export default function ProductsPage({
                     setShowAddCategoryModal(false);
                   }
                 }}
-                style={{ flex: 1, padding: '0.6rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                style={{ flex: 1, padding: '0.6rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 600, cursor: 'pointer' }}
               >
                 Add Category
               </button>

@@ -41,7 +41,7 @@ export default function PortalGatewayPage({
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      fontFamily: "'Poppins', sans-serif",
+      fontFamily: "var(--font-body)",
       boxSizing: 'border-box',
       padding: '2.5rem 1.5rem',
       overflowX: 'hidden'
@@ -57,29 +57,16 @@ export default function PortalGatewayPage({
         boxSizing: 'border-box'
       }}>
         
-        {/* Top Centered Logo Badge */}
+        {/* Logo: transparent PNG, so it sits straight on the page */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-          <div style={{
-            width: '200px',
-            height: '64px',
-            borderRadius: '18px',
-            backgroundColor: '#FFFFFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '8px 16px',
-            boxShadow: '0 12px 30px rgba(4, 120, 87, 0.12)',
-            border: '2px solid #A7F3D0'
-          }}>
-            <img src={logoImg} alt="MilkyLush Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
+          <img src={logoImg} alt="MilkyLush Logo" style={{ width: '230px', maxWidth: '70%', height: 'auto' }} />
         </div>
 
         {/* Portal Title Header */}
         <div style={{ textAlign: 'center', marginBottom: '1.75rem', padding: '0 1rem' }}>
           <h1 style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 800,
+            fontFamily: "var(--font-body)",
+            fontWeight: 700,
             fontSize: '2.1rem',
             color: '#047857',
             letterSpacing: '-0.5px',
@@ -124,7 +111,7 @@ export default function PortalGatewayPage({
             <div>
               <div style={{
                 fontSize: '0.75rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 color: '#059669',
@@ -134,13 +121,13 @@ export default function PortalGatewayPage({
               </div>
               <h2 style={{
                 fontSize: '1.6rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: '#064E3B',
                 margin: 0,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                fontFamily: "'Poppins', sans-serif"
+                fontFamily: "var(--font-body)"
               }}>
                 {/* Green Location Pin Icon */}
                 <MapPin size={24} style={{ color: '#059669' }} /> 
@@ -160,7 +147,7 @@ export default function PortalGatewayPage({
                 padding: '7px 16px',
                 borderRadius: '20px',
                 fontSize: '0.82rem',
-                fontWeight: 700
+                fontWeight: 600
               }}>
                 {stateBadge}
               </div>
@@ -181,7 +168,7 @@ export default function PortalGatewayPage({
                   backgroundColor: logoutHover ? '#FFE4E6' : '#FFF1F2',
                   color: '#991B1B',
                   fontSize: '0.82rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -189,7 +176,7 @@ export default function PortalGatewayPage({
                   transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                   transform: logoutHover ? 'translateY(-1px)' : 'none',
                   boxShadow: logoutHover ? '0 4px 12px rgba(225, 29, 72, 0.15)' : 'none',
-                  fontFamily: "'Poppins', sans-serif"
+                  fontFamily: "var(--font-body)"
                 }}
               >
                 <LogOut size={15} />
@@ -245,7 +232,7 @@ export default function PortalGatewayPage({
               }}>
                 <LayoutDashboard size={28} />
               </div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#047857', marginBottom: '6px' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#047857', marginBottom: '6px' }}>
                 Catalog &amp; Orders
               </div>
               <div style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 600 }}>
@@ -292,7 +279,7 @@ export default function PortalGatewayPage({
               }}>
                 <Truck size={28} />
               </div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#92400E', marginBottom: '6px' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#92400E', marginBottom: '6px' }}>
                 Delivery &amp; Dispatch
               </div>
               <div style={{ fontSize: '0.8rem', color: '#B45309', fontWeight: 600 }}>
@@ -339,7 +326,7 @@ export default function PortalGatewayPage({
               }}>
                 <TrendingUp size={28} />
               </div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#166534', marginBottom: '6px' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#166534', marginBottom: '6px' }}>
                 Marketing &amp; Finance
               </div>
               <div style={{ fontSize: '0.8rem', color: '#15803D', fontWeight: 600 }}>
@@ -366,7 +353,7 @@ export default function PortalGatewayPage({
               backgroundColor: btnHover ? '#065F46' : '#047857',
               color: '#FFFFFF',
               fontSize: '1.05rem',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -375,7 +362,7 @@ export default function PortalGatewayPage({
               boxShadow: btnHover ? '0 12px 30px rgba(4, 120, 87, 0.45)' : '0 8px 24px rgba(4, 120, 87, 0.35)',
               transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
               transform: btnHover ? 'translateY(-2px)' : 'translateY(0)',
-              fontFamily: "'Poppins', sans-serif"
+              fontFamily: "var(--font-body)"
             }}
           >
             <span>Open {isHosur ? 'Hosur' : 'Bangalore'} Management Portal</span>

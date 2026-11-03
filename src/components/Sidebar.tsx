@@ -1,27 +1,9 @@
-import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  ShoppingBag, 
-  Truck, 
-  Search, 
-  LogOut, 
-  Calendar, 
-  BarChart2, 
-  ShieldCheck, 
-  FileText,
-  CreditCard,
-  Smartphone,
-  Gift,
-  Ticket,
-  Clock,
-  Lock,
-  Settings,
-  Grid,
-  Wine,
-  MapPin
+import {
+  LayoutDashboard, Users, ShoppingBag, Truck, Calendar, BarChart2, ShieldCheck,
+  CreditCard, Smartphone, Gift, Ticket, Clock, Lock, Grid, Wine, MapPin,
+  PackageCheck, ClipboardList, Package, Repeat, Layers, FlaskConical, UserPlus, Bike, Cog,
 } from 'lucide-react';
-import logoImg from '../assets/logo.png';
+import SideNav, { type NavGroup } from './SideNav';
 
 interface SidebarProps {
   activeTab: string;
@@ -33,318 +15,82 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-interface MenuGroup {
-  title: string;
-  items: {
-    id: string;
-    label: string;
-    icon: any;
-    badge?: string;
-  }[];
-}
+// The pages used every day sit at the top and are always showing; everything
+// else is grouped by what it is for and folds away until needed.
+const GROUPS: NavGroup[] = [
+  {
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'todays-deliveries', label: "Today's Deliveries", icon: Truck },
+      { id: 'orders', label: 'Orders', icon: ShoppingBag },
+      { id: 'subscriptions', label: 'Subscriptions', icon: Repeat },
+      { id: 'customers', label: 'Customers', icon: Users },
+    ],
+  },
+  {
+    title: 'Deliveries',
+    collapsible: true,
+    items: [
+      { id: 'all-deliveries', label: 'All Deliveries', icon: ClipboardList },
+      { id: 'delivered-history', label: 'Delivered History', icon: PackageCheck },
+      { id: 'delivery', label: 'Delivery Fleet', icon: Bike },
+      { id: 'service-area', label: 'Service Areas & Map', icon: MapPin },
+    ],
+  },
+  {
+    title: 'Plans & Subscriptions',
+    collapsible: true,
+    items: [
+      { id: 'prepaid-subscriptions', label: 'Prepaid Plans', icon: Calendar },
+      { id: 'manage-subscriptions', label: 'Plan Packages & Analytics', icon: Layers },
+    ],
+  },
+  {
+    title: 'Products & Stock',
+    collapsible: true,
+    items: [
+      { id: 'products', label: 'Products & Stock', icon: Package },
+      { id: 'bottle-management', label: 'Bottles', icon: Wine },
+      { id: 'quality-reports', label: 'Quality & Lab Reports', icon: FlaskConical },
+    ],
+  },
+  {
+    title: 'Money & Offers',
+    collapsible: true,
+    items: [
+      { id: 'payments', label: 'Payments', icon: CreditCard },
+      { id: 'promo-codes', label: 'Promo Codes', icon: Ticket },
+      { id: 'refer-earn', label: 'Refer & Earn', icon: Gift },
+      { id: 'free-samples', label: 'Free Samples', icon: UserPlus },
+      { id: 'analysis', label: 'Analytics & Reports', icon: BarChart2 },
+    ],
+  },
+  {
+    title: 'Admin & Settings',
+    collapsible: true,
+    items: [
+      { id: 'mobile-control', label: 'Mobile App Control', icon: Smartphone },
+      { id: 'user-control', label: 'User Control', icon: ShieldCheck },
+      { id: 'admin-access', label: 'Admin Access', icon: Lock },
+      { id: 'audit-logs', label: 'Activity Log', icon: Clock },
+      { id: 'settings', label: 'Settings', icon: Cog },
+    ],
+  },
+];
 
-export default function Sidebar({
-  activeTab,
-  onSelectTab,
-  onLogout,
-  isMobileOpen = false,
-  onCloseMobile,
-  isCollapsed: controlledIsCollapsed,
-  onToggleCollapse,
-}: SidebarProps) {
-  const [menuSearch, setMenuSearch] = useState('');
-  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
-
-  const isCollapsed = controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalIsCollapsed;
-  const handleToggleCollapse = () => {
-    if (onToggleCollapse) {
-      onToggleCollapse();
-    } else {
-      setInternalIsCollapsed(!internalIsCollapsed);
-    }
-  };
-
-  const menuStructure: MenuGroup[] = [
-    {
-      title: 'OVERVIEW',
-      items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'analysis', label: 'Analytics & Reports', icon: BarChart2 }
-      ]
-    },
-    {
-      title: 'OPERATIONS & FULFILLMENT',
-      items: [
-        { id: 'todays-deliveries', label: "Today's Deliveries", icon: Truck },
-        { id: 'all-deliveries', label: 'All Deliveries', icon: Truck },
-        { id: 'orders', label: 'Orders', icon: ShoppingBag },
-        { id: 'delivered-history', label: 'Delivered History', icon: Truck }
-      ]
-    },
-    {
-      title: 'MANAGE SUBSCRIPTIONS',
-      items: [
-        { id: 'subscriptions', label: 'Subscriptions', icon: Calendar },
-        { id: 'prepaid-subscriptions', label: 'Prepaid Subscriptions', icon: Calendar },
-        { id: 'manage-subscriptions', label: 'Subscription Analytics & Packages', icon: Settings }
-      ]
-    },
-    {
-      title: 'CATALOG & FLEET',
-      items: [
-        { id: 'products', label: 'Products & Stock', icon: ShoppingBag },
-        { id: 'quality-reports', label: 'Quality & Lab Reports', icon: FileText },
-        { id: 'bottle-management', label: 'Bottle Management', icon: Wine },
-        { id: 'delivery', label: 'Delivery Fleet', icon: Truck },
-        { id: 'service-area', label: 'Service Areas & Hub Map', icon: MapPin }
-      ]
-    },
-    {
-      title: 'CUSTOMERS & ACCOUNTS',
-      items: [
-        { id: 'customers', label: 'Customers', icon: Users },
-        { id: 'user-control', label: 'User Control', icon: ShieldCheck },
-        { id: 'admin-access', label: 'Admin Access', icon: Lock }
-      ]
-    },
-    {
-      title: 'MARKETING & SETTINGS',
-      items: [
-        { id: 'payments', label: 'Payments Ledger', icon: CreditCard },
-        { id: 'mobile-control', label: 'Mobile Control', icon: Smartphone },
-        { id: 'refer-earn', label: 'Refer & Earn Program', icon: Gift },
-        { id: 'promo-codes', label: 'Promo Codes & Coupons', icon: Ticket },
-        { id: 'free-samples', label: 'Free Samples', icon: Gift },
-        { id: 'audit-logs', label: 'Audit Logs', icon: Clock },
-        { id: 'settings', label: 'Settings', icon: Settings },
-        { id: 'portal-gateway', label: 'Portal Gateway', icon: Grid }
-      ]
-    }
-  ];
-
-  const handleNavClick = (tabId: string) => {
-    onSelectTab(tabId);
-    if (onCloseMobile) onCloseMobile();
-  };
-
-  const sidebarWidth = isCollapsed ? '76px' : '260px';
-
+export default function Sidebar(props: SidebarProps) {
   return (
-    <>
-      {isMobileOpen && (
-        <div 
-          className="sidebar-mobile-backdrop" 
-          onClick={onCloseMobile} 
-        />
-      )}
-      <aside 
-        className={`sidebar-container ${isMobileOpen ? 'mobile-open' : ''}`}
-        style={{
-          width: sidebarWidth,
-          height: '100vh',
-          backgroundColor: 'var(--bg-sidebar)',
-          borderRight: '1px solid var(--border-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 100,
-          boxSizing: 'border-box',
-          overflowY: 'auto',
-          transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          fontFamily: "'Poppins', sans-serif"
-        }}
-      >
-        {/* Brand Header */}
-        <div style={{
-          padding: isCollapsed ? '1rem 0.5rem' : '1.1rem 1rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: isCollapsed ? 'center' : 'flex-start',
-          borderBottom: '1px solid var(--border-color)',
-          backgroundColor: '#FFFFFF',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-            <img
-              src={logoImg}
-              alt="MilkyLush Logo"
-              style={{
-                height: isCollapsed ? '28px' : '42px',
-                maxWidth: isCollapsed ? '48px' : '185px',
-                objectFit: 'contain',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Menu Search Box */}
-        {!isCollapsed && (
-          <div style={{ padding: '0.85rem 1.25rem 0.5rem 1.25rem' }}>
-            <div style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
-              <input
-                type="text"
-                placeholder="Filter menu..."
-                value={menuSearch}
-                onChange={(e) => setMenuSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.45rem 0.75rem 0.45rem 30px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'var(--bg-main)',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                  fontFamily: "'Poppins', sans-serif"
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Groups */}
-        <div style={{ flex: 1, padding: isCollapsed ? '0.5rem' : '0.5rem 0.85rem', display: 'flex', flexDirection: 'column', gap: isCollapsed ? '0.5rem' : '1.25rem' }}>
-          {menuStructure.map((group, groupIdx) => {
-            const filteredItems = group.items.filter(item => 
-              item.label.toLowerCase().includes(menuSearch.toLowerCase())
-            );
-
-            if (menuSearch && filteredItems.length === 0) return null;
-
-            return (
-              <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                {!isCollapsed && (
-                  <div style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    letterSpacing: '0.06em',
-                    padding: '0.45rem 0.65rem 0.2rem 0.65rem',
-                    textTransform: 'uppercase',
-                    fontFamily: "'Poppins', sans-serif"
-                  }}>
-                    {group.title}
-                  </div>
-                )}
-
-                {filteredItems.map(item => {
-                  const IconComp = item.icon;
-                  const isActive = activeTab === item.id;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleNavClick(item.id)}
-                      className={`nav-link ${isActive ? 'active' : ''}`}
-                      title={isCollapsed ? item.label : undefined}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: isCollapsed ? 'center' : 'space-between',
-                        width: '100%',
-                        padding: isCollapsed ? '0.65rem 0' : '0.55rem 0.75rem',
-                        borderRadius: '10px',
-                        border: isActive ? '1px solid var(--primary-light)' : '1px solid transparent',
-                        backgroundColor: isActive ? 'var(--nav-active-bg, rgba(4, 120, 87, 0.15))' : 'transparent',
-                        color: isActive ? 'var(--primary-light)' : 'var(--text-main)',
-                        fontWeight: isActive ? 700 : 500,
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-                        textAlign: 'left',
-                        fontFamily: "'Poppins', sans-serif"
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <IconComp size={18} style={{ color: isActive ? 'var(--primary-light)' : 'var(--text-muted)', transition: 'color 0.2s ease' }} />
-                        {!isCollapsed && <span style={{ color: isActive ? 'var(--primary-light)' : 'var(--text-main)', fontWeight: isActive ? 700 : 500 }}>{item.label}</span>}
-                      </div>
-
-                      {!isCollapsed && item.badge && (
-                        <span style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          backgroundColor: isActive ? '#047857' : 'var(--bg-main)',
-                          color: isActive ? '#FFFFFF' : 'var(--primary-light)',
-                          padding: '2px 6px',
-                          borderRadius: '6px'
-                        }}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom Footer: Collapse Toggle & Logout */}
-        <div style={{
-          padding: '0.85rem 1.25rem',
-          borderTop: '1px solid var(--border-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-          backgroundColor: 'var(--bg-card)'
-        }}>
-          {/* Bottom Collapse Toggle */}
-          <button
-            onClick={handleToggleCollapse}
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
-              gap: '8px',
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              backgroundColor: 'var(--bg-main)',
-              color: 'var(--text-muted)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <span style={{ fontSize: '1rem', lineHeight: 1 }}>{isCollapsed ? '➔' : '❮'}</span>
-            {!isCollapsed && <span>Collapse Sidebar</span>}
-          </button>
-
-          <button
-            onClick={onLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
-              gap: '8px',
-              width: '100%',
-              padding: '0.55rem 0.75rem',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: '#EF4444',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-            title="Log Out"
-          >
-            <LogOut size={16} />
-            {!isCollapsed && <span>Log Out</span>}
-          </button>
-        </div>
-
-      </aside>
-    </>
+    <SideNav
+      groups={GROUPS}
+      activeTab={props.activeTab}
+      onSelectTab={props.onSelectTab}
+      onLogout={props.onLogout}
+      exit={{ label: 'Back to portals', icon: Grid, onClick: () => props.onSelectTab('portal-gateway') }}
+      isMobileOpen={props.isMobileOpen}
+      onCloseMobile={props.onCloseMobile}
+      isCollapsed={props.isCollapsed}
+      onToggleCollapse={props.onToggleCollapse}
+      consoleName="Catalog"
+    />
   );
 }

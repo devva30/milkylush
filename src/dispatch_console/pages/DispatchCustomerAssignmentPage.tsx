@@ -123,12 +123,12 @@ export default function DispatchCustomerAssignmentPage({
 
   return (
     <DataState loading={customersQuery.loading || routesQuery.loading} error={customersQuery.error || routesQuery.error} onRetry={() => { customersQuery.retry(); routesQuery.retry(); }} loadingLabel="Loading customers & routes…">
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Header Card */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             🎯 Dedicated Customer-Rider Auto-Assignment & Shift Manager
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -140,20 +140,20 @@ export default function DispatchCustomerAssignmentPage({
       {/* Top Summary Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>TOTAL CUSTOMERS IN HUB</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1E293B', marginTop: '4px' }}>{users.length} Customers</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>TOTAL CUSTOMERS IN HUB</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1E293B', marginTop: '4px' }}>{users.length} Customers</div>
           <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>Registered customer profiles</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>AUTO-ASSIGNED CUSTOMERS</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>{assignedUsersCount} / {users.length}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>AUTO-ASSIGNED CUSTOMERS</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#047857', marginTop: '4px' }}>{assignedUsersCount} / {users.length}</div>
           <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '2px' }}>Dedicated rider mapped</div>
         </div>
 
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.15rem', border: '1px solid #E2E8F0' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: activeShiftSwap ? '#D97706' : '#64748B', textTransform: 'uppercase' }}>TEMPORARY SHIFT STATUS</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: activeShiftSwap ? '#D97706' : '#059669', marginTop: '6px' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: activeShiftSwap ? '#D97706' : '#64748B', textTransform: 'uppercase' }}>TEMPORARY SHIFT STATUS</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: activeShiftSwap ? '#D97706' : '#059669', marginTop: '6px' }}>
             {activeShiftSwap ? '⚠️ Active Substitute Override' : '🟢 Standard Duty Routes'}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
@@ -167,7 +167,7 @@ export default function DispatchCustomerAssignmentPage({
         
         {/* Card 1: Rider Absence & Shift Swap Panel */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.35rem', border: '1px solid #E2E8F0' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ArrowRightLeft size={18} style={{ color: '#D97706' }} /> Rider Absence &amp; Shift Substitution Manager
           </h3>
           <p style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '4px' }}>
@@ -176,7 +176,7 @@ export default function DispatchCustomerAssignmentPage({
 
           {activeShiftSwap ? (
             <div style={{ backgroundColor: '#FFFBEB', borderRadius: '12px', padding: '1rem', border: '1px solid #FDE68A', marginTop: '1rem' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#92400E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400E', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertTriangle size={16} /> Temporary Shift Override Active for Today
               </div>
               <div style={{ fontSize: '0.8rem', color: '#78350F', marginTop: '6px', lineHeight: '1.4' }}>
@@ -192,7 +192,7 @@ export default function DispatchCustomerAssignmentPage({
                   borderRadius: '6px',
                   padding: '0.35rem 0.85rem',
                   fontSize: '0.75rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer'
                 }}
               >
@@ -203,7 +203,7 @@ export default function DispatchCustomerAssignmentPage({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1E293B' }}>Absent Rider Today</label>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1E293B' }}>Absent Rider Today</label>
                   <select
                     value={absentRiderId}
                     onChange={(e) => setAbsentRiderId(e.target.value)}
@@ -217,7 +217,7 @@ export default function DispatchCustomerAssignmentPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1E293B' }}>Substitute Rider</label>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1E293B' }}>Substitute Rider</label>
                   <select
                     value={substituteRiderId}
                     onChange={(e) => setSubstituteRiderId(e.target.value)}
@@ -236,7 +236,7 @@ export default function DispatchCustomerAssignmentPage({
                 style={{
                   backgroundColor: '#D97706',
                   color: '#FFFFFF',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.82rem',
                   padding: '0.6rem 1rem',
                   borderRadius: '8px',
@@ -254,7 +254,7 @@ export default function DispatchCustomerAssignmentPage({
         {/* Card 2: How Auto-Assignment Works */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.35rem', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldCheck size={18} style={{ color: '#047857' }} /> How Auto-Assignment Works
             </h3>
             <ul style={{ margin: '10px 0 0 0', paddingLeft: '18px', fontSize: '0.8rem', color: '#64748B', lineHeight: '1.55' }}>
@@ -270,7 +270,7 @@ export default function DispatchCustomerAssignmentPage({
       {/* Main Table: Customer Directory Dedicated Rider Mapping */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
         <div style={{ padding: '1.15rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
             Customer Dedicated Rider Mapping List ({filteredUsers.length})
           </h3>
 
@@ -311,7 +311,7 @@ export default function DispatchCustomerAssignmentPage({
 
                   return (
                     <tr key={user.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.85rem 1.25rem', fontWeight: 800, color: '#1E293B', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700, color: '#1E293B', fontSize: '0.85rem' }}>
                         {user.name || 'Valued Customer'}
                       </td>
 
@@ -326,7 +326,7 @@ export default function DispatchCustomerAssignmentPage({
                       <td style={{ padding: '0.85rem 1.25rem' }}>
                         <span style={{
                           fontSize: '0.72rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           padding: '3px 10px',
                           borderRadius: '12px',
                           backgroundColor: user.assignedDeliveryAgentId ? '#DCFCE7' : '#FEF3C7',
@@ -347,7 +347,7 @@ export default function DispatchCustomerAssignmentPage({
                             border: '1px solid #CBD5E1',
                             backgroundColor: user.assignedDeliveryAgentId ? '#ECFDF5' : '#FFFFFF',
                             fontSize: '0.8rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: user.assignedDeliveryAgentId ? '#047857' : '#475569',
                             outline: 'none',
                             cursor: 'pointer'

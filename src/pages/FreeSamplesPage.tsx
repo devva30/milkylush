@@ -278,7 +278,7 @@ export default function FreeSamplesPage({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', fontFamily: "var(--font-body)" }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -287,11 +287,11 @@ export default function FreeSamplesPage({
               <Gift size={22} />
             </div>
             <div>
-              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, lineHeight: 1.2 }}>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, lineHeight: 1.2 }}>
                 Free Sample Campaign &amp; Realtime Orders
               </h1>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-                Managing live campaign for <span style={{ fontWeight: 800, color: '#047857' }}>{isHosur ? 'Hosur Main Hub' : 'Bangalore Electronic City Hub'}</span> (Admin Tracking Only)
+                Managing live campaign for <span style={{ fontWeight: 700, color: '#047857' }}>{isHosur ? 'Hosur Main Hub' : 'Bangalore Electronic City Hub'}</span> (Admin Tracking Only)
               </p>
             </div>
           </div>
@@ -299,7 +299,7 @@ export default function FreeSamplesPage({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: settings.active ? '#ECFDF5' : '#FEF2F2', padding: '0.5rem 1rem', borderRadius: '12px', border: settings.active ? '1px solid #A7F3D0' : '1px solid #FECACA' }}>
           <Power size={18} color={settings.active ? '#047857' : '#DC2626'} />
-          <span style={{ fontWeight: 700, fontSize: '0.85rem', color: settings.active ? '#047857' : '#DC2626' }}>
+          <span style={{ fontWeight: 600, fontSize: '0.85rem', color: settings.active ? '#047857' : '#DC2626' }}>
             Offer Status: {settings.active ? 'LIVE & ACTIVE ON APP' : 'OFF / DISABLED'}
           </span>
         </div>
@@ -309,34 +309,34 @@ export default function FreeSamplesPage({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.15rem', borderLeft: '4px solid #047857', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TOTAL CLAIMS</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TOTAL CLAIMS</span>
             <Gift size={18} color="#047857" />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>{totalClaims}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '4px' }}>{totalClaims}</div>
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.15rem', borderLeft: '4px solid #0284C7', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>PACKED &amp; PENDING</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>PACKED &amp; PENDING</span>
             <Package size={18} color="#0284C7" />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0284C7', marginTop: '4px' }}>{packedCount}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#0284C7', marginTop: '4px' }}>{packedCount}</div>
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.15rem', borderLeft: '4px solid #D97706', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>OUT FOR DELIVERY</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>OUT FOR DELIVERY</span>
             <Truck size={18} color="#D97706" />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#D97706', marginTop: '4px' }}>{outForDeliveryCount}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#D97706', marginTop: '4px' }}>{outForDeliveryCount}</div>
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.15rem', borderLeft: '4px solid #059669', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERED SAMPLES</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERED SAMPLES</span>
             <CheckCircle2 size={18} color="#059669" />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#059669', marginTop: '4px' }}>{deliveredCount}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#059669', marginTop: '4px' }}>{deliveredCount}</div>
         </div>
       </div>
 
@@ -345,7 +345,7 @@ export default function FreeSamplesPage({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sparkles size={18} color="#D97706" />
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Campaign Configuration Settings</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: 'var(--text-main)' }}>Campaign Configuration Settings</h3>
           </div>
           <button
             onClick={handleSaveSettings}
@@ -359,7 +359,7 @@ export default function FreeSamplesPage({
               backgroundColor: '#047857',
               color: '#FFFFFF',
               border: 'none',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.8rem',
               cursor: 'pointer',
             }}
@@ -370,7 +370,7 @@ export default function FreeSamplesPage({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Campaign Status</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Campaign Status</label>
             <button
               type="button"
               onClick={handleToggleActive}
@@ -381,7 +381,7 @@ export default function FreeSamplesPage({
                 border: '1px solid var(--border-color)',
                 backgroundColor: settings.active ? '#ECFDF5' : '#FEF2F2',
                 color: settings.active ? '#047857' : '#DC2626',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.85rem',
                 cursor: 'pointer',
                 textAlign: 'center',
@@ -392,7 +392,7 @@ export default function FreeSamplesPage({
           </div>
 
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Max Claims Allowed Per Device / User</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Max Claims Allowed Per Device / User</label>
             <input
               type="number"
               min={1}
@@ -403,18 +403,18 @@ export default function FreeSamplesPage({
                 setSettings({ ...settings, maxClaimsPerDevice: isNaN(val) ? 1 : Math.max(1, val) });
               }}
               placeholder="Enter number (e.g. 1, 2, 5...)"
-              style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700, outline: 'none' }}
+              style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
               Target Free Product ({isHosur ? 'Hosur Stock' : 'Bangalore Stock'})
             </label>
             <select
               value={selectedProductId}
               onChange={(e) => handleSelectProductFromStock(e.target.value)}
-              style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700, outline: 'none' }}
+              style={{ width: '100%', padding: '0.55rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
             >
               <option value="">-- Choose Hub Product Stock --</option>
               {hubProducts.map((p) => (
@@ -426,7 +426,7 @@ export default function FreeSamplesPage({
           </div>
 
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Free Sample Display Title</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Free Sample Display Title</label>
             <input
               type="text"
               value={settings.title}
@@ -437,7 +437,7 @@ export default function FreeSamplesPage({
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Free Sample Subtitle / Description</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Free Sample Subtitle / Description</label>
             <input
               type="text"
               value={settings.subtitle}
@@ -479,7 +479,7 @@ export default function FreeSamplesPage({
                   border: customerFilter === f.id ? '1px solid #D97706' : '1px solid var(--border-color)',
                   backgroundColor: customerFilter === f.id ? '#D97706' : 'var(--bg-main)',
                   color: customerFilter === f.id ? '#FFFFFF' : 'var(--text-main)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.78rem',
                   cursor: 'pointer',
                 }}
@@ -500,7 +500,7 @@ export default function FreeSamplesPage({
                   border: statusFilter === st ? '1px solid #047857' : '1px solid var(--border-color)',
                   backgroundColor: statusFilter === st ? '#047857' : 'var(--bg-main)',
                   color: statusFilter === st ? '#FFFFFF' : 'var(--text-main)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.78rem',
                   cursor: 'pointer',
                   textTransform: 'capitalize',
@@ -545,14 +545,14 @@ export default function FreeSamplesPage({
 
                   return (
                     <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
-                        <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                      <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
+                        <span style={{ backgroundColor: '#FEF3C7', color: '#D97706', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
                           🎁 {o.id.slice(11)}
                         </span>
                       </td>
 
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)' }}>
                           {user?.name || 'Customer'}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -564,11 +564,11 @@ export default function FreeSamplesPage({
                         {cleanAddr}
                       </td>
 
-                      <td style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
+                      <td style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
                         {o.items?.[0]?.product?.name || settings.productName} (x1)
                       </td>
 
-                      <td style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
+                      <td style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
                         {o.deliveredAt ? formatDateTime(o.deliveredAt) : formatDay(o.orderDate)}
                       </td>
 
@@ -579,7 +579,7 @@ export default function FreeSamplesPage({
                           style={{
                             padding: '0.3rem 0.6rem',
                             borderRadius: '8px',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             fontSize: '0.75rem',
                             border: '1px solid var(--border-color)',
                             backgroundColor: o.status === 'delivered' ? '#DCFCE7' : o.status === 'outForDelivery' ? '#FEF3C7' : '#EFF6FF',
@@ -609,7 +609,7 @@ export default function FreeSamplesPage({
                               backgroundColor: '#ECFDF5',
                               color: '#047857',
                               fontSize: '0.75rem',
-                              fontWeight: 700,
+                              fontWeight: 600,
                               cursor: 'pointer',
                             }}
                           >
@@ -627,7 +627,7 @@ export default function FreeSamplesPage({
                               backgroundColor: '#FFFFFF',
                               color: '#111827',
                               fontSize: '0.75rem',
-                              fontWeight: 700,
+                              fontWeight: 600,
                               cursor: 'pointer',
                             }}
                           >
@@ -675,7 +675,7 @@ export default function FreeSamplesPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Edit2 size={18} color="#047857" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
                   Edit Shipping Address ({editingOrder.id})
                 </h3>
               </div>
@@ -690,7 +690,7 @@ export default function FreeSamplesPage({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>House / Door No.</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>House / Door No.</label>
                   <input
                     type="text"
                     value={editHouseNo}
@@ -700,7 +700,7 @@ export default function FreeSamplesPage({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Street / Road</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Street / Road</label>
                   <input
                     type="text"
                     value={editStreet}
@@ -712,7 +712,7 @@ export default function FreeSamplesPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Area / Locality</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Area / Locality</label>
                 <input
                   type="text"
                   value={editArea}
@@ -724,7 +724,7 @@ export default function FreeSamplesPage({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>City</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>City</label>
                   <select
                     value={editCity}
                     onChange={(e) => {
@@ -732,7 +732,7 @@ export default function FreeSamplesPage({
                       setEditCity(newCity);
                       setEditState(newCity === 'Hosur' ? 'Tamil Nadu' : 'Karnataka');
                     }}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}
                   >
                     <option value="Hosur">Hosur</option>
                     <option value="Bengaluru">Bengaluru</option>
@@ -740,7 +740,7 @@ export default function FreeSamplesPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>State</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>State</label>
                   <input
                     type="text"
                     value={editState}
@@ -750,7 +750,7 @@ export default function FreeSamplesPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PIN Code</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PIN Code</label>
                   <input
                     type="text"
                     value={editPin}
@@ -765,14 +765,14 @@ export default function FreeSamplesPage({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
               <button
                 onClick={() => setEditingOrder(null)}
-                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveAddress}
                 disabled={isUpdatingAddress}
-                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
               >
                 {isUpdatingAddress ? 'Saving...' : 'Update Address'}
               </button>

@@ -76,10 +76,10 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
       {/* Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             ADMIN SECURITY &amp; SYSTEM AUDIT PORTAL • {hubLabel}
           </div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: '2px 0 0 0' }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: 'var(--text-main)', margin: '2px 0 0 0' }}>
             Admin Activity &amp; Operation History Trail
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -94,12 +94,12 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
         {/* Card 1: TOTAL ADMIN ACTIONS */}
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #059669' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-light, #047857)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary-light, #047857)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               TOTAL ADMIN ACTIONS
             </span>
             <ShieldCheck size={18} style={{ color: '#059669' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
             {auditLogs.length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -110,12 +110,12 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
         {/* Card 2: SECURITY & LOGINS */}
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #2563EB' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               SECURITY &amp; LOGINS
             </span>
             <Key size={18} style={{ color: '#2563EB' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
             {auditLogs.filter(l => l.category === 'Security & Login').length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -126,12 +126,12 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
         {/* Card 3: PRICING & CATALOG EDITS */}
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #D97706' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               PRICING &amp; CATALOG EDITS
             </span>
             <Settings size={18} style={{ color: '#D97706' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
             {auditLogs.filter(l => l.category === 'Catalog & Pricing').length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -142,12 +142,12 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
         {/* Card 4: FINANCIAL & REFUND LOGS */}
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--border-color)', borderLeft: '4px solid #7C3AED' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               FINANCIAL &amp; REFUNDS
             </span>
             <FileText size={18} style={{ color: '#7C3AED' }} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-title)', marginTop: '4px' }}>
             {auditLogs.filter(l => l.category === 'Financials & Refunds').length}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -167,7 +167,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
           {/* Admin User Filter Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserCheck size={16} style={{ color: '#047857' }} />
-            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)' }}>Filter Admin User:</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>Filter Admin User:</span>
             <select
               value={activeAdminFilter}
               onChange={(e) => setActiveAdminFilter(e.target.value)}
@@ -221,7 +221,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
                 fontSize: '0.82rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 padding: '0.45rem 1rem',
                 borderRadius: '8px',
                 border: 'none',
@@ -236,7 +236,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
 
         {/* Category Pills Row */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '4px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '4px' }}>
             Category:
           </span>
           {[
@@ -257,7 +257,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                 backgroundColor: activeCategoryFilter === cat.id ? '#047857' : 'var(--bg-main)',
                 color: activeCategoryFilter === cat.id ? '#FFFFFF' : 'var(--text-main)',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -287,16 +287,16 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                 <tr key={log.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   
                   {/* TIMESTAMP Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                     {log.timestamp}
                   </td>
                   
                   {/* ADMIN OPERATOR Column */}
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.85rem' }}>{log.adminName}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.85rem' }}>{log.adminName}</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{log.adminEmail}</span>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '1px 6px', borderRadius: '6px', width: 'fit-content', marginTop: '3px' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#047857', backgroundColor: '#ECFDF5', padding: '1px 6px', borderRadius: '6px', width: 'fit-content', marginTop: '3px' }}>
                         {log.adminRole}
                       </span>
                     </div>
@@ -306,7 +306,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <span style={{
                       fontSize: '0.72rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: log.category === 'Security & Login' ? '#2563EB' : log.category === 'Catalog & Pricing' ? '#D97706' : log.category === 'Financials & Refunds' ? '#7C3AED' : '#059669',
                       backgroundColor: log.category === 'Security & Login' ? '#EFF6FF' : log.category === 'Catalog & Pricing' ? '#FEF3C7' : log.category === 'Financials & Refunds' ? '#F3E8FF' : '#ECFDF5',
                       padding: '3px 10px',
@@ -323,7 +323,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                   </td>
 
                   {/* TARGET MODULE Column */}
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {log.targetEntity}
                   </td>
 
@@ -338,7 +338,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                         backgroundColor: 'var(--bg-main)',
                         color: 'var(--text-main)',
                         fontSize: '0.75rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         cursor: 'pointer'
                       }}
                     >
@@ -420,7 +420,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button
@@ -472,7 +472,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
             boxShadow: 'var(--shadow-lg)',
             textAlign: 'left'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>
               Audit Log Payload: {selectedPayloadLog.id}
             </h3>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
@@ -501,7 +501,7 @@ export default function AuditLogsPage({ selectedHubId }: AuditLogsPageProps) {
                   backgroundColor: '#047857',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}

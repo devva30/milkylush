@@ -274,7 +274,7 @@ export default function OrdersPage({
           maxHeight: '90vh',
           overflowY: 'auto',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          fontFamily: "'Poppins', sans-serif",
+          fontFamily: "var(--font-body)",
           color: '#111827',
           textAlign: 'left',
           margin: 'auto'
@@ -282,7 +282,7 @@ export default function OrdersPage({
           
           {/* Modal Actions Bar (Hidden on print) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '0.85rem' }} className="no-print">
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#047857' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#047857' }}>
               MILKYLUSH OFFICIAL TAX BILL INVOICE
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -294,7 +294,7 @@ export default function OrdersPage({
                   backgroundColor: '#047857',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.82rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -306,7 +306,7 @@ export default function OrdersPage({
               </button>
               <button
                 onClick={() => setShowPrintBillModal(false)}
-                style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}
+                style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
               >
                 <X size={18} /> Close
               </button>
@@ -316,10 +316,10 @@ export default function OrdersPage({
           {/* Printable Invoice Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #047857', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
             <div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#047857', margin: 0, letterSpacing: '-0.02em' }}>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#047857', margin: 0, letterSpacing: '-0.02em' }}>
                 MILKYLUSH DAIRY
               </h1>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginTop: '2px' }}>
                 MilkyLush Technologies Pvt. Ltd.
               </div>
               <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '2px', lineHeight: '1.4' }}>
@@ -330,10 +330,10 @@ export default function OrdersPage({
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#111827', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', textTransform: 'uppercase' }}>
                 TAX INVOICE
               </div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
                 NO: INV-{o.id}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '2px' }}>
@@ -348,15 +348,15 @@ export default function OrdersPage({
           {/* Customer & Billing Details */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem', backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>BILLED &amp; DELIVERED TO:</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#111827', marginTop: '4px' }}>{custName}</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>BILLED &amp; DELIVERED TO:</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', marginTop: '4px' }}>{custName}</div>
               <div style={{ fontSize: '0.78rem', color: '#4B5563', marginTop: '2px' }}>Mobile: <strong>{custPhone}</strong></div>
               <div style={{ fontSize: '0.78rem', color: '#4B5563' }}>Email: {custEmail}</div>
               <div style={{ fontSize: '0.78rem', color: '#374151', marginTop: '4px', lineHeight: '1.3' }}>Address: {addressText}</div>
             </div>
 
             <div style={{ borderLeft: '1px solid #E5E7EB', paddingLeft: '1.25rem' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>DELIVERY &amp; ORDER INFO:</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>DELIVERY &amp; ORDER INFO:</div>
               <div style={{ fontSize: '0.82rem', color: '#374151', marginTop: '6px' }}>
                 Order Type: <strong>{o.orderType === 'subscription' || o.isSubscriptionDelivery ? 'Prepaid Subscription Drop' : 'One-Time Delivery'}</strong>
               </div>
@@ -381,15 +381,15 @@ export default function OrdersPage({
             <tbody>
               {o.items?.map((item, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid #E5E7EB' }}>
-                  <td style={{ padding: '10px', fontWeight: 700 }}>{idx + 1}</td>
+                  <td style={{ padding: '10px', fontWeight: 600 }}>{idx + 1}</td>
                   <td style={{ padding: '10px' }}>
-                    <div style={{ fontWeight: 800, color: '#111827' }}>{getItemDisplayName(item)}</div>
+                    <div style={{ fontWeight: 700, color: '#111827' }}>{getItemDisplayName(item)}</div>
                     <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{item.product?.unit || '750ml Reusable Glass Bottle'}</div>
                   </td>
                   <td style={{ padding: '10px', textAlign: 'center', color: '#6B7280' }}>0401</td>
-                  <td style={{ padding: '10px', textAlign: 'center', fontWeight: 800 }}>{item.quantity}</td>
+                  <td style={{ padding: '10px', textAlign: 'center', fontWeight: 700 }}>{item.quantity}</td>
                   <td style={{ padding: '10px', textAlign: 'right' }}>₹{item.product?.price || 90}</td>
-                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 800 }}>₹{item.quantity * (item.product?.price || 90)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700 }}>₹{item.quantity * (item.product?.price || 90)}</td>
                 </tr>
               ))}
             </tbody>
@@ -398,7 +398,7 @@ export default function OrdersPage({
           {/* Invoice Calculations Footer */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '2rem' }}>
             <div style={{ flex: 1, fontSize: '0.75rem', color: '#6B7280', lineHeight: '1.4' }}>
-              <div style={{ fontWeight: 800, color: '#111827', marginBottom: '4px' }}>Terms &amp; Bottle Return Policy:</div>
+              <div style={{ fontWeight: 700, color: '#111827', marginBottom: '4px' }}>Terms &amp; Bottle Return Policy:</div>
               • Goods once delivered in sealed condition cannot be returned.<br />
               • Please place empty, washed glass bottles outside for next morning collection.<br />
               • This is a computer-generated tax bill invoice, no signature required.
@@ -417,18 +417,18 @@ export default function OrdersPage({
                 <span>SGST (2.5%):</span>
                 <span>₹{sgstCalc}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', fontWeight: 700, marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', fontWeight: 600, marginBottom: '6px' }}>
                 <span>Delivery Charge:</span>
                 <span>FREE</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 900, color: '#047857', borderTop: '2px solid #047857', paddingTop: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 700, color: '#047857', borderTop: '2px solid #047857', paddingTop: '6px' }}>
                 <span>Grand Total:</span>
                 <span>₹{grandTotalCalc}</span>
               </div>
             </div>
           </div>
 
-          <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px dashed #D1D5DB', paddingTop: '1rem', fontSize: '0.78rem', fontWeight: 700, color: '#047857' }}>
+          <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px dashed #D1D5DB', paddingTop: '1rem', fontSize: '0.78rem', fontWeight: 600, color: '#047857' }}>
             🌱 Thank you for subscribing to MilkyLush Fresh Glass Bottle Milk Delivery!
           </div>
 
@@ -469,20 +469,20 @@ export default function OrdersPage({
       {/* 4 Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '1.15rem', borderLeft: '4px solid #047857', borderTop: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>TOTAL ORDERS</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>{totalPipeline}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>TOTAL ORDERS</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827', marginTop: '2px' }}>{totalPipeline}</div>
         </div>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '1.15rem', borderLeft: '4px solid #0284C7', borderTop: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>PACKED &amp; PENDING</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0284C7', marginTop: '2px' }}>{packedPending}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>PACKED &amp; PENDING</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0284C7', marginTop: '2px' }}>{packedPending}</div>
         </div>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '1.15rem', borderLeft: '4px solid #D97706', borderTop: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>OUT FOR DELIVERY</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#D97706', marginTop: '2px' }}>{outForDelivery}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>OUT FOR DELIVERY</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#D97706', marginTop: '2px' }}>{outForDelivery}</div>
         </div>
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '1.15rem', borderLeft: '4px solid #059669', borderTop: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase' }}>DELIVERED TODAY</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>{deliveredToday}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>DELIVERED TODAY</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#059669', marginTop: '2px' }}>{deliveredToday}</div>
         </div>
       </div>
 
@@ -527,7 +527,7 @@ export default function OrdersPage({
                 border: typeFilter === t.id ? '1px solid #047857' : '1px solid var(--border-color)',
                 backgroundColor: typeFilter === t.id ? '#047857' : 'var(--bg-main)',
                 color: typeFilter === t.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 cursor: 'pointer'
               }}
@@ -553,7 +553,7 @@ export default function OrdersPage({
                 border: '1px solid var(--border-color)',
                 backgroundColor: statusFilter === s.id ? '#047857' : 'var(--bg-main)',
                 color: statusFilter === s.id ? '#FFFFFF' : 'var(--text-main)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 cursor: 'pointer'
               }}
@@ -579,7 +579,7 @@ export default function OrdersPage({
               backgroundColor: '#047857',
               color: '#FFFFFF',
               border: 'none',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.78rem',
               cursor: 'pointer',
             }}
@@ -652,10 +652,10 @@ export default function OrdersPage({
 
                 return (
                   <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{o.id}</td>
-                    <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{customerName}</td>
+                    <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{o.id}</td>
+                    <td style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>{customerName}</td>
                     <td style={{ fontSize: '0.78rem', color: 'var(--text-main)', maxWidth: '240px', padding: '0.85rem 1rem', lineHeight: 1.4 }}>{cleanAddress}</td>
-                    <td style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
+                    <td style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-main)', padding: '0.85rem 1rem' }}>
                       {productsText}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
@@ -665,16 +665,16 @@ export default function OrdersPage({
                         padding: '3px 9px',
                         borderRadius: '12px',
                         fontSize: '0.72rem',
-                        fontWeight: 800
+                        fontWeight: 700
                       }}>
                         {(o as any).isFreeSample || o.id.startsWith('FS_') ? '🎁 Free Sample' : isSub ? 'Subscription' : 'One-Time'}
                       </span>
                     </td>
-                    <td style={{ fontSize: '0.8rem', fontWeight: 700, color: '#111827', padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
+                    <td style={{ fontSize: '0.8rem', fontWeight: 600, color: '#111827', padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>
                       {safeParseDate(o.orderDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <span style={{ backgroundColor: o.status === 'delivered' ? '#DCFCE7' : o.status === 'outForDelivery' ? '#FEF3C7' : '#EFF6FF', color: o.status === 'delivered' ? '#059669' : o.status === 'outForDelivery' ? '#D97706' : '#2563EB', padding: '3px 9px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 800, textTransform: 'capitalize' }}>
+                      <span style={{ backgroundColor: o.status === 'delivered' ? '#DCFCE7' : o.status === 'outForDelivery' ? '#FEF3C7' : '#EFF6FF', color: o.status === 'delivered' ? '#059669' : o.status === 'outForDelivery' ? '#D97706' : '#2563EB', padding: '3px 9px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'capitalize' }}>
                         {o.status === 'outForDelivery' ? 'Out For Delivery' : o.status}
                       </span>
                     </td>
@@ -682,14 +682,14 @@ export default function OrdersPage({
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => setSelectedOrderDetail(o)}
-                          style={{ padding: '0.4rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                          style={{ padding: '0.4rem 0.65rem', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#111827', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
                         >
                           View Sheet
                         </button>
 
                         <button
                           onClick={() => { setSelectedOrderDetail(o); setShowPrintBillModal(true); }}
-                          style={{ padding: '0.4rem 0.65rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          style={{ padding: '0.4rem 0.65rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
                           <Printer size={14} /> Bill
                         </button>
@@ -731,7 +731,7 @@ export default function OrdersPage({
             >
               ❮ Prev
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#111827' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button
@@ -781,7 +781,7 @@ export default function OrdersPage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Edit2 size={18} color="#047857" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
                   Edit Shipping Address ({editingAddressOrder.id})
                 </h3>
               </div>
@@ -796,7 +796,7 @@ export default function OrdersPage({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>House / Door No.</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>House / Door No.</label>
                   <input
                     type="text"
                     value={editHouseNo}
@@ -806,7 +806,7 @@ export default function OrdersPage({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Street / Road</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Street / Road</label>
                   <input
                     type="text"
                     value={editStreet}
@@ -818,7 +818,7 @@ export default function OrdersPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Area / Locality</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Area / Locality</label>
                 <input
                   type="text"
                   value={editArea}
@@ -830,7 +830,7 @@ export default function OrdersPage({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>City</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>City</label>
                   <select
                     value={editCity}
                     onChange={(e) => {
@@ -838,7 +838,7 @@ export default function OrdersPage({
                       setEditCity(newCity);
                       setEditState(newCity === 'Hosur' ? 'Tamil Nadu' : 'Karnataka');
                     }}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}
                   >
                     <option value="Hosur">Hosur</option>
                     <option value="Bengaluru">Bengaluru</option>
@@ -846,7 +846,7 @@ export default function OrdersPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>State</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>State</label>
                   <input
                     type="text"
                     value={editState}
@@ -856,7 +856,7 @@ export default function OrdersPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PIN Code</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PIN Code</label>
                   <input
                     type="text"
                     value={editPin}
@@ -871,7 +871,7 @@ export default function OrdersPage({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
               <button
                 onClick={() => setEditingAddressOrder(null)}
-                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-main)', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -899,7 +899,7 @@ export default function OrdersPage({
                   }
                 }}
                 disabled={isUpdatingAddress}
-                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
               >
                 {isUpdatingAddress ? 'Saving...' : 'Update Address'}
               </button>

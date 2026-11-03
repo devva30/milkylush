@@ -94,12 +94,12 @@ export default function DispatchActiveBoardPage({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Page Title & Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             📋 Active Dispatch Table Board
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -128,7 +128,7 @@ export default function DispatchActiveBoardPage({
 
           {/* Date Filter Pills */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Calendar size={14} /> Date Range:
             </span>
             {(['today', 'week', 'all'] as const).map(d => (
@@ -159,7 +159,7 @@ export default function DispatchActiveBoardPage({
           
           {/* Order Type Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B' }}>Order Type:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B' }}>Order Type:</span>
             {(['all', 'one-time', 'subscription'] as const).map(type => (
               <button
                 key={type}
@@ -183,7 +183,7 @@ export default function DispatchActiveBoardPage({
 
           {/* Status Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B' }}>Status:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B' }}>Status:</span>
             {(['all', 'packed', 'outForDelivery', 'delivered', 'cancelled'] as const).map(st => (
               <button
                 key={st}
@@ -212,7 +212,7 @@ export default function DispatchActiveBoardPage({
       {/* Main Table */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1E293B' }}>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E293B' }}>
             Active Dispatch Manifest ({filteredOrders.length} Records)
           </span>
         </div>
@@ -261,19 +261,19 @@ export default function DispatchActiveBoardPage({
 
                   return (
                     <tr key={order.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.85rem 1.25rem', fontWeight: 800, color: '#044E35', fontSize: '0.88rem' }}>
+                      <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700, color: '#044E35', fontSize: '0.88rem' }}>
                         {order.id}
                       </td>
 
                       <td style={{ padding: '0.85rem 1.25rem' }}>
-                        <div style={{ fontWeight: 700, color: '#1E293B', fontSize: '0.85rem' }}>{customerName}</div>
+                        <div style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.85rem' }}>{customerName}</div>
                         <div style={{ fontSize: '0.75rem', color: '#64748B' }}>📞 {customerPhone}</div>
                       </td>
 
                       <td style={{ padding: '0.85rem 1.25rem' }}>
                         <span style={{
                           fontSize: '0.72rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           padding: '3px 8px',
                           borderRadius: '6px',
                           backgroundColor: isSub ? '#EFF6FF' : '#FDF4FF',
@@ -291,7 +291,7 @@ export default function DispatchActiveBoardPage({
                       <td style={{ padding: '0.85rem 1.25rem' }}>
                         <span style={{
                           fontSize: '0.72rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           padding: '3px 10px',
                           borderRadius: '12px',
                           backgroundColor: isDelivered ? '#DCFCE7' : order.status === 'outForDelivery' ? '#DBEAFE' : isCancelled ? '#FEE2E2' : '#FEF3C7',
@@ -313,10 +313,10 @@ export default function DispatchActiveBoardPage({
                               alt="Proof"
                               style={{ width: '46px', height: '46px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #047857' }}
                             />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857' }}>View Photo ✓</span>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#047857' }}>View Photo ✓</span>
                           </div>
                         ) : isCancelled ? (
-                          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#DC2626' }}>
+                          <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#DC2626' }}>
                             {cancelReason ? `✕ ${cancelReason}` : '✕ Cancelled'}
                           </span>
                         ) : (
@@ -334,7 +334,7 @@ export default function DispatchActiveBoardPage({
                             borderRadius: '6px',
                             cursor: 'pointer',
                             fontSize: '0.75rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: '#FFFFFF',
                             display: 'inline-flex',
                             alignItems: 'center',

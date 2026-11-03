@@ -286,10 +286,10 @@ export default function AllDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             TOTAL PENDING DELIVERIES
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: 'var(--text-main)', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {totalEntriesCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -308,10 +308,10 @@ export default function AllDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             SUBSCRIPTION DELIVERIES
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {subCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -330,10 +330,10 @@ export default function AllDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             ONE-TIME ORDERS
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#2563EB', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#2563EB', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {oneTimeCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -352,10 +352,10 @@ export default function AllDeliveriesPage({
           borderBottom: '1px solid var(--border-color)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
         }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             UNASSIGNED DRIVERS
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#D97706', margin: '0.15rem 0 0.05rem 0', fontFamily: 'var(--font-title)', lineHeight: 1.1 }}>
             {unassignedCount}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -380,7 +380,7 @@ export default function AllDeliveriesPage({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', marginRight: '4px' }}>DATE:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginRight: '4px' }}>DATE:</span>
             {[
               { key: 'all', label: 'All Dates' },
               { key: 'today', label: 'Today' },
@@ -399,7 +399,7 @@ export default function AllDeliveriesPage({
                   border: dateFilter === d.key ? 'none' : '1px solid var(--border-color)',
                   backgroundColor: dateFilter === d.key ? '#ECFDF5' : 'var(--bg-main)',
                   color: dateFilter === d.key ? '#047857' : 'var(--text-main)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.8rem',
                   cursor: 'pointer'
                 }}
@@ -419,7 +419,7 @@ export default function AllDeliveriesPage({
               backgroundColor: '#ECFDF5',
               color: '#047857',
               fontSize: '0.8rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -433,14 +433,14 @@ export default function AllDeliveriesPage({
         {/* Custom Date Range Picker Input (When Custom selected) */}
         {dateFilter === 'custom' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', backgroundColor: 'var(--bg-main)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>From Date:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>From Date:</span>
             <input
               type="date"
               value={customStartDate}
               onChange={(e) => setCustomStartDate(e.target.value)}
               style={{ padding: '0.35rem 0.65rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
             />
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>To Date:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>To Date:</span>
             <input
               type="date"
               value={customEndDate}
@@ -455,7 +455,7 @@ export default function AllDeliveriesPage({
           
           {/* Order Type Chips */}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', marginRight: '4px' }}>TYPE:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginRight: '4px' }}>TYPE:</span>
             {[
               { key: 'all', label: 'All Types' },
               { key: 'subscription', label: 'Subscription' },
@@ -470,7 +470,7 @@ export default function AllDeliveriesPage({
                   border: typeFilter === t.key ? '1px solid #047857' : '1px solid var(--border-color)',
                   backgroundColor: typeFilter === t.key ? '#047857' : 'var(--bg-main)',
                   color: typeFilter === t.key ? '#FFFFFF' : 'var(--text-main)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.78rem',
                   cursor: 'pointer'
                 }}
@@ -479,7 +479,7 @@ export default function AllDeliveriesPage({
               </button>
             ))}
 
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', marginLeft: '8px', marginRight: '4px' }}>STATUS:</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginLeft: '8px', marginRight: '4px' }}>STATUS:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -490,7 +490,7 @@ export default function AllDeliveriesPage({
                 backgroundColor: 'var(--bg-main)',
                 color: 'var(--text-main)',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 outline: 'none',
                 cursor: 'pointer'
               }}
@@ -533,15 +533,15 @@ export default function AllDeliveriesPage({
           <table className="admin-table" style={{ width: '100%' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERY ID</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>CUSTOMER</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ADDRESS &amp; HUB</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>PRODUCTS</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TYPE</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>SCHEDULED DATE</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DRIVER FLEET</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>STATUS</th>
-                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ACTIONS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERY ID</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>CUSTOMER</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ADDRESS &amp; HUB</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>PRODUCTS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TYPE</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>SCHEDULED DATE</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DRIVER FLEET</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>STATUS</th>
+                <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -553,12 +553,12 @@ export default function AllDeliveriesPage({
                     style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
                   >
                     {/* ID */}
-                    <td style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-main)', padding: '0.75rem 0.85rem', verticalAlign: 'middle' }}>
+                    <td style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-main)', padding: '0.75rem 0.85rem', verticalAlign: 'middle' }}>
                       {item.id}
                     </td>
 
                     {/* Customer */}
-                    <td style={{ fontWeight: 700, fontSize: '0.82rem', padding: '0.75rem 0.85rem', verticalAlign: 'middle' }}>
+                    <td style={{ fontWeight: 600, fontSize: '0.82rem', padding: '0.75rem 0.85rem', verticalAlign: 'middle' }}>
                       <div style={{ color: '#047857' }}>{item.customerName}</div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>📞 {item.phone}</div>
                     </td>
@@ -570,14 +570,14 @@ export default function AllDeliveriesPage({
                         📍 {hubCodeName}
                       </div>
                       {(item.deliveryInstructions || item.rawObject?.deliveryInstructions) && (
-                        <div style={{ marginTop: '4px', fontSize: '0.71rem', fontWeight: 700, color: '#B45309', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', padding: '2px 6px', display: 'inline-block' }}>
+                        <div style={{ marginTop: '4px', fontSize: '0.71rem', fontWeight: 600, color: '#B45309', backgroundColor: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', padding: '2px 6px', display: 'inline-block' }}>
                           📝 Note: {item.deliveryInstructions || item.rawObject?.deliveryInstructions}
                         </div>
                       )}
                     </td>
 
                     {/* Products */}
-                    <td style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-main)', padding: '0.75rem 0.85rem', verticalAlign: 'middle', maxWidth: '200px' }}>
+                    <td style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-main)', padding: '0.75rem 0.85rem', verticalAlign: 'middle', maxWidth: '200px' }}>
                       {item.products}
                     </td>
 
@@ -590,7 +590,7 @@ export default function AllDeliveriesPage({
                         padding: '3px 9px',
                         borderRadius: '12px',
                         fontSize: '0.72rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         display: 'inline-block'
                       }}>
                         {item.orderType}
@@ -598,7 +598,7 @@ export default function AllDeliveriesPage({
                     </td>
 
                     {/* Scheduled Date & Time */}
-                    <td style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', padding: '0.75rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <td style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', padding: '0.75rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div>{formatDateTimeString(item.rawDate, item.rawObject?.timing)}</div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                         📅 Slot: {item.rawObject?.timing === 'evening' ? 'Evening (5-7 PM)' : 'Morning (6-8 AM)'}
@@ -622,7 +622,7 @@ export default function AllDeliveriesPage({
                           backgroundColor: 'var(--bg-main)',
                           color: item.deliveryAgentId ? 'var(--text-main)' : '#D97706',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           outline: 'none',
                           cursor: 'pointer'
                         }}
@@ -645,7 +645,7 @@ export default function AllDeliveriesPage({
                         padding: '3px 9px',
                         borderRadius: '12px',
                         fontSize: '0.72rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         display: 'inline-block'
                       }}>
                         {item.status === 'outForDelivery' ? 'Out for Delivery' : 'Packed & Ready'}
@@ -663,7 +663,7 @@ export default function AllDeliveriesPage({
                           backgroundColor: 'var(--bg-main)',
                           color: 'var(--text-main)',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           cursor: 'pointer',
                           whiteSpace: 'nowrap'
                         }}
@@ -717,7 +717,7 @@ export default function AllDeliveriesPage({
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button

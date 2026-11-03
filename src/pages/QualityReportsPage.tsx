@@ -130,12 +130,12 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Action Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main, #0F172A)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main, #0F172A)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ShieldCheck size={24} style={{ color: '#047857' }} /> Milk Quality & Lab Audit Reports
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted, #64748B)', margin: '2px 0 0 0' }}>
@@ -151,7 +151,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
             gap: '6px',
             backgroundColor: '#047857',
             color: '#FFFFFF',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.82rem',
             padding: '0.6rem 1.25rem',
             borderRadius: '10px',
@@ -205,7 +205,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                     padding: '3px 9px',
                     borderRadius: '9999px',
                     fontSize: '0.72rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     backgroundColor: r.active ? '#ECFDF5' : '#F1F5F9',
                     color: r.active ? '#047857' : '#64748B',
                     border: r.active ? '1px solid #A7F3D0' : '1px solid #E2E8F0'
@@ -228,7 +228,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main, #0F172A)', margin: '0 0 4px 0' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main, #0F172A)', margin: '0 0 4px 0' }}>
                   {r.title}
                 </h3>
                 <div style={{ fontSize: '0.76rem', color: 'var(--text-muted, #64748B)', marginBottom: '1rem' }}>
@@ -238,16 +238,16 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                 {/* Key Metrics */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '1rem' }}>
                   <div style={{ backgroundColor: '#ECFDF5', borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#047857' }}>FAT</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#047857' }}>{r.fat}</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#047857' }}>FAT</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#047857' }}>{r.fat}</div>
                   </div>
                   <div style={{ backgroundColor: '#FEF3C7', borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#B45309' }}>SNF</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#B45309' }}>{r.snf}</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#B45309' }}>SNF</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#B45309' }}>{r.snf}</div>
                   </div>
                   <div style={{ backgroundColor: '#DCFCE7', borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#15803D' }}>PURITY</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#15803D' }}>{r.purity}</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#15803D' }}>PURITY</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#15803D' }}>{r.purity}</div>
                   </div>
                 </div>
               </div>
@@ -262,7 +262,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '0.76rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#047857',
                     textDecoration: 'underline'
                   }}
@@ -279,13 +279,13 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
           <div style={{ backgroundColor: 'var(--bg-card, #FFFFFF)', borderRadius: '20px', padding: '1.5rem', width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--border-color, #E2E8F0)' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-main, #0F172A)' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main, #0F172A)' }}>
               {editingReport ? 'Edit Lab Quality Report' : 'Add New Lab Quality Report'}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.82rem' }}>
               <div>
-                <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Report Title</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Report Title</label>
                 <input
                   type="text"
                   value={title}
@@ -296,7 +296,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Test Date</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Test Date</label>
                   <input
                     type="date"
                     value={date}
@@ -305,7 +305,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Fat %</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Fat %</label>
                   <input
                     type="text"
                     value={fat}
@@ -317,7 +317,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>SNF %</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>SNF %</label>
                   <input
                     type="text"
                     value={snf}
@@ -326,7 +326,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Purity Score</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Purity Score</label>
                   <input
                     type="text"
                     value={purity}
@@ -337,7 +337,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
               </div>
 
               <div>
-                <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Lab Name / Auditor</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Lab Name / Auditor</label>
                 <input
                   type="text"
                   value={labName}
@@ -347,7 +347,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
               </div>
 
               <div>
-                <label style={{ display: 'block', fontWeight: 700, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Certificate PDF / Image URL</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px', color: 'var(--text-main, #0F172A)' }}>Certificate PDF / Image URL</label>
                 <input
                   type="text"
                   placeholder="https://..."
@@ -364,7 +364,7 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
                   checked={active}
                   onChange={(e) => setActive(e.target.checked)}
                 />
-                <label htmlFor="activeCheck" style={{ fontWeight: 700, cursor: 'pointer', color: 'var(--text-main, #0F172A)' }}>
+                <label htmlFor="activeCheck" style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--text-main, #0F172A)' }}>
                   Active on Customer Mobile App
                 </label>
               </div>
@@ -373,13 +373,13 @@ export default function QualityReportsPage({ selectedHubId, showToast }: Quality
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '0.5rem' }}>
               <button
                 onClick={() => setShowModal(false)}
-                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color, #CBD5E1)', backgroundColor: 'transparent', color: 'var(--text-main, #0F172A)', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color, #CBD5E1)', backgroundColor: 'transparent', color: 'var(--text-main, #0F172A)', fontWeight: 600, cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveReport}
-                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
               >
                 Save Report
               </button>

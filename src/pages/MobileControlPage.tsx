@@ -400,7 +400,7 @@ export default function MobileControlPage({
             border: activeTab === 'onboarding' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
             backgroundColor: activeTab === 'onboarding' ? '#ECFDF5' : '#FFFFFF',
             color: activeTab === 'onboarding' ? '#047857' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             boxShadow: activeTab === 'onboarding' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
@@ -420,7 +420,7 @@ export default function MobileControlPage({
             border: activeTab === 'banners' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
             backgroundColor: activeTab === 'banners' ? '#ECFDF5' : '#FFFFFF',
             color: activeTab === 'banners' ? '#047857' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             boxShadow: activeTab === 'banners' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
@@ -440,7 +440,7 @@ export default function MobileControlPage({
             border: activeTab === 'broadcast' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
             backgroundColor: activeTab === 'broadcast' ? '#ECFDF5' : '#FFFFFF',
             color: activeTab === 'broadcast' ? '#047857' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             boxShadow: activeTab === 'broadcast' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
@@ -460,7 +460,7 @@ export default function MobileControlPage({
             border: activeTab === 'fssai-social' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
             backgroundColor: activeTab === 'fssai-social' ? '#ECFDF5' : '#FFFFFF',
             color: activeTab === 'fssai-social' ? '#047857' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             boxShadow: activeTab === 'fssai-social' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
@@ -480,7 +480,7 @@ export default function MobileControlPage({
             border: activeTab === 'popup-ad' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
             backgroundColor: activeTab === 'popup-ad' ? '#ECFDF5' : '#FFFFFF',
             color: activeTab === 'popup-ad' ? '#047857' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             boxShadow: activeTab === 'popup-ad' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
@@ -500,7 +500,7 @@ export default function MobileControlPage({
             border: activeTab === 'help-desk' ? '1.5px solid #A7F3D0' : '1px solid #E5E7EB',
             backgroundColor: activeTab === 'help-desk' ? '#ECFDF5' : '#FFFFFF',
             color: activeTab === 'help-desk' ? '#047857' : '#374151',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             cursor: 'pointer',
             boxShadow: activeTab === 'help-desk' ? '0 2px 4px rgba(4,120,87,0.06)' : 'none'
@@ -519,7 +519,7 @@ export default function MobileControlPage({
           {/* Header Bar matching Screenshot 1 */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                 Onboarding Screen Presentation Slides
               </h2>
               <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
@@ -535,7 +535,7 @@ export default function MobileControlPage({
                 gap: '6px',
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.85rem',
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
@@ -577,7 +577,7 @@ export default function MobileControlPage({
                       backgroundColor: '#044E35',
                       color: '#FFFFFF',
                       fontSize: '0.75rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       padding: '4px 10px',
                       borderRadius: '12px',
                       display: 'flex',
@@ -592,12 +592,12 @@ export default function MobileControlPage({
                   <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     
                     {/* Icon Pill Identifier */}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: '#ECFDF5', color: '#059669', fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', width: 'fit-content' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: '#ECFDF5', color: '#059669', fontSize: '0.75rem', fontWeight: 600, padding: '3px 10px', borderRadius: '8px', width: 'fit-content' }}>
                       Icon: {slide.iconName || 'water_drop'}
                     </div>
 
                     {/* Headline Title */}
-                    <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '4px 0 2px 0', whiteSpace: 'pre-line' }}>
+                    <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: '4px 0 2px 0', whiteSpace: 'pre-line' }}>
                       {slide.title.replace('\\n', '\n')}
                     </h3>
 
@@ -610,7 +610,7 @@ export default function MobileControlPage({
 
                 {/* Card Footer Bar */}
                 <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid #F3F4F6', backgroundColor: '#FAFAFA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#047857' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#047857' }}>
                     Rank Order: #{slide.displayOrder}
                   </span>
                   
@@ -620,7 +620,7 @@ export default function MobileControlPage({
                       style={{
                         padding: '0.4rem 0.85rem',
                         fontSize: '0.78rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         backgroundColor: '#FFFFFF',
                         color: '#111827',
                         border: '1px solid #D1D5DB',
@@ -635,7 +635,7 @@ export default function MobileControlPage({
                       style={{
                         padding: '0.4rem 0.85rem',
                         fontSize: '0.78rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         backgroundColor: '#FEE2E2',
                         color: '#DC2626',
                         border: 'none',
@@ -662,7 +662,7 @@ export default function MobileControlPage({
           {/* Header Bar matching Screenshot 3 */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                 Active Promo Banners (Max 5)
               </h2>
               <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
@@ -678,7 +678,7 @@ export default function MobileControlPage({
                 gap: '6px',
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.85rem',
                 padding: '0.65rem 1.25rem',
                 borderRadius: '10px',
@@ -720,7 +720,7 @@ export default function MobileControlPage({
                       backgroundColor: banner.active ? '#059669' : '#6B7280',
                       color: '#FFFFFF',
                       fontSize: '0.7rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       padding: '3px 8px',
                       borderRadius: '6px',
                       textTransform: 'uppercase',
@@ -732,7 +732,7 @@ export default function MobileControlPage({
 
                   {/* Banner Info Box */}
                   <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                    <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                       {banner.title}
                     </h3>
                     <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: 0, lineHeight: '1.4' }}>
@@ -743,7 +743,7 @@ export default function MobileControlPage({
 
                 {/* Card Footer Bar */}
                 <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid #F3F4F6', backgroundColor: '#FAFAFA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#047857' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#047857' }}>
                     Display Rank: #{banner.displayOrder}
                   </span>
                   
@@ -753,7 +753,7 @@ export default function MobileControlPage({
                       style={{
                         padding: '0.4rem 0.85rem',
                         fontSize: '0.78rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         backgroundColor: '#FFFFFF',
                         color: '#111827',
                         border: '1px solid #D1D5DB',
@@ -768,7 +768,7 @@ export default function MobileControlPage({
                       style={{
                         padding: '0.4rem 0.85rem',
                         fontSize: '0.78rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         backgroundColor: '#FEE2E2',
                         color: '#DC2626',
                         border: 'none',
@@ -794,7 +794,7 @@ export default function MobileControlPage({
           
           {/* Header Title matching Screenshot 5 */}
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 600, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Bell size={20} style={{ color: '#047857' }} /> System Campaigns &amp; Broadcast Center
             </h2>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
@@ -811,7 +811,7 @@ export default function MobileControlPage({
                 
                 {/* Field 1: Target Audience */}
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Target Audience
                   </label>
                   <select
@@ -849,7 +849,7 @@ export default function MobileControlPage({
 
                 {/* Field 2: Alert Category */}
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Alert Category
                   </label>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -864,7 +864,7 @@ export default function MobileControlPage({
                         backgroundColor: alertCategory === 'Special Offer' ? '#ECFDF5' : '#FFFFFF',
                         color: alertCategory === 'Special Offer' ? '#047857' : '#374151',
                         fontSize: '0.82rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -886,7 +886,7 @@ export default function MobileControlPage({
                         backgroundColor: alertCategory === 'Wishes & Info' ? '#ECFDF5' : '#FFFFFF',
                         color: alertCategory === 'Wishes & Info' ? '#047857' : '#374151',
                         fontSize: '0.82rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -902,7 +902,7 @@ export default function MobileControlPage({
                 {/* Field 3: Headline / Title */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>
                       Headline / Title
                     </label>
                     <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
@@ -931,7 +931,7 @@ export default function MobileControlPage({
                 {/* Field 4: Message Content / Body */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>
                       Message Content / Body
                     </label>
                     <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
@@ -965,7 +965,7 @@ export default function MobileControlPage({
                     borderRadius: '10px',
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.88rem',
                     border: 'none',
                     cursor: 'pointer',
@@ -992,7 +992,7 @@ export default function MobileControlPage({
               flexDirection: 'column',
               gap: '1rem'
             }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827' }}>
                 Visual Push Preview
               </div>
 
@@ -1013,7 +1013,7 @@ export default function MobileControlPage({
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827' }}>
                         {broadcastTitle || 'MilkyLush App Update'}
                       </span>
                       <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>now</span>
@@ -1040,7 +1040,7 @@ export default function MobileControlPage({
                   <div style={{ color: '#6B7280' }}>
                     To: <span style={{ color: '#374151' }}>All Active Customers</span>
                   </div>
-                  <div style={{ fontWeight: 800, color: '#047857', marginTop: '2px' }}>
+                  <div style={{ fontWeight: 700, color: '#047857', marginTop: '2px' }}>
                     Subject: {broadcastTitle || 'MilkyLush Update'}
                   </div>
                   <div style={{ backgroundColor: '#FFFFFF', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #E5E7EB', color: '#6B7280', marginTop: '4px' }}>
@@ -1055,7 +1055,7 @@ export default function MobileControlPage({
 
           {/* BOTTOM SECTION: Campaign & Broadcast History Log Table matching Screenshot 5 */}
           <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E5E7EB', overflow: 'hidden', marginTop: '0.5rem' }}>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid #F3F4F6', fontSize: '0.95rem', fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ padding: '1.25rem', borderBottom: '1px solid #F3F4F6', fontSize: '0.95rem', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <History size={18} style={{ color: '#047857' }} /> Campaign &amp; Broadcast History Log
             </div>
 
@@ -1075,7 +1075,7 @@ export default function MobileControlPage({
                 <tbody>
                   {campaignHistory.map((log) => (
                     <tr key={log.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                      <td style={{ fontWeight: 800, color: '#111827', padding: '0.85rem 1rem' }}>
+                      <td style={{ fontWeight: 700, color: '#111827', padding: '0.85rem 1rem' }}>
                         {log.title}
                       </td>
                       <td style={{ color: '#4B5563', padding: '0.85rem 1rem' }}>
@@ -1084,7 +1084,7 @@ export default function MobileControlPage({
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <span style={{
                           fontSize: '0.72rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: '#059669',
                           backgroundColor: '#ECFDF5',
                           padding: '2px 8px',
@@ -1093,7 +1093,7 @@ export default function MobileControlPage({
                           {log.type}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 800, color: '#111827', padding: '0.85rem 1rem' }}>
+                      <td style={{ fontWeight: 700, color: '#111827', padding: '0.85rem 1rem' }}>
                         {log.recipients}
                       </td>
                       <td style={{ color: '#6B7280', padding: '0.85rem 1rem' }}>
@@ -1115,7 +1115,7 @@ export default function MobileControlPage({
                             backgroundColor: '#FEE2E2',
                             color: '#DC2626',
                             fontSize: '0.75rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             border: 'none',
                             cursor: 'pointer'
                           }}
@@ -1137,7 +1137,7 @@ export default function MobileControlPage({
       {activeTab === 'fssai-social' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 600, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldCheck size={22} style={{ color: '#047857' }} /> Customer Mobile App FSSAI &amp; Social Links Manager
             </h2>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
@@ -1150,7 +1150,7 @@ export default function MobileControlPage({
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
               <form onSubmit={handleSaveSocialFssai} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     FSSAI License Number
                   </label>
                   <input
@@ -1163,7 +1163,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Instagram Page URL
                   </label>
                   <input
@@ -1176,7 +1176,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     YouTube Channel URL
                   </label>
                   <input
@@ -1189,7 +1189,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Facebook Page URL
                   </label>
                   <input
@@ -1202,7 +1202,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     WhatsApp Customer Care Link
                   </label>
                   <input
@@ -1221,7 +1221,7 @@ export default function MobileControlPage({
                     borderRadius: '10px',
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.88rem',
                     border: 'none',
                     cursor: 'pointer',
@@ -1239,7 +1239,7 @@ export default function MobileControlPage({
 
             {/* Live Mobile Profile Footer Preview */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '2px dashed #047857', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827' }}>
                 App Profile Footer Live Preview
               </div>
 
@@ -1256,17 +1256,17 @@ export default function MobileControlPage({
                       if (fallback) (fallback as HTMLElement).style.display = 'block';
                     }}
                   />
-                  <div style={{ display: 'none', fontSize: '1.1rem', fontWeight: 900, fontStyle: 'italic', fontFamily: 'serif', color: '#1E3A8A', letterSpacing: '-0.5px' }}>
+                  <div style={{ display: 'none', fontSize: '1.1rem', fontWeight: 700, fontStyle: 'italic', fontFamily: 'serif', color: '#1E3A8A', letterSpacing: '-0.5px' }}>
                     fssa<span style={{ color: '#EA580C' }}>i</span>
                   </div>
                   <div style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#64748B' }}>Food Safety License</div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F3A2C' }}>Lic No. {fssaiNumber || '12423999000123'}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F3A2C' }}>Lic No. {fssaiNumber || '12423999000123'}</div>
                   </div>
                 </div>
 
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4B5563' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563' }}>
                   Connect with MilkyLush
                 </div>
 
@@ -1291,7 +1291,7 @@ export default function MobileControlPage({
       {activeTab === 'popup-ad' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 600, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={22} style={{ color: '#047857' }} /> Home Screen In-App Pop-up Offer Ad Manager
             </h2>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
@@ -1307,7 +1307,7 @@ export default function MobileControlPage({
                 {/* Active Toggle Switch */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', backgroundColor: popupActive ? '#ECFDF5' : '#F9FAFB', borderRadius: '12px', border: popupActive ? '1px solid #A7F3D0' : '1px solid #E5E7EB' }}>
                   <div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: popupActive ? '#047857' : '#374151' }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: popupActive ? '#047857' : '#374151' }}>
                       Pop-up Offer Ad Status: {popupActive ? 'ACTIVE (LIVE)' : 'DISABLED'}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
@@ -1325,7 +1325,7 @@ export default function MobileControlPage({
 
                 {/* Offer Title */}
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Offer Dialog Title
                   </label>
                   <input
@@ -1339,7 +1339,7 @@ export default function MobileControlPage({
 
                 {/* Offer Subtitle / Details */}
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Subtitle / Promotional Details
                   </label>
                   <textarea
@@ -1353,7 +1353,7 @@ export default function MobileControlPage({
 
                 {/* Promo Image URL */}
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                     Pop-up Offer Image URL
                   </label>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1367,7 +1367,7 @@ export default function MobileControlPage({
                     <button
                       type="button"
                       onClick={() => showToast('Selected offer image.', 'info')}
-                      style={{ padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                      style={{ padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                     >
                       📷 Choose
                     </button>
@@ -1377,7 +1377,7 @@ export default function MobileControlPage({
                 {/* CTA Button Text (Optional) */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>
                       CTA Button Text (Optional)
                     </label>
                     <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>Leave blank to hide button</span>
@@ -1394,7 +1394,7 @@ export default function MobileControlPage({
                 {/* 2-Column Row: Auto-close timer */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
                       Auto-close Timer
                     </label>
                     <select
@@ -1417,7 +1417,7 @@ export default function MobileControlPage({
                     borderRadius: '10px',
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.88rem',
                     border: 'none',
                     cursor: 'pointer',
@@ -1435,7 +1435,7 @@ export default function MobileControlPage({
 
             {/* Right Interactive Mobile Screen Mockup Preview */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '2px dashed #047857', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#111827', width: '100%', textAlign: 'left' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', width: '100%', textAlign: 'left' }}>
                 Live Pop-up Offer Ad Screen Preview
               </div>
 
@@ -1485,7 +1485,7 @@ export default function MobileControlPage({
                       backgroundColor: 'rgba(0,0,0,0.5)',
                       color: '#FFFFFF',
                       fontSize: '0.75rem',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1504,7 +1504,7 @@ export default function MobileControlPage({
                         backgroundColor: '#FEF3C7',
                         color: '#92400E',
                         fontSize: '0.65rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         padding: '2px 8px',
                         borderRadius: '10px',
                         zIndex: 10
@@ -1520,7 +1520,7 @@ export default function MobileControlPage({
 
                     {/* Content */}
                     <div style={{ padding: '0.85rem' }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                         {popupTitle || 'Special Offer Title'}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '4px', lineHeight: '1.3' }}>
@@ -1536,7 +1536,7 @@ export default function MobileControlPage({
                           borderRadius: '10px',
                           backgroundColor: '#047857',
                           color: '#FFFFFF',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.75rem',
                           border: 'none'
                         }}>
@@ -1558,7 +1558,7 @@ export default function MobileControlPage({
       {activeTab === 'help-desk' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Headphones size={22} style={{ color: '#047857' }} /> Help &amp; Support Desk Management
             </h2>
             <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '3px' }}>
@@ -1569,13 +1569,13 @@ export default function MobileControlPage({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
             {/* LEFT COLUMN: Support Contact Channels */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', marginTop: 0, marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.5rem' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', marginTop: 0, marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.5rem' }}>
                 📞 Support Contact Channels
               </h3>
 
               <form onSubmit={handleSaveHelpSupport} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Customer Helpline Phone Number (Primary)
                   </label>
                   <input
@@ -1588,7 +1588,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Extra Helpline Phone Number (Secondary / Phone 2)
                   </label>
                   <input
@@ -1601,7 +1601,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Support WhatsApp Number
                   </label>
                   <input
@@ -1614,7 +1614,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Customer Support Email Address
                   </label>
                   <input
@@ -1627,7 +1627,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Office Address / Hub Location (Optional)
                   </label>
                   <textarea
@@ -1650,7 +1650,7 @@ export default function MobileControlPage({
                     border: 'none',
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1667,13 +1667,13 @@ export default function MobileControlPage({
 
             {/* RIGHT COLUMN: Manage Dynamic FAQs */}
             <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', marginTop: 0, marginBottom: 0, borderBottom: '1px solid #F3F4F6', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', marginTop: 0, marginBottom: 0, borderBottom: '1px solid #F3F4F6', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <HelpCircle size={18} style={{ color: '#047857' }} /> Manage Frequently Asked Questions (FAQs)
               </h3>
 
               {/* Add New FAQ Form */}
               <div style={{ backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '12px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>
                   + Add New FAQ Item
                 </span>
                 
@@ -1703,7 +1703,7 @@ export default function MobileControlPage({
                     border: 'none',
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.8rem',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1720,7 +1720,7 @@ export default function MobileControlPage({
                 {helpFaqs.map((faq, idx) => (
                   <div key={faq.id} style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.85rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
                         {idx + 1}. {faq.question}
                       </span>
                       <span style={{ fontSize: '0.78rem', color: '#4B5563', lineHeight: '1.4' }}>
@@ -1738,7 +1738,7 @@ export default function MobileControlPage({
                         backgroundColor: '#FEE2E2',
                         color: '#DC2626',
                         fontSize: '0.75rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -1783,14 +1783,14 @@ export default function MobileControlPage({
             boxShadow: 'var(--shadow-lg)',
             textAlign: 'left'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
               Edit Onboarding Presentation Slide
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Title Input */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Presentation Title / Headline
                 </label>
                 <input
@@ -1803,7 +1803,7 @@ export default function MobileControlPage({
 
               {/* Tagline Description */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Tagline Description / Details
                 </label>
                 <textarea
@@ -1817,7 +1817,7 @@ export default function MobileControlPage({
               {/* 2 Column Row: Feature Badge & Lucide Icon */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Feature Badge / Category Tag
                   </label>
                   <input
@@ -1829,7 +1829,7 @@ export default function MobileControlPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     Lucide Icon Class Identifier
                   </label>
                   <select
@@ -1847,7 +1847,7 @@ export default function MobileControlPage({
 
               {/* Display Rank */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Sequence Display Rank (1 = First)
                 </label>
                 <input
@@ -1860,7 +1860,7 @@ export default function MobileControlPage({
 
               {/* Artwork URL & Upload Button */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Presentation Image / Slide Artwork URL
                 </label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1878,7 +1878,7 @@ export default function MobileControlPage({
                       borderRadius: '10px',
                       border: '1px solid #D1D5DB',
                       backgroundColor: '#FFFFFF',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: '0.8rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -1896,14 +1896,14 @@ export default function MobileControlPage({
                 <button
                   type="button"
                   onClick={() => setIsSlideModalOpen(false)}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveSlide}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Save Slide
                 </button>
@@ -1940,14 +1940,14 @@ export default function MobileControlPage({
             boxShadow: 'var(--shadow-lg)',
             textAlign: 'left'
           }}>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1.25rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '0.75rem' }}>
               Edit Marketing Banner
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Banner Title */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Banner Title / Headline
                 </label>
                 <input
@@ -1960,7 +1960,7 @@ export default function MobileControlPage({
 
               {/* Description */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Description / Offer Details
                 </label>
                 <textarea
@@ -1973,7 +1973,7 @@ export default function MobileControlPage({
 
               {/* Badge */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Badge (small label above the title)
                 </label>
                 <input
@@ -1991,7 +1991,7 @@ export default function MobileControlPage({
 
               {/* Tap opens */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   When tapped, open
                 </label>
                 <select
@@ -2017,7 +2017,7 @@ export default function MobileControlPage({
 
               {/* Display Rank */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Display Rank (1 = First)
                 </label>
                 <input
@@ -2030,7 +2030,7 @@ export default function MobileControlPage({
 
               {/* Target Hub Selection */}
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                   Target Operations Hub
                 </label>
                 <div style={{
@@ -2043,7 +2043,7 @@ export default function MobileControlPage({
                   border: '1px solid #A7F3D0',
                   color: '#047857',
                   fontSize: '0.82rem',
-                  fontWeight: 800
+                  fontWeight: 700
                 }}>
                   <span>📍 Locked to {selectedHubId === 'hosur' ? 'Hosur Central Hub (hub_hosur_main)' : 'Bangalore Electronic City Hub (hub_blr_ecity)'}</span>
                 </div>
@@ -2058,14 +2058,14 @@ export default function MobileControlPage({
                   onChange={(e) => setEditingBanner({ ...editingBanner, active: e.target.checked })}
                   style={{ width: '18px', height: '18px', accentColor: '#047857', cursor: 'pointer' }}
                 />
-                <label htmlFor="showBannerCheck" style={{ fontSize: '0.88rem', fontWeight: 700, color: '#111827', cursor: 'pointer' }}>
+                <label htmlFor="showBannerCheck" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}>
                   Show Banner on App
                 </label>
               </div>
 
               {/* Graphic Link / File Upload box matching Screenshot 4 */}
               <div style={{ border: '1px dashed #D1D5DB', borderRadius: '12px', padding: '1rem', backgroundColor: '#F9FAFB', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>
                   Banner Graphic Link / File Upload
                 </label>
 
@@ -2083,7 +2083,7 @@ export default function MobileControlPage({
                       borderRadius: '10px',
                       backgroundColor: '#3B82F6',
                       color: '#FFFFFF',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: '0.82rem',
                       border: 'none',
                       cursor: 'pointer',
@@ -2109,14 +2109,14 @@ export default function MobileControlPage({
                 <button
                   type="button"
                   onClick={() => setIsBannerModalOpen(false)}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveBanner}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', backgroundColor: '#047857', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Save Banner
                 </button>

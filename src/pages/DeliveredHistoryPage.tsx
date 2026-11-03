@@ -22,14 +22,14 @@ function ProofPhotoTableCell({ order, onSelect }: { order: Order; onSelect: (o: 
     return (
       <div onClick={() => onSelect(order)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
         <img src={url} alt="Proof" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #047857' }} />
-        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857' }}>View Photo ✓</span>
+        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#047857' }}>View Photo ✓</span>
       </div>
     );
   }
 
   if (isCancelled) {
     return (
-      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#DC2626' }}>
+      <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#DC2626' }}>
         {cancelReason ? `✕ ${cancelReason}` : '✕ Cancelled'}
       </span>
     );
@@ -38,7 +38,7 @@ function ProofPhotoTableCell({ order, onSelect }: { order: Order; onSelect: (o: 
   return (
     <div onClick={() => onSelect(order)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
       <Camera size={15} style={{ color: '#047857' }} />
-      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#047857' }}>View Details</span>
+      <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#047857' }}>View Details</span>
     </div>
   );
 }
@@ -199,7 +199,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
           flexDirection: 'column',
           gap: '1.25rem',
           textAlign: 'left',
-          fontFamily: "'Poppins', sans-serif",
+          fontFamily: "var(--font-body)",
           maxWidth: '1280px',
           margin: '0 auto',
           width: '100%',
@@ -242,7 +242,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
               <ArrowLeft size={18} />
             </button>
             <div>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: '#111827' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#111827' }}>
                 Delivery receipt &amp; proof #{o.id}
               </h2>
               <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '2px' }}>
@@ -256,7 +256,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
               padding: '0.4rem 0.9rem',
               borderRadius: '8px',
               fontSize: '0.8rem',
-              fontWeight: 700,
+              fontWeight: 600,
               backgroundColor: '#DCFCE7',
               color: '#15803D',
               border: 'none',
@@ -276,7 +276,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   backgroundColor: '#ECFDF5',
                   color: '#047857',
                   border: '1px solid #A7F3D0',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.8rem',
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -300,7 +300,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                 backgroundColor: '#FFFFFF',
                 color: '#111827',
                 fontSize: '0.82rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -327,7 +327,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
               return (
                 <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.85rem 0', color: '#111827' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 0.85rem 0', color: '#111827' }}>
                     Doorstep photo proof
                   </h3>
                   
@@ -349,7 +349,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
             {/* Card 2: Empty glass bottles returned */}
             <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 2px 0', color: '#111827' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 2px 0', color: '#111827' }}>
                   Empty glass bottles returned
                 </h3>
                 <div style={{ fontSize: '0.82rem', color: '#6B7280' }}>
@@ -366,7 +366,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.1rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 flexShrink: 0
               }}>
                 {o.bottlesReturned || 1}
@@ -375,7 +375,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
             {/* Card 3: Delivery instructions on file */}
             <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem 0', color: '#111827' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 0.75rem 0', color: '#111827' }}>
                 Delivery instructions on file
               </h3>
               <div style={{
@@ -384,7 +384,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                 padding: '0.85rem 1rem',
                 color: '#15803D',
                 fontSize: '0.85rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 lineHeight: 1.4
               }}>
                 {(o as any).deliveryInstructions || u?.deliveryInstructions || 'Silent drop — no bell, no knock. Leave at doorstep.'}
@@ -393,7 +393,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
             {/* Card 4: Products delivered — this drop */}
             <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 1rem 0', color: '#111827' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 1rem 0', color: '#111827' }}>
                 Products delivered — this drop
               </h3>
               
@@ -403,7 +403,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <ProductThumb hubId={(o as any).hubId} productId={item.product?.id} name={item.product?.name} radius={8} />
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>
                           {item.product?.name || 'Item'}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
@@ -411,7 +411,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                         </div>
                       </div>
                     </div>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111827' }}>
                       ₹{item.quantity * (item.product?.price ?? 0)}
                     </div>
                   </div>
@@ -423,11 +423,11 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
               <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
                   <span>This drop's value</span>
-                  <span style={{ fontWeight: 800, color: '#111827' }}>₹{o.totalAmount ?? 0}</span>
+                  <span style={{ fontWeight: 700, color: '#111827' }}>₹{o.totalAmount ?? 0}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
                   <span>Delivery charge</span>
-                  <span style={{ fontWeight: 800, color: '#16A34A' }}>Free</span>
+                  <span style={{ fontWeight: 700, color: '#16A34A' }}>Free</span>
                 </div>
               </div>
 
@@ -438,7 +438,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                 padding: '0.75rem 1rem',
                 color: '#1E40AF',
                 fontSize: '0.8rem',
-                fontWeight: 700
+                fontWeight: 600
               }}>
                 {isSubOrder 
                   ? `Part of prepaid plan · total plan value ₹2,970 · 30 drops` 
@@ -455,7 +455,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
             {/* Card 1: Customer profile */}
             <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#111827' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: 0, color: '#111827' }}>
                   Customer profile
                 </h3>
                 {onNavigateTab && (
@@ -471,7 +471,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                       color: '#047857',
                       border: '1px solid #A7F3D0',
                       fontSize: '0.74rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       cursor: 'pointer'
                     }}
                   >
@@ -490,14 +490,14 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '0.9rem',
                   flexShrink: 0
                 }}>
                   {(customerName || 'SI').substring(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#111827' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111827' }}>
                     {customerName}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '1px' }}>
@@ -512,7 +512,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
                 return (
                   <div style={{ borderTop: '1px solid var(--border-color, #E2E8F0)', paddingTop: '0.9rem', marginTop: '0.9rem' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
                       DELIVERY ADDRESS DETAILS
                     </div>
                     
@@ -521,43 +521,43 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                       {formattedAddrObj.doorNo && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Door no.</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.doorNo}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.doorNo}</span>
                         </div>
                       )}
                       {formattedAddrObj.street && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Street / road</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.street}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.street}</span>
                         </div>
                       )}
                       {formattedAddrObj.building && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Building</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.building}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.building}</span>
                         </div>
                       )}
                       {formattedAddrObj.floor && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Floor</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.floor}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.floor}</span>
                         </div>
                       )}
                       {formattedAddrObj.area && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Area / locality</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.area}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.area}</span>
                         </div>
                       )}
                       {formattedAddrObj.landmark && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>Landmark</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.landmark}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>{formattedAddrObj.landmark}</span>
                         </div>
                       )}
                       {(formattedAddrObj.city || formattedAddrObj.pincode) && (
                         <div>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', display: 'block', fontWeight: 600 }}>City / PIN</span>
-                          <span style={{ fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                             {[formattedAddrObj.city, formattedAddrObj.pincode].filter(Boolean).join(' · ')}
                           </span>
                         </div>
@@ -581,7 +581,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                         backgroundColor: '#047857',
                         color: '#FFFFFF',
                         fontSize: '0.82rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textDecoration: 'none',
                         display: 'flex',
                         alignItems: 'center',
@@ -601,7 +601,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
             {/* Card 2: Fulfillment rider information */}
             <div style={{ backgroundColor: 'var(--bg-card, #FFFFFF)', border: '1px solid var(--border-color, #E2E8F0)', borderRadius: '20px', padding: '1.35rem' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 0.85rem 0', color: 'var(--text-main, #0F172A)' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.85rem 0', color: 'var(--text-main, #0F172A)' }}>
                 Fulfillment rider information
               </h3>
 
@@ -616,14 +616,14 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '0.9rem',
                   flexShrink: 0
                 }}>
                   {((agent?.name || 'Rider').substring(0, 2)).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
                     {agent?.name || 'Rider'}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
@@ -641,7 +641,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
             {/* Card 3: Logistics history and audit logs */}
             <div style={{ backgroundColor: 'var(--bg-card, #FFFFFF)', border: '1px solid var(--border-color, #E2E8F0)', borderRadius: '20px', padding: '1.35rem' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 1rem 0', color: 'var(--text-main, #0F172A)' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 1rem 0', color: 'var(--text-main, #0F172A)' }}>
                 Logistics history and audit logs
               </h3>
 
@@ -721,7 +721,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                         borderRadius: '9999px',
                         backgroundColor: log.bg,
                         color: log.color,
-                        fontWeight: 700,
+                        fontWeight: 600,
                         fontSize: '0.72rem',
                         border: `1px solid ${log.border}`,
                         marginTop: '1px',
@@ -730,7 +730,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                         {log.tag}
                       </span>
                       <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
                           {log.title}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>
@@ -810,12 +810,12 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
   // Main Delivered History Table View
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Action Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main, #0F172A)', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main, #0F172A)', margin: 0 }}>
             📜 Complete Delivery Log History
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted, #64748B)', margin: '2px 0 0 0' }}>
@@ -831,7 +831,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
             gap: '6px',
             backgroundColor: '#047857',
             color: '#FFFFFF',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.82rem',
             padding: '0.55rem 1.15rem',
             borderRadius: '10px',
@@ -863,7 +863,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
           
           {/* Status Filter */}
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>Status:</span>
+            <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted, #64748B)' }}>Status:</span>
             {[
               { id: 'all', label: 'All Statuses' },
               { id: 'delivered', label: 'Delivered' },
@@ -878,7 +878,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   border: '1px solid var(--border-color, #CBD5E1)',
                   backgroundColor: statusFilter === st.id ? (st.id === 'cancelled' ? '#DC2626' : '#047857') : 'var(--bg-card, #FFFFFF)',
                   color: statusFilter === st.id ? '#FFFFFF' : 'var(--text-main, #475569)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.76rem',
                   cursor: 'pointer'
                 }}
@@ -890,7 +890,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
           {/* Type Filter */}
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>Type:</span>
+            <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted, #64748B)' }}>Type:</span>
             {[
               { id: 'all', label: 'All Types' },
               { id: 'one-time', label: 'One-Time' },
@@ -905,7 +905,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   border: '1px solid var(--border-color, #CBD5E1)',
                   backgroundColor: filterType === t.id ? '#047857' : 'var(--bg-card, #FFFFFF)',
                   color: filterType === t.id ? '#FFFFFF' : 'var(--text-main, #475569)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.76rem',
                   cursor: 'pointer'
                 }}
@@ -917,7 +917,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
           {/* Date Presets & Custom Date Picker */}
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>Date:</span>
+            <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted, #64748B)' }}>Date:</span>
             {[
               { id: 'all', label: 'All Dates' },
               { id: 'today', label: 'Today' },
@@ -934,7 +934,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                   border: '1px solid var(--border-color, #CBD5E1)',
                   backgroundColor: timePreset === p.id && !customDate ? '#0284C7' : 'var(--bg-card, #FFFFFF)',
                   color: timePreset === p.id && !customDate ? '#FFFFFF' : 'var(--text-main, #475569)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.76rem',
                   cursor: 'pointer'
                 }}
@@ -953,7 +953,7 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                 border: '1px solid var(--border-color, #CBD5E1)',
                 backgroundColor: customDate ? '#ECFDF5' : 'var(--bg-card, #FFFFFF)',
                 color: customDate ? '#047857' : 'var(--text-main, #475569)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.76rem',
                 outline: 'none',
                 cursor: 'pointer'
@@ -1011,13 +1011,13 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
 
                   return (
                     <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color, #F1F5F9)' }}>
-                      <td style={{ fontWeight: 800, color: '#047857', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{o.id}</td>
+                      <td style={{ fontWeight: 700, color: '#047857', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{o.id}</td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <span style={{
                           padding: '3px 8px',
                           borderRadius: '6px',
                           fontSize: '0.72rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           backgroundColor: isCancelled ? '#FEE2E2' : '#ECFDF5',
                           color: isCancelled ? '#DC2626' : '#047857',
                           border: `1px solid ${isCancelled ? '#FCA5A5' : '#A7F3D0'}`
@@ -1032,19 +1032,19 @@ export default function DeliveredHistoryPage({ orders, users, deliveryAgents, on
                       </td>
 
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted, #475569)', padding: '0.85rem 1rem' }}>{formatDateWithTime(o.orderDate)}</td>
-                      <td style={{ fontWeight: 700, color: 'var(--text-main, #1E293B)', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{customerName}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-main, #1E293B)', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>{customerName}</td>
                       <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: 'var(--text-muted, #475569)' }}>{agent?.name || 'Express Rider'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted, #475569)', padding: '0.85rem 1rem', maxWidth: '260px' }}>
                         {o.deliveryAddress || o.address || u?.savedAddresses?.[0] || 'Default Address'}
                       </td>
-                      <td style={{ fontWeight: 700, color: 'var(--text-main, #1E293B)', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>₹{o.totalAmount || 0}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-main, #1E293B)', padding: '0.85rem 1rem', fontSize: '0.85rem' }}>₹{o.totalAmount || 0}</td>
                       <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
                         <button
                           onClick={() => setSelectedOrder(o)}
                           style={{
                             padding: '0.35rem 0.75rem',
                             fontSize: '0.76rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             backgroundColor: '#047857',
                             color: '#FFFFFF',
                             border: 'none',

@@ -168,11 +168,11 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
   if (loadingSettings) return <PageLoader label="Loading referral program…" />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Header Bar */}
       <div>
-        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
           🎁 Refer &amp; Earn Program Control &amp; Campaign Rules
         </h2>
         <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '2px' }}>
@@ -186,7 +186,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
         {/* Toggle Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isCampaignActive ? '#ECFDF5' : '#F3F4F6', padding: '1rem 1.25rem', borderRadius: '14px', border: `1px solid ${isCampaignActive ? '#A7F3D0' : '#E5E7EB'}` }}>
           <div>
-            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: isCampaignActive ? '#047857' : '#374151', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: 700, color: isCampaignActive ? '#047857' : '#374151', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Gift size={18} /> Program Status: {isCampaignActive ? 'ACTIVE & VISIBLE IN CUSTOMER APP' : 'INACTIVE (HIDDEN IN APP)'}
             </h4>
             <p style={{ fontSize: '0.8rem', color: isCampaignActive ? '#065F46' : '#6B7280', margin: '2px 0 0 0' }}>
@@ -204,7 +204,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
               backgroundColor: isCampaignActive ? '#047857' : '#6B7280',
               color: '#FFFFFF',
               fontSize: '0.85rem',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -220,13 +220,13 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
           
           {/* Rule 1: Order Applicability */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
               1. ORDER APPLICABILITY
             </label>
             <select 
               value={appliesTo}
               onChange={(e) => setAppliesTo(e.target.value as any)}
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none', backgroundColor: '#FFFFFF', fontWeight: 700 }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none', backgroundColor: '#FFFFFF', fontWeight: 600 }}
             >
               <option value="first_order">Only Works on 1st Order</option>
               <option value="all_orders">Applicable on All Orders</option>
@@ -236,7 +236,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
 
           {/* Rule 2: Target Referral Limit */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
               2. FRIENDS SHARE TARGET LIMIT
             </label>
             <input 
@@ -244,20 +244,20 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
               value={targetReferralLimit}
               onChange={(e) => setTargetReferralLimit(e.target.value)}
               placeholder="e.g. 3 friends"
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 800, outline: 'none', color: '#047857' }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none', color: '#047857' }}
             />
             <span style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '2px', display: 'block' }}>Number of friends needed to claim reward</span>
           </div>
 
           {/* Rule 3: Reward Type */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
               3. REWARD OFFER TYPE
             </label>
             <select 
               value={rewardType}
               onChange={(e) => setRewardType(e.target.value as any)}
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none', backgroundColor: '#FFFFFF', fontWeight: 700 }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none', backgroundColor: '#FFFFFF', fontWeight: 600 }}
             >
               <option value="flat">Flat Rupee Discount (₹)</option>
               <option value="percentage">Percentage Discount (%)</option>
@@ -269,7 +269,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
 
           {/* Rule 4: Reward Value / Amount */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
               4. REWARD VALUE ({rewardType === 'flat' ? '₹' : rewardType === 'percentage' ? '%' : 'Qty'})
             </label>
             <input 
@@ -277,14 +277,14 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
               value={rewardValue}
               onChange={(e) => setRewardValue(e.target.value)}
               placeholder="e.g. 50"
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 800, outline: 'none' }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none' }}
             />
             <span style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '2px', display: 'block' }}>Amount deducted or gift quantity</span>
           </div>
 
           {/* Rule 5: Min Cart Value Requirement */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
               5. MIN CART REQUIREMENT (₹)
             </label>
             <input 
@@ -292,7 +292,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
               value={minCart}
               onChange={(e) => setMinCart(e.target.value)}
               placeholder="e.g. 100"
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 800, outline: 'none' }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none' }}
             />
             <span style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '2px', display: 'block' }}>Minimum order amount needed to redeem</span>
           </div>
@@ -302,13 +302,13 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
         {/* Free Gift Selector (Shown if rewardType == free_gift) */}
         {rewardType === 'free_gift' && (
           <div style={{ backgroundColor: '#FFFBEB', padding: '1rem', borderRadius: '12px', border: '1px solid #FDE68A' }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#92400E', display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#92400E', display: 'block', marginBottom: '6px' }}>
               🎁 SELECT FREE GIFT PRODUCT FROM CATALOG:
             </label>
             <select
               value={freeGiftProductId}
               onChange={(e) => setFreeGiftProductId(e.target.value)}
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #FCD34D', fontSize: '0.88rem', fontWeight: 700, backgroundColor: '#FFFFFF', outline: 'none' }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #FCD34D', fontSize: '0.88rem', fontWeight: 600, backgroundColor: '#FFFFFF', outline: 'none' }}
             >
               <option value="">-- Select Free Gift Item --</option>
               {products.map((p) => (
@@ -328,17 +328,17 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
         {/* Banner Texts */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>Mobile App Banner Title</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>Mobile App Banner Title</label>
             <input 
               type="text" 
               value={bannerHeading}
               onChange={(e) => setBannerHeading(e.target.value)}
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700 }}
+              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 600 }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>Mobile App Subtitle / Description</label>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>Mobile App Subtitle / Description</label>
             <input 
               type="text" 
               value={bannerSubtitle}
@@ -350,21 +350,21 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
 
         {/* How Referral Works Steps Breakdown (Editable by Admin) */}
         <div style={{ backgroundColor: '#F9FAFB', padding: '1.15rem', borderRadius: '14px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
             📖 How Referral Works Steps Breakdown (Editable in Mobile App)
           </h4>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* Step 1 */}
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '3px' }}>STEP 1 TITLE</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '3px' }}>STEP 1 TITLE</label>
               <input 
                 type="text" 
                 value={step1Title}
                 onChange={(e) => setStep1Title(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px' }}
+                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}
               />
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', display: 'block', marginBottom: '3px' }}>STEP 1 DESCRIPTION</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '3px' }}>STEP 1 DESCRIPTION</label>
               <input 
                 type="text" 
                 value={step1Sub}
@@ -375,14 +375,14 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
 
             {/* Step 2 */}
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '3px' }}>STEP 2 TITLE</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '3px' }}>STEP 2 TITLE</label>
               <input 
                 type="text" 
                 value={step2Title}
                 onChange={(e) => setStep2Title(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px' }}
+                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}
               />
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', display: 'block', marginBottom: '3px' }}>STEP 2 DESCRIPTION</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '3px' }}>STEP 2 DESCRIPTION</label>
               <input 
                 type="text" 
                 value={step2Sub}
@@ -393,14 +393,14 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
 
             {/* Step 3 */}
             <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '3px' }}>STEP 3 TITLE</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '3px' }}>STEP 3 TITLE</label>
               <input 
                 type="text" 
                 value={step3Title}
                 onChange={(e) => setStep3Title(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px' }}
+                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}
               />
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B7280', display: 'block', marginBottom: '3px' }}>STEP 3 DESCRIPTION</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '3px' }}>STEP 3 DESCRIPTION</label>
               <input 
                 type="text" 
                 value={step3Sub}
@@ -423,7 +423,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
               backgroundColor: '#047857',
               color: '#FFFFFF',
               fontSize: '0.88rem',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -441,7 +441,7 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
       <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Users size={18} style={{ color: '#047857' }} /> Referral Reward Claims ({userReferralList.length})
             </h3>
             <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -473,24 +473,24 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
 
                 return (
                   <tr key={usr.userId} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#111827' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#111827' }}>
                       {usr.userName}
                       <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 500 }}>{usr.userPhone}</div>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#047857' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#047857' }}>
                       {usr.referralCode}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#374151' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#374151' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Share2 size={13} style={{ color: '#047857' }} /> {usr.sharesCount} Shares
                       </span>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#111827' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#111827' }}>
                       {usr.joinedCount} / {target} Friends
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ width: '130px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 700, marginBottom: '2px', color: '#374151' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 600, marginBottom: '2px', color: '#374151' }}>
                           <span>{percent}%</span>
                           <span>{usr.joinedCount}/{target}</span>
                         </div>
@@ -501,28 +501,28 @@ export default function ReferEarnPage(_props: ReferEarnPageProps) {
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       {usr.claimStatus === 'used' ? (
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', backgroundColor: '#DCFCE7', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', backgroundColor: '#DCFCE7', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <CheckCircle2 size={12} /> Claimed Reward
                         </span>
                       ) : usr.claimStatus === 'approved' ? (
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', backgroundColor: '#DCFCE7', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', backgroundColor: '#DCFCE7', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <ShieldCheck size={12} /> Approved (next order)
                         </span>
                       ) : usr.claimStatus === 'rejected' ? (
-                        <span title={usr.rejectReason} style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '3px 10px', borderRadius: '12px' }}>
+                        <span title={usr.rejectReason} style={{ fontSize: '0.72rem', fontWeight: 600, color: '#6B7280', backgroundColor: '#F3F4F6', padding: '3px 10px', borderRadius: '12px' }}>
                           Rejected{usr.rejectReason ? `: ${usr.rejectReason}` : ''}
                         </span>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#B45309', backgroundColor: '#FEF3C7', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#B45309', backgroundColor: '#FEF3C7', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             🎉 Waiting for approval
                           </span>
                           <button disabled={reviewingUid === usr.userId} onClick={() => handleReview(usr.userId, true)}
-                            style={{ fontSize: '0.72rem', fontWeight: 800, color: '#FFFFFF', backgroundColor: '#047857', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer' }}>
+                            style={{ fontSize: '0.72rem', fontWeight: 700, color: '#FFFFFF', backgroundColor: '#047857', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer' }}>
                             Approve
                           </button>
                           <button disabled={reviewingUid === usr.userId} onClick={() => handleReview(usr.userId, false)}
-                            style={{ fontSize: '0.72rem', fontWeight: 800, color: '#DC2626', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer' }}>
+                            style={{ fontSize: '0.72rem', fontWeight: 700, color: '#DC2626', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer' }}>
                             Reject
                           </button>
                         </div>

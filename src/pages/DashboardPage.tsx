@@ -78,7 +78,7 @@ export default function DashboardPage({
       
       {/* Welcome Greeting Header */}
       <div>
-        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
           Good morning, {adminUsername || 'Admin'}
         </h2>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -105,10 +105,10 @@ export default function DashboardPage({
           }}
         >
           <div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <MapPin size={12} /> {isHosur ? 'HOSUR PORTAL' : 'BANGALORE PORTAL'}
             </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-title)' }}>
               Catalog &amp; Orders
             </div>
             <div style={{ fontSize: '0.75rem', opacity: 0.95, marginTop: '4px' }}>
@@ -136,10 +136,10 @@ export default function DashboardPage({
           }}
         >
           <div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <MapPin size={12} /> {isHosur ? 'HOSUR FLEET' : 'BANGALORE FLEET'}
             </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-title)' }}>
               Delivery &amp; Dispatch
             </div>
             <div style={{ fontSize: '0.75rem', opacity: 0.95, marginTop: '4px' }}>
@@ -167,10 +167,10 @@ export default function DashboardPage({
           }}
         >
           <div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#10B981', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#10B981', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <MapPin size={12} /> {isHosur ? 'HOSUR SECURITY' : 'BANGALORE SECURITY'}
             </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-title)' }}>
               Admin Access Control
             </div>
             <div style={{ fontSize: '0.75rem', opacity: 0.9, marginTop: '4px' }}>
@@ -234,7 +234,7 @@ export default function DashboardPage({
       <div className="card-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>Sales &amp; Milk Delivery Performance</h3>
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>Sales &amp; Milk Delivery Performance</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {dashboardFilter === 'week' ? 'Last 7 Days Dynamic Sales & Volume' : dashboardFilter === 'year' ? 'Last 12 Months Sales & Volume' : 'Last 30 Days Sales & Volume Overview'}
             </p>
@@ -336,7 +336,7 @@ export default function DashboardPage({
         {/* Order Status Breakdown */}
         <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Order Pipeline Breakdown</h4>
+            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>Order Pipeline Breakdown</h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Real-time status of orders in fulfillment flow</p>
           </div>
           {(() => {
@@ -385,7 +385,7 @@ export default function DashboardPage({
         {/* Subscription Plans Breakdown */}
         <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Subscription Frequency & Plan Share</h4>
+            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>Subscription Frequency & Plan Share</h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Usage distribution of user delivery schedules</p>
           </div>
           {(() => {
@@ -435,7 +435,7 @@ export default function DashboardPage({
       {/* Recent Deliveries Table */}
       <div className="card-panel" style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 700 }}>Recent Deliveries Overview</h3>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 600 }}>Recent Deliveries Overview</h3>
           <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }} onClick={() => onNavigateTab('orders')}>
             View All Orders &rarr;
           </button>
@@ -458,7 +458,7 @@ export default function DashboardPage({
                     <td style={{ fontWeight: 600, color: '#10B981' }}>{o.id}</td>
                     <td style={{ fontWeight: 600 }}>{o.customerName}</td>
                     <td>{o.items.map(i => `${i.qty}x ${i.name}`).join(', ') || '—'}</td>
-                    <td style={{ fontWeight: 700 }}>₹{o.total}</td>
+                    <td style={{ fontWeight: 600 }}>₹{o.total}</td>
                     <td>
                       <span className={`badge ${o.status === 'delivered' ? 'badge-success' : o.status === 'placed' ? 'badge-warning' : o.status === 'cancelled' || o.status === 'failed' ? 'badge-error' : 'badge-neutral'}`}>
                         {o.status === 'delivered' ? 'Delivered' : o.status === 'placed' ? 'Placed' : o.status === 'cancelled' ? 'Cancelled' : o.status === 'failed' ? 'Failed' : 'Awaiting payment'}

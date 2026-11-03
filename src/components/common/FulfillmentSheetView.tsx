@@ -146,7 +146,7 @@ export default function FulfillmentSheetView({
         flexDirection: 'column',
         gap: '1.25rem',
         textAlign: 'left',
-        fontFamily: "'Poppins', sans-serif",
+        fontFamily: "var(--font-body)",
         maxWidth: '1280px',
         margin: '0 auto',
         width: '100%',
@@ -158,7 +158,7 @@ export default function FulfillmentSheetView({
         {/* Header Section */}
         <div style={{ borderBottom: '2px solid #047857', paddingBottom: '10px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontSize: '18px', fontWeight: 900, color: '#047857', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#047857', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
               MILKYLUSH
             </div>
             <div style={{ fontSize: '10px', color: '#334155', marginTop: '2px', fontWeight: 600 }}>
@@ -169,10 +169,10 @@ export default function FulfillmentSheetView({
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase' }}>
               TAX INVOICE &amp; DELIVERY BILL
             </div>
-            <div style={{ fontSize: '11px', fontWeight: 800, color: '#047857', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#047857', marginTop: '2px' }}>
               Bill #: {o.orderNumber || o.id}
             </div>
             <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>
@@ -184,16 +184,16 @@ export default function FulfillmentSheetView({
         {/* Customer & Delivery Address Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
           <div style={{ border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px', backgroundColor: '#F8FAFC' }}>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>
               CUSTOMER DETAILS
             </div>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A' }}>{customerName}</div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', marginTop: '2px' }}>Phone: {customerPhone}</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{customerName}</div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: '#334155', marginTop: '2px' }}>Phone: {customerPhone}</div>
             <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>User ID: {o.userId || u?.id || 'N/A'}</div>
           </div>
 
           <div style={{ border: '1px solid #CBD5E1', borderRadius: '8px', padding: '10px', backgroundColor: '#F8FAFC' }}>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', marginBottom: '4px' }}>
               DELIVERY ADDRESS &amp; INSTRUCTIONS
             </div>
             <div style={{ fontSize: '10px', color: '#0F172A', lineHeight: '1.4' }}>
@@ -203,7 +203,7 @@ export default function FulfillmentSheetView({
               {formattedAddr.city && <span>City: <strong>{formattedAddr.city} {formattedAddr.pincode || ''}</strong><br/></span>}
               {formattedAddr.landmark && <span>Landmark: <strong>{formattedAddr.landmark}</strong></span>}
             </div>
-            <div style={{ fontSize: '10px', color: '#047857', fontWeight: 700, marginTop: '4px', borderTop: '1px dashed #CBD5E1', paddingTop: '4px' }}>
+            <div style={{ fontSize: '10px', color: '#047857', fontWeight: 600, marginTop: '4px', borderTop: '1px dashed #CBD5E1', paddingTop: '4px' }}>
               Note: {o.deliveryInstructions || 'Standard doorstep dropoff. Ring doorbell.'}
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function FulfillmentSheetView({
         <div style={{ marginBottom: '12px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#047857', color: '#FFFFFF', textAlign: 'left', fontWeight: 800 }}>
+              <tr style={{ backgroundColor: '#047857', color: '#FFFFFF', textAlign: 'left', fontWeight: 700 }}>
                 <th style={{ padding: '6px 8px' }}>#</th>
                 <th style={{ padding: '6px 8px' }}>ITEM DESCRIPTION</th>
                 <th style={{ padding: '6px 8px' }}>PACK SIZE</th>
@@ -227,11 +227,11 @@ export default function FulfillmentSheetView({
                 o.items.map((item, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                     <td style={{ padding: '6px 8px', color: '#64748B' }}>{idx + 1}</td>
-                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>{item.product?.name || 'Item'}</td>
+                    <td style={{ padding: '6px 8px', fontWeight: 600 }}>{item.product?.name || 'Item'}</td>
                     <td style={{ padding: '6px 8px', color: '#475569' }}>{item.product?.unit || ''}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 700 }}>{item.quantity || 1}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>{item.quantity || 1}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'right' }}>₹{item.product?.price ?? 0}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800 }}>₹{(item.quantity || 1) * (item.product?.price ?? 0)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>₹{(item.quantity || 1) * (item.product?.price ?? 0)}</td>
                   </tr>
                 ))
               ) : (
@@ -244,7 +244,7 @@ export default function FulfillmentSheetView({
         {/* Bill Summary & Payment Info */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div style={{ fontSize: '10px', color: '#475569', maxWidth: '60%' }}>
-            <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: '2px' }}>PLAN &amp; LOGISTICS SUMMARY:</div>
+            <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>PLAN &amp; LOGISTICS SUMMARY:</div>
             {isSubscription ? (
               <div>Prepaid Subscription Plan ({subscriptionId || '—'}). Drop value ₹{dropValue} deducted per schedule.</div>
             ) : isFreeSample ? (
@@ -258,13 +258,13 @@ export default function FulfillmentSheetView({
           <div style={{ width: '220px', border: '1px solid #047857', borderRadius: '6px', padding: '8px', backgroundColor: '#ECFDF5' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
               <span>This Drop Value:</span>
-              <span style={{ fontWeight: 700 }}>₹{dropValue}</span>
+              <span style={{ fontWeight: 600 }}>₹{dropValue}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px', color: '#047857' }}>
               <span>Delivery Charge:</span>
-              <span style={{ fontWeight: 800 }}>FREE</span>
+              <span style={{ fontWeight: 700 }}>FREE</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 900, color: '#047857', borderTop: '1.5px solid #047857', paddingTop: '4px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#047857', borderTop: '1.5px solid #047857', paddingTop: '4px', marginTop: '4px' }}>
               <span>TOTAL AMOUNT:</span>
               <span>₹{dropValue}</span>
             </div>
@@ -273,12 +273,12 @@ export default function FulfillmentSheetView({
 
         {/* Bill Footer */}
         <div style={{ borderTop: '2px solid #047857', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px' }}>
-          <div style={{ color: '#047857', fontWeight: 800 }}>
+          <div style={{ color: '#047857', fontWeight: 700 }}>
             💚 Thank you for choosing MilkyLush Organic Dairy! Pure &amp; Fresh Everyday.
           </div>
           <div style={{ textAlign: 'right', color: '#334155' }}>
             <div style={{ height: '24px' }}></div>
-            <div style={{ borderTop: '1px solid #475569', paddingTop: '2px', fontWeight: 800 }}>
+            <div style={{ borderTop: '1px solid #475569', paddingTop: '2px', fontWeight: 700 }}>
               Authorized Signatory (MilkyLush Logistics)
             </div>
           </div>
@@ -326,7 +326,7 @@ export default function FulfillmentSheetView({
           <div>
             <h1 style={{
               fontSize: '1.35rem',
-              fontWeight: 800,
+              fontWeight: 700,
               margin: 0,
               color: 'var(--text-main, #0F172A)',
               letterSpacing: '-0.02em',
@@ -353,7 +353,7 @@ export default function FulfillmentSheetView({
                 borderRadius: '8px',
                 padding: '5px 11px',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
@@ -369,7 +369,7 @@ export default function FulfillmentSheetView({
                 borderRadius: '8px',
                 padding: '5px 11px',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
@@ -385,7 +385,7 @@ export default function FulfillmentSheetView({
                 borderRadius: '8px',
                 padding: '5px 11px',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
@@ -398,7 +398,7 @@ export default function FulfillmentSheetView({
           <span style={{
             padding: '6px 14px',
             borderRadius: '9999px',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.78rem',
             backgroundColor: isFreeSample ? '#FEF3C7' : isSubscription ? '#ECFDF5' : '#F1F5F9',
             color: isFreeSample ? '#D97706' : isSubscription ? '#047857' : '#475569',
@@ -412,7 +412,7 @@ export default function FulfillmentSheetView({
           <span style={{
             padding: '6px 14px',
             borderRadius: '9999px',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.78rem',
             backgroundColor: isDelivered ? '#ECFDF5' : isCancelled ? '#FEE2E2' : o.status === 'outForDelivery' ? '#FEF3C7' : '#FEF3C7',
             color: isDelivered ? '#047857' : isCancelled ? '#991B1B' : o.status === 'outForDelivery' ? '#B45309' : '#B45309',
@@ -435,7 +435,7 @@ export default function FulfillmentSheetView({
               backgroundColor: '#047857',
               color: '#FFFFFF',
               fontSize: '0.8rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
@@ -447,13 +447,13 @@ export default function FulfillmentSheetView({
 
       {/* View Mode Context Banners */}
       {viewMode === 'customer' && (
-        <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.85rem 1.25rem', borderRadius: '14px', color: '#1E40AF', fontSize: '0.85rem', fontWeight: 700 }}>
+        <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.85rem 1.25rem', borderRadius: '14px', color: '#1E40AF', fontSize: '0.85rem', fontWeight: 600 }}>
           👤 Customer Receipt View Mode: Displaying digital tax invoice & doorstep delivery receipt formatted for <strong>{customerName}</strong>.
         </div>
       )}
 
       {viewMode === 'rider' && (
-        <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '0.85rem 1.25rem', borderRadius: '14px', color: '#047857', fontSize: '0.85rem', fontWeight: 700 }}>
+        <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '0.85rem 1.25rem', borderRadius: '14px', color: '#047857', fontSize: '0.85rem', fontWeight: 600 }}>
           🛵 Delivery Person View Mode: Displaying rider dropoff sheet & doorstep verification proof for <strong>{assignedRiderName}</strong>.
         </div>
       )}
@@ -481,7 +481,7 @@ export default function FulfillmentSheetView({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
               <span style={{
                 fontSize: '0.72rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: isSubscription ? '#047857' : '#64748B',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase'
@@ -502,7 +502,7 @@ export default function FulfillmentSheetView({
                     color: '#047857',
                     border: '1px solid #A7F3D0',
                     fontSize: '0.74rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >
@@ -513,7 +513,7 @@ export default function FulfillmentSheetView({
 
             <h3 style={{
               fontSize: '1.05rem',
-              fontWeight: 800,
+              fontWeight: 700,
               margin: '0 0 1.1rem 0',
               color: 'var(--text-main, #0F172A)'
             }}>
@@ -532,7 +532,7 @@ export default function FulfillmentSheetView({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <ProductThumb hubId={deliveryHubId} productId={item.product?.id} name={prodDisplayName} />
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main, #0F172A)' }}>
                             {prodDisplayName}
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748B)', marginTop: '2px' }}>
@@ -540,7 +540,7 @@ export default function FulfillmentSheetView({
                           </div>
                         </div>
                       </div>
-                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main, #0F172A)' }}>
                         ₹{(item.quantity || 1) * unitPrice}
                       </div>
                     </div>
@@ -562,13 +562,13 @@ export default function FulfillmentSheetView({
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #64748B)' }}>
                   <span>{isSubscription ? "This drop's value" : "Item subtotal"}</span>
-                  <span style={{ color: 'var(--text-main, #0F172A)', fontWeight: 700 }}>₹{dropValue}</span>
+                  <span style={{ color: 'var(--text-main, #0F172A)', fontWeight: 600 }}>₹{dropValue}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #64748B)' }}>
                   <span>Sunrise delivery charge</span>
-                  <span style={{ color: '#047857', fontWeight: 800 }}>Free</span>
+                  <span style={{ color: '#047857', fontWeight: 700 }}>Free</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main, #0F172A)', fontWeight: 800, fontSize: '0.92rem', paddingTop: '0.4rem', borderTop: '1px solid #F1F5F9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main, #0F172A)', fontWeight: 700, fontSize: '0.92rem', paddingTop: '0.4rem', borderTop: '1px solid #F1F5F9' }}>
                   <span>{isSubscription ? 'Charged for this drop' : 'Grand total paid'}</span>
                   <span>₹{dropValue}</span>
                 </div>
@@ -583,7 +583,7 @@ export default function FulfillmentSheetView({
                   padding: '0.85rem 1rem',
                   fontSize: '0.82rem',
                   color: '#0369A1',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   lineHeight: 1.45
                 }}>
                   Part of prepaid plan <strong>{subscriptionId || '—'}</strong>{planDoc.data ? <> · total plan value ₹{totalPlanValue.toLocaleString('en-IN')} · {planDrops} drops · already fully paid</> : null}
@@ -615,7 +615,7 @@ export default function FulfillmentSheetView({
           }}>
             <h3 style={{
               fontSize: '1.05rem',
-              fontWeight: 800,
+              fontWeight: 700,
               margin: '0 0 0.85rem 0',
               color: 'var(--text-main, #0F172A)'
             }}>
@@ -629,7 +629,7 @@ export default function FulfillmentSheetView({
                     padding: '4px 10px',
                     borderRadius: '9999px',
                     fontSize: '0.74rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     backgroundColor: '#ECFDF5',
                     color: '#047857',
                     border: '1px solid #A7F3D0'
@@ -684,7 +684,7 @@ export default function FulfillmentSheetView({
                     gap: '0.5rem'
                   }}>
                     <Camera size={24} style={{ color: 'var(--text-muted, #64748B)' }} />
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted, #64748B)' }}>
                       No doorstep photo attached by rider
                     </div>
                     <label style={{
@@ -693,7 +693,7 @@ export default function FulfillmentSheetView({
                       color: '#FFFFFF',
                       borderRadius: '8px',
                       fontSize: '0.76rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       cursor: 'pointer'
                     }}>
                       {isUploadingPhoto ? 'Uploading...' : 'Upload Photo Proof'}
@@ -715,10 +715,10 @@ export default function FulfillmentSheetView({
                 }}>
                   <AlertTriangle size={20} style={{ color: '#DC2626', flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#991B1B' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#991B1B' }}>
                       Cancellation Reason Recorded
                     </div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#7F1D1D', marginTop: '3px' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#7F1D1D', marginTop: '3px' }}>
                       "{cancelReason || 'Customer unreachable / delivery issue'}"
                     </div>
                     <div style={{ fontSize: '0.74rem', color: '#B91C1C', marginTop: '3px' }}>
@@ -758,7 +758,7 @@ export default function FulfillmentSheetView({
           >
             <h3 style={{
               fontSize: '1.05rem',
-              fontWeight: 800,
+              fontWeight: 700,
               margin: '0 0 0.2rem 0',
               color: 'var(--text-main, #0F172A)'
             }}>
@@ -772,7 +772,7 @@ export default function FulfillmentSheetView({
               
               {/* Field 1: Transition delivery status */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main, #0F172A)' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main, #0F172A)' }}>
                   Transition delivery status
                 </label>
                 <select
@@ -810,7 +810,7 @@ export default function FulfillmentSheetView({
 
               {/* Field 2: Logistics driver assigned */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-main, #0F172A)' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-main, #0F172A)' }}>
                   Logistics driver assigned
                 </label>
                 <select
@@ -851,7 +851,7 @@ export default function FulfillmentSheetView({
 
               {/* Field 3: Cancel job order */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem', color: '#EF4444' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.35rem', color: '#EF4444' }}>
                   Cancel job order
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -887,7 +887,7 @@ export default function FulfillmentSheetView({
                       border: '1px solid #FCA5A5',
                       borderRadius: '10px',
                       padding: '0.55rem 0.95rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: '0.8rem',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap'
@@ -918,13 +918,13 @@ export default function FulfillmentSheetView({
               <div>
                 <h3 style={{
                   fontSize: '1.05rem',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   margin: 0,
                   color: 'var(--text-main, #0F172A)'
                 }}>
                   Customer details
                 </h3>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main, #0F172A)', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main, #0F172A)', marginTop: '4px' }}>
                   {customerName} · <span style={{ color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>{customerPhone}</span>
                 </div>
               </div>
@@ -942,7 +942,7 @@ export default function FulfillmentSheetView({
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '0.76rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >
@@ -962,12 +962,12 @@ export default function FulfillmentSheetView({
               gap: '0.85rem'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   DELIVERY ADDRESS
                 </span>
                 <span style={{
                   fontSize: '0.72rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#047857',
                   backgroundColor: '#ECFDF5',
                   padding: '2px 8px',
@@ -983,7 +983,7 @@ export default function FulfillmentSheetView({
                 {formattedAddr.doorNo && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Door no.</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {formattedAddr.doorNo}
                     </div>
                   </div>
@@ -992,7 +992,7 @@ export default function FulfillmentSheetView({
                 {formattedAddr.street && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Street / road</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {formattedAddr.street}
                     </div>
                   </div>
@@ -1001,7 +1001,7 @@ export default function FulfillmentSheetView({
                 {formattedAddr.building && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Building</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {formattedAddr.building}
                     </div>
                   </div>
@@ -1010,7 +1010,7 @@ export default function FulfillmentSheetView({
                 {formattedAddr.floor && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Floor</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {formattedAddr.floor}
                     </div>
                   </div>
@@ -1019,7 +1019,7 @@ export default function FulfillmentSheetView({
                 {formattedAddr.area && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Area / locality</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {formattedAddr.area}
                     </div>
                   </div>
@@ -1028,7 +1028,7 @@ export default function FulfillmentSheetView({
                 {formattedAddr.landmark && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>Landmark</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {formattedAddr.landmark}
                     </div>
                   </div>
@@ -1037,7 +1037,7 @@ export default function FulfillmentSheetView({
                 {(formattedAddr.city || formattedAddr.pincode) && (
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>City / PIN</div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main, #0F172A)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main, #0F172A)' }}>
                       {[formattedAddr.city, formattedAddr.pincode].filter(Boolean).join(' · ')}
                     </div>
                   </div>
@@ -1066,7 +1066,7 @@ export default function FulfillmentSheetView({
                   padding: '0.65rem 1rem',
                   borderRadius: '10px',
                   fontSize: '0.82rem',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   textDecoration: 'none',
                   transition: 'background-color 0.15s ease'
                 }}
@@ -1087,7 +1087,7 @@ export default function FulfillmentSheetView({
           }}>
             <h3 style={{
               fontSize: '1.05rem',
-              fontWeight: 800,
+              fontWeight: 700,
               margin: '0 0 0.85rem 0',
               color: 'var(--text-main, #0F172A)'
             }}>
@@ -1101,7 +1101,7 @@ export default function FulfillmentSheetView({
               border: '1px solid #A7F3D0',
               color: '#047857'
             }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', marginBottom: '4px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', marginBottom: '4px' }}>
                 Customer note (checkout)
               </div>
               <div style={{ fontSize: '0.84rem', fontWeight: 600, lineHeight: 1.45 }}>
@@ -1120,7 +1120,7 @@ export default function FulfillmentSheetView({
           }}>
             <h3 style={{
               fontSize: '1.05rem',
-              fontWeight: 800,
+              fontWeight: 700,
               margin: '0 0 1rem 0',
               color: 'var(--text-main, #0F172A)'
             }}>
@@ -1218,7 +1218,7 @@ export default function FulfillmentSheetView({
                       borderRadius: '9999px',
                       backgroundColor: log.bg,
                       color: log.color,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: '0.72rem',
                       border: `1px solid ${log.border}`,
                       marginTop: '1px',
@@ -1227,7 +1227,7 @@ export default function FulfillmentSheetView({
                       {log.tag}
                     </span>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main, #0F172A)' }}>
                         {log.title}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)', marginTop: '1px' }}>

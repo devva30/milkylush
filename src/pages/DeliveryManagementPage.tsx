@@ -137,7 +137,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
                 borderRadius: '50%',
                 backgroundColor: isOnline ? '#047857' : '#6B7280',
                 color: '#FFFFFF',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '1.2rem',
                 display: 'flex',
                 alignItems: 'center',
@@ -148,7 +148,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
               </div>
 
               <div>
-                <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
                   {selectedAgent.name} Profile
                   <span className={`badge ${isOnline ? 'badge-success' : 'badge-neutral'}`}>
                     {isOnline ? '🟢 On Duty (Online)' : '⚪ Off Duty (Offline)'}
@@ -187,34 +187,34 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
             
             {/* Performance KPI Grid */}
             <div className="card-panel" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Executive Partner Key Metrics</span>
                 <ShieldCheck size={16} style={{ color: 'var(--primary)' }} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
                 <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>TODAY'S DELIVERIES</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>{todayDrops.data.filter(d => d.riderUid === selectedAgent.id).length} Doorsteps</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>TODAY'S DELIVERIES</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#047857', marginTop: '4px' }}>{todayDrops.data.filter(d => d.riderUid === selectedAgent.id).length} Doorsteps</div>
                 </div>
 
                 <div style={{ backgroundColor: 'var(--bg-main)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>LIFETIME DELIVERIES</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>{lifetimeDrops === null ? '…' : lifetimeDrops.toLocaleString('en-IN')} Doorsteps</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>LIFETIME DELIVERIES</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '4px' }}>{lifetimeDrops === null ? '…' : lifetimeDrops.toLocaleString('en-IN')} Doorsteps</div>
                 </div>
 
                 <div style={{ backgroundColor: '#ECFDF5', padding: '0.85rem', borderRadius: '12px', border: '1px solid #A7F3D0' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Star size={13} fill="#047857" /> RATING SCORE
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#047857', marginTop: '4px' }}>No ratings yet</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#047857', marginTop: '4px' }}>No ratings yet</div>
                 </div>
               </div>
             </div>
 
             {/* Morning Route Manifest Table */}
             <div className="card-panel" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Today's Assigned Route Stops (05:30 AM - 07:30 AM)</span>
                 <Truck size={16} style={{ color: 'var(--primary)' }} />
               </div>
@@ -229,9 +229,9 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
                   .map((d, i) => (
                   <div key={d.id} style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: d.status === 'delivered' ? '#D1FAE5' : '#FEF3C7', color: d.status === 'delivered' ? '#047857' : '#D97706', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: d.status === 'delivered' ? '#D1FAE5' : '#FEF3C7', color: d.status === 'delivered' ? '#047857' : '#D97706', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                       <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>{d.customerName}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{d.customerName}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.addressText.slice(0, 40)} • {d.items.map(it => `${it.qty}x ${it.name}`).join(', ')}</div>
                       </div>
                     </div>
@@ -258,29 +258,29 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
             
             {/* Card: Vehicle & License Details */}
             <div className="card-panel" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
                 Vehicle &amp; Driving License Info
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderRadius: '8px', backgroundColor: 'var(--bg-main)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Vehicle Type:</span>
-                  <span style={{ fontWeight: 700 }}>⚡ Electric EV Scooter</span>
+                  <span style={{ fontWeight: 600 }}>⚡ Electric EV Scooter</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderRadius: '8px', backgroundColor: 'var(--bg-main)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>License Plate:</span>
-                  <span style={{ fontWeight: 800, color: 'var(--primary)' }}>KA-05-EB-4921</span>
+                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>KA-05-EB-4921</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderRadius: '8px', backgroundColor: 'var(--bg-main)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Driving License:</span>
-                  <span style={{ fontWeight: 700 }}>DL-2024-884920</span>
+                  <span style={{ fontWeight: 600 }}>DL-2024-884920</span>
                 </div>
               </div>
             </div>
 
             {/* Card: Live GPS Rider Tracking Map */}
             <div className="card-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Live Rider GPS Tracking</span>
                 <Navigation size={15} style={{ color: 'var(--primary)' }} />
               </div>
@@ -320,10 +320,10 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
               Active Delivery Fleet
             </h2>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 10px', borderRadius: '12px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#047857', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 10px', borderRadius: '12px' }}>
               Total Fleet: {totalFleetCount} | Online: {activeAgentsCount}
             </span>
           </div>
@@ -348,8 +348,8 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
             <Truck size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ON-DUTY FLEET</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)' }}>{activeAgentsCount} Executive Partners</div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>ON-DUTY FLEET</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: 'var(--text-main)' }}>{activeAgentsCount} Executive Partners</div>
           </div>
         </div>
 
@@ -358,8 +358,8 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
             <Clock size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TRANSIT DISPATCH</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#B45309' }}>{outForDeliveryOrders} Orders On Route</div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TRANSIT DISPATCH</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#B45309' }}>{outForDeliveryOrders} Orders On Route</div>
           </div>
         </div>
 
@@ -368,8 +368,8 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
             <CheckCircle size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERED TODAY</div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#047857' }}>{deliveredOrders} Doorsteps Fulfilled</div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DELIVERED TODAY</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#047857' }}>{deliveredOrders} Doorsteps Fulfilled</div>
           </div>
         </div>
       </div>
@@ -398,7 +398,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
                         borderRadius: '50%',
                         backgroundColor: agent.isOnline ? '#047857' : '#6B7280',
                         color: '#FFFFFF',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         fontSize: '0.85rem',
                         display: 'flex',
                         alignItems: 'center',
@@ -407,7 +407,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
                         {agent.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>{agent.name}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{agent.name}</div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>ID: {agent.id}</div>
                       </div>
                     </div>
@@ -478,7 +478,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
             width: '100%', maxWidth: '500px', textAlign: 'left', boxShadow: 'var(--shadow-xl)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.4rem', color: '#111827', margin: 0 }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.4rem', color: '#111827', margin: 0 }}>
                 Register New Delivery Partner
               </h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>
@@ -600,7 +600,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
                   backgroundColor: '#F1F5F9',
                   border: '1px solid #CBD5E1',
                   fontSize: '0.85rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#0F172A',
                   display: 'flex',
                   alignItems: 'center',
@@ -625,7 +625,7 @@ export default function DeliveryManagementPage({ hubDeliveryAgents, selectedHubI
                   type="submit"
                   className="btn-primary"
                   disabled={isSaving}
-                  style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#044E35', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#044E35', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
                   {isSaving ? 'Registering...' : 'Create Delivery Partner'}
                 </button>

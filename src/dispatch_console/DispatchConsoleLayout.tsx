@@ -95,7 +95,7 @@ export default function DispatchConsoleLayout({
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main, #F8FAFC)', color: 'var(--text-main, #1E293B)', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main, #F8FAFC)', color: 'var(--text-main, #1E293B)', fontFamily: "var(--font-body)" }}>
       
       {/* Sidebar Navigation */}
       <DispatchSidebar

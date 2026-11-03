@@ -80,7 +80,7 @@ export default function AnalysisPage({
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Analysis &amp; Operational Insights
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -100,7 +100,7 @@ export default function AnalysisPage({
                 backgroundColor: timeRange === r ? 'var(--primary)' : 'var(--bg-main)',
                 color: timeRange === r ? '#FFFFFF' : 'var(--text-main)',
                 border: timeRange === r ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 cursor: 'pointer',
               }}
@@ -164,7 +164,7 @@ export default function AnalysisPage({
         {/* Subscription Status Card */}
         <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>Subscription Health</h4>
+            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 600, margin: 0 }}>Subscription Health</h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Active vs Paused vs Cancelled subscriptions ratio</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -194,14 +194,14 @@ export default function AnalysisPage({
         <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
+              <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 600, margin: 0 }}>
                 Product Catalog Distribution
               </h4>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
                 Live products &amp; category breakdown for {isHosur ? 'Hosur' : 'Bangalore'}
               </p>
             </div>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 10px', borderRadius: '12px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#047857', backgroundColor: '#ECFDF5', padding: '3px 10px', borderRadius: '12px' }}>
               {totalProducts} {totalProducts === 1 ? 'Product' : 'Products'} Live
             </span>
           </div>
@@ -214,7 +214,7 @@ export default function AnalysisPage({
                   key={cat}
                   style={{
                     fontSize: '0.72rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     padding: '3px 8px',
                     borderRadius: '8px',
                     backgroundColor: 'var(--bg-main)',
@@ -259,7 +259,7 @@ export default function AnalysisPage({
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {p.name}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -267,7 +267,7 @@ export default function AnalysisPage({
                       </div>
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#047857', whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#047857', whiteSpace: 'nowrap', marginLeft: '8px' }}>
                     ₹{p.price} / {p.unit || 'unit'}
                   </span>
                 </div>
@@ -284,7 +284,7 @@ export default function AnalysisPage({
         {/* Prepaid Subscription Packages Card */}
         <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
           <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
               🎁 Prepaid Subscription Packages (Customer App Checkout)
             </h4>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -295,30 +295,30 @@ export default function AnalysisPage({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)' }}>15 Days Pack</div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>15 Days Pack</div>
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{plan15Count} Subscriptions Active · Standard Plan</div>
               </div>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748B', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748B', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: '8px' }}>
                 0% OFF
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5' }}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#047857' }}>30 Days Gold Plan ⭐</div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#047857' }}>30 Days Gold Plan ⭐</div>
                 <div style={{ fontSize: '0.74rem', color: '#059669' }}>{plan30Count} Subscriptions Active · Most Popular App Selection</div>
               </div>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF', backgroundColor: '#047857', padding: '3px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#FFFFFF', backgroundColor: '#047857', padding: '3px 8px', borderRadius: '8px' }}>
                 10% OFF
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E40AF' }}>90 Days Elite Plan 🚀</div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1E40AF' }}>90 Days Elite Plan 🚀</div>
                 <div style={{ fontSize: '0.74rem', color: '#2563EB' }}>{plan90Count} Subscriptions Active · Maximum Savings Pack</div>
               </div>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF', backgroundColor: '#2563EB', padding: '3px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#FFFFFF', backgroundColor: '#2563EB', padding: '3px 8px', borderRadius: '8px' }}>
                 15% OFF
               </span>
             </div>
@@ -328,7 +328,7 @@ export default function AnalysisPage({
         {/* Subscription Renewal Projection (Real-Time) Card */}
         <div className="card-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
           <div>
-            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+            <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
               📈 Subscription Renewal Projection (Real-Time)
             </h4>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -339,7 +339,7 @@ export default function AnalysisPage({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next 7 Days Renewals</span>
-              <span style={{ fontWeight: 800, color: '#047857' }}>{est7DayRenewals} Plans (Est. ₹{est7DayValue.toLocaleString('en-IN')})</span>
+              <span style={{ fontWeight: 700, color: '#047857' }}>{est7DayRenewals} Plans (Est. ₹{est7DayValue.toLocaleString('en-IN')})</span>
             </div>
             <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, Math.max(15, (est7DayRenewals / Math.max(1, totalActiveSubs)) * 100))}%`, height: '100%', backgroundColor: '#047857' }} />
@@ -347,7 +347,7 @@ export default function AnalysisPage({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next 15 Days Renewals</span>
-              <span style={{ fontWeight: 800, color: '#0284C7' }}>{est15DayRenewals} Plans (Est. ₹{est15DayValue.toLocaleString('en-IN')})</span>
+              <span style={{ fontWeight: 700, color: '#0284C7' }}>{est15DayRenewals} Plans (Est. ₹{est15DayValue.toLocaleString('en-IN')})</span>
             </div>
             <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, Math.max(30, (est15DayRenewals / Math.max(1, totalActiveSubs)) * 100))}%`, height: '100%', backgroundColor: '#0284C7' }} />
@@ -355,7 +355,7 @@ export default function AnalysisPage({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Next 30 Days Renewals</span>
-              <span style={{ fontWeight: 800, color: '#9333EA' }}>{est30DayRenewals} Plans (Est. ₹{est30DayValue.toLocaleString('en-IN')})</span>
+              <span style={{ fontWeight: 700, color: '#9333EA' }}>{est30DayRenewals} Plans (Est. ₹{est30DayValue.toLocaleString('en-IN')})</span>
             </div>
           </div>
         </div>

@@ -26,12 +26,12 @@ export default function DispatchDeliveryPartnersPage({
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             👥 Delivery Fleet Partners
           </h2>
           <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -44,7 +44,7 @@ export default function DispatchDeliveryPartnersPage({
           style={{
             backgroundColor: '#044E35',
             color: '#FFFFFF',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.85rem',
             padding: '0.6rem 1.2rem',
             borderRadius: '10px',
@@ -62,7 +62,7 @@ export default function DispatchDeliveryPartnersPage({
       {/* Filter & Search Bar */}
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1rem 1.25rem', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
           Registered Personnel List ({filteredAgents.length})
         </div>
 
@@ -103,7 +103,7 @@ export default function DispatchDeliveryPartnersPage({
               ) : (
                 filteredAgents.map(agent => (
                   <tr key={agent.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700, color: '#1E293B', fontSize: '0.85rem' }}>
+                    <td style={{ padding: '0.85rem 1.25rem', fontWeight: 600, color: '#1E293B', fontSize: '0.85rem' }}>
                       {agent.name}
                     </td>
 
@@ -124,7 +124,7 @@ export default function DispatchDeliveryPartnersPage({
                     <td style={{ padding: '0.85rem 1.25rem' }}>
                       <span style={{
                         fontSize: '0.72rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         padding: '3px 10px',
                         borderRadius: '12px',
                         backgroundColor: agent.isOnline ? '#DCFCE7' : '#F1F5F9',
@@ -145,7 +145,7 @@ export default function DispatchDeliveryPartnersPage({
                           borderRadius: '8px',
                           backgroundColor: '#044E35',
                           color: '#FFFFFF',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.75rem',
                           border: 'none',
                           cursor: 'pointer'

@@ -1271,10 +1271,10 @@ export default function SubscriptionsPage({
               <ArrowLeft size={18} />
             </button>
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 CUSTOMER SUBSCRIPTION &amp; SCHEDULE PORTAL
               </div>
-              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.4rem', fontWeight: 800, margin: 0, color: '#111827' }}>
+              <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#111827' }}>
                 {cust.name}
               </h2>
               <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '2px' }}>
@@ -1291,7 +1291,7 @@ export default function SubscriptionsPage({
               backgroundColor: '#047857',
               color: '#FFFFFF',
               border: 'none',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.82rem',
               cursor: 'pointer',
               display: 'flex',
@@ -1315,13 +1315,13 @@ export default function SubscriptionsPage({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '1.25rem'
             }}>
               {(cust.name || 'Customer').charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#111827' }}>
+              <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#111827' }}>
                 {cust.name || 'Customer'}
               </h3>
               <div style={{ fontSize: '0.82rem', color: '#4B5563', marginTop: '3px', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -1335,7 +1335,7 @@ export default function SubscriptionsPage({
           <span style={{
             padding: '6px 14px',
             borderRadius: '20px',
-            fontWeight: 800,
+            fontWeight: 700,
             fontSize: '0.78rem',
             backgroundColor: cust.status === 'On Vacation' ? '#FEF3C7' : '#DCFCE7',
             color: cust.status === 'On Vacation' ? '#D97706' : '#059669'
@@ -1351,10 +1351,10 @@ export default function SubscriptionsPage({
             {/* Plan Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
+                <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>
                   Plan #{idx + 1}
                 </span>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#111827' }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#111827' }}>
                   {plan.productName}
                 </h3>
               </div>
@@ -1369,7 +1369,7 @@ export default function SubscriptionsPage({
                         padding: '4px 12px',
                         borderRadius: '12px',
                         fontSize: '0.75rem',
-                        fontWeight: 800
+                        fontWeight: 700
                       }}>
                         {isCancelled ? 'CANCELLED BY ADMIN 🛑' : plan.status}
                       </span>
@@ -1383,7 +1383,7 @@ export default function SubscriptionsPage({
                             backgroundColor: '#ECFDF5',
                             color: '#047857',
                             border: '1px solid #A7F3D0',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontSize: '0.75rem',
                             cursor: 'pointer',
                             display: 'flex',
@@ -1403,7 +1403,7 @@ export default function SubscriptionsPage({
                             backgroundColor: '#FEF2F2',
                             color: '#DC2626',
                             border: '1px solid #FEE2E2',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontSize: '0.75rem',
                             cursor: 'pointer',
                             display: 'flex',
@@ -1422,7 +1422,7 @@ export default function SubscriptionsPage({
                             backgroundColor: '#ECFDF5',
                             color: '#047857',
                             border: '1px solid #A7F3D0',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontSize: '0.75rem',
                             cursor: 'pointer',
                             display: 'flex',
@@ -1441,7 +1441,7 @@ export default function SubscriptionsPage({
 
             {String(plan.status || '').toUpperCase() === 'PENDING_PAYMENT' && (
               <div style={{ margin: '0 0 1rem 0', padding: '0.9rem 1rem', borderRadius: '12px', border: '1px solid #FCD34D', backgroundColor: '#FFFBEB' }}>
-                <div style={{ fontWeight: 800, color: '#92400E', fontSize: '0.85rem' }}>Awaiting payment — hidden from the customer</div>
+                <div style={{ fontWeight: 700, color: '#92400E', fontSize: '0.85rem' }}>Awaiting payment — hidden from the customer</div>
                 <div style={{ fontSize: '0.78rem', color: '#78350F', margin: '4px 0 8px' }}>
                   If this customer says they paid, find the payment in the Razorpay dashboard and enter its id here. The plan is activated and the payment recorded.
                 </div>
@@ -1454,7 +1454,7 @@ export default function SubscriptionsPage({
                   />
                   <button
                     onClick={() => handleMarkPaid(plan)}
-                    style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}
+                    style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', backgroundColor: '#047857', color: '#FFFFFF', border: 'none', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}
                   >
                     Mark as paid &amp; activate
                   </button>
@@ -1487,44 +1487,44 @@ export default function SubscriptionsPage({
               border: '1px solid #F3F4F6'
             }}>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>DAILY DROP QTY</div>
-                <div style={{ fontWeight: 800, color: '#047857', marginTop: '2px', fontSize: '0.95rem' }}>{plan.dailyQty} Unit(s)</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>DAILY DROP QTY</div>
+                <div style={{ fontWeight: 700, color: '#047857', marginTop: '2px', fontSize: '0.95rem' }}>{plan.dailyQty} Unit(s)</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>DAILY RATE</div>
-                <div style={{ fontWeight: 800, color: '#111827', marginTop: '2px', fontSize: '0.95rem' }}>₹{plan.dailyRate}/day</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>DAILY RATE</div>
+                <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px', fontSize: '0.95rem' }}>₹{plan.dailyRate}/day</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>FREQUENCY</div>
-                <div style={{ fontWeight: 800, color: '#111827', marginTop: '2px' }}>{plan.frequency}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>FREQUENCY</div>
+                <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px' }}>{plan.frequency}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>DELIVERY TIMING</div>
-                <div style={{ fontWeight: 800, color: '#111827', marginTop: '2px' }}>{plan.timing}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>DELIVERY TIMING</div>
+                <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px' }}>{plan.timing}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>PACKAGE DURATION</div>
-                <div style={{ fontWeight: 800, color: '#111827', marginTop: '2px' }}>{plan.duration}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>PACKAGE DURATION</div>
+                <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px' }}>{plan.duration}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>SUBSCRIBED TIME</div>
-                <div style={{ fontWeight: 800, color: '#047857', marginTop: '2px', fontSize: '0.85rem' }}>{formatSubscribedTime(plan)}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>SUBSCRIBED TIME</div>
+                <div style={{ fontWeight: 700, color: '#047857', marginTop: '2px', fontSize: '0.85rem' }}>{formatSubscribedTime(plan)}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>START DATE</div>
-                <div style={{ fontWeight: 800, color: '#111827', marginTop: '2px' }}>{formatDateLabel(plan.startDate)}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>START DATE</div>
+                <div style={{ fontWeight: 700, color: '#111827', marginTop: '2px' }}>{formatDateLabel(plan.startDate)}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>ESTIMATED END DATE</div>
-                <div style={{ fontWeight: 800, color: '#047857', marginTop: '2px' }}>{plan.calculatedEndDate}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>ESTIMATED END DATE</div>
+                <div style={{ fontWeight: 700, color: '#047857', marginTop: '2px' }}>{plan.calculatedEndDate}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>PREPAID PAID</div>
-                <div style={{ fontWeight: 800, color: '#047857', marginTop: '2px' }}>₹{plan.prepaidPaid?.toLocaleString('en-IN')}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>PREPAID PAID</div>
+                <div style={{ fontWeight: 700, color: '#047857', marginTop: '2px' }}>₹{plan.prepaidPaid?.toLocaleString('en-IN')}</div>
               </div>
               <div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 700 }}>SKIPPED DROPS</div>
-                <div style={{ fontWeight: 800, color: plan.pausedDates?.length > 0 ? '#D97706' : '#6B7280', marginTop: '2px' }}>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600 }}>SKIPPED DROPS</div>
+                <div style={{ fontWeight: 700, color: plan.pausedDates?.length > 0 ? '#D97706' : '#6B7280', marginTop: '2px' }}>
                   {plan.pausedDates?.length || 0} Drop(s) {plan.pausedDates?.length > 0 ? '(Auto-Extended)' : ''}
                 </div>
               </div>
@@ -1535,7 +1535,7 @@ export default function SubscriptionsPage({
               
               {/* Calendar Month Navigation Controls */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-                <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#111827' }}>
+                <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1.05rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#111827' }}>
                   <CalendarIcon size={18} style={{ color: '#047857' }} /> Delivery Schedule &amp; Vacation Calendar
                 </h4>
 
@@ -1559,7 +1559,7 @@ export default function SubscriptionsPage({
                         border: 'none',
                         backgroundColor: calendarMonthIndex === m.monthIndex && calendarYear === m.year ? '#047857' : '#F3F4F6',
                         color: calendarMonthIndex === m.monthIndex && calendarYear === m.year ? '#FFFFFF' : '#374151',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         fontSize: '0.78rem',
                         cursor: 'pointer'
                       }}
@@ -1584,13 +1584,13 @@ export default function SubscriptionsPage({
               {/* Dynamic Live Calendar Grid */}
               <div style={{ border: '1px solid #E5E7EB', borderRadius: '14px', padding: '1.25rem', backgroundColor: '#FFFFFF' }}>
                 
-                <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '1rem', color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>🗓️ {MONTH_NAMES[calendarMonthIndex]} {calendarYear}</span>
                   <span style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>💡 Click any date tile to set delivery exception, skip date, or active status</span>
                 </div>
 
                 {/* Day Headers */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#6B7280', marginBottom: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 700, fontSize: '0.75rem', color: '#6B7280', marginBottom: '8px' }}>
                   <div>SUN</div>
                   <div>MON</div>
                   <div>TUE</div>
@@ -1674,10 +1674,10 @@ export default function SubscriptionsPage({
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 800, fontSize: '0.8rem', color: isCancelledPlan || isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: isCancelledPlan || isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
                             {dayNum}
                           </span>
-                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: isCancelledPlan || isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 600, color: isCancelledPlan || isExc || isSkip ? '#DC2626' : isVac ? '#B45309' : isOff ? '#9CA3AF' : '#047857' }}>
                             {dayName}
                           </span>
                         </div>
@@ -1686,7 +1686,7 @@ export default function SubscriptionsPage({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                             <span style={{
                               fontSize: '0.6rem',
-                              fontWeight: 800,
+                              fontWeight: 700,
                               backgroundColor: '#DC2626',
                               color: '#FFFFFF',
                               borderRadius: '4px',
@@ -1708,7 +1708,7 @@ export default function SubscriptionsPage({
                             title={dayInfo.reason ? `Customer Skip Reason: ${dayInfo.reason}` : 'Skipped by customer'}
                             style={{
                               fontSize: '0.58rem',
-                              fontWeight: 800,
+                              fontWeight: 700,
                               backgroundColor: '#EF4444',
                               color: '#FFFFFF',
                               borderRadius: '4px',
@@ -1732,7 +1732,7 @@ export default function SubscriptionsPage({
                         ) : isVac ? (
                           <span style={{
                             fontSize: '0.62rem',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             backgroundColor: '#F59E0B',
                             color: '#FFFFFF',
                             borderRadius: '4px',
@@ -1748,7 +1748,7 @@ export default function SubscriptionsPage({
                         ) : isActive ? (
                           <span style={{
                             fontSize: '0.62rem',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             backgroundColor: '#047857',
                             color: '#FFFFFF',
                             borderRadius: '4px',
@@ -1919,7 +1919,7 @@ export default function SubscriptionsPage({
               return (
                 <div style={{ marginTop: '1.25rem', borderTop: '1px solid #E5E7EB', paddingTop: '1.25rem', textAlign: 'left' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 800, margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h4 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', fontWeight: 700, margin: 0, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <CalendarIcon size={18} style={{ color: '#047857' }} /> Subscription activity &amp; skip history ({plan.productName || 'Subscription'})
                     </h4>
 
@@ -1934,7 +1934,7 @@ export default function SubscriptionsPage({
                           border: '1px solid #E5E7EB',
                           backgroundColor: '#F9FAFB',
                           fontSize: '0.76rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: '#374151',
                           outline: 'none',
                           cursor: 'pointer'
@@ -1957,7 +1957,7 @@ export default function SubscriptionsPage({
                             border: '1px solid #E5E7EB',
                             color: '#374151',
                             fontSize: '0.78rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -2034,7 +2034,7 @@ export default function SubscriptionsPage({
 
                             <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
                                   {dateDisplay} · {titleText}
                                 </div>
                                 <div style={{ fontSize: '0.76rem', color: '#6B7280', marginTop: '2px' }}>
@@ -2107,7 +2107,7 @@ export default function SubscriptionsPage({
               textAlign: 'left'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', color: '#111827', margin: 0 }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.25rem', color: '#111827', margin: 0 }}>
                   Manage Delivery Date Status
                 </h3>
                 <button
@@ -2134,11 +2134,11 @@ export default function SubscriptionsPage({
 
                 return (
                   <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '12px', padding: '0.85rem', marginBottom: '1.25rem', textAlign: 'left' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <PauseCircle size={14} style={{ color: '#DC2626' }} /> Customer Skip Reason (App Request)
                     </div>
                     {custReason && (
-                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#DC2626', marginTop: '4px' }}>
                         "{custReason}"
                       </div>
                     )}
@@ -2154,7 +2154,7 @@ export default function SubscriptionsPage({
               {/* Exception Reason & Suggestion Fields */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>
                     1. UNABLE TO DELIVER REASON (IF EXCEPTION):
                   </label>
                   <select
@@ -2171,7 +2171,7 @@ export default function SubscriptionsPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>
                     2. SUGGESTED ACTION / RESOLUTION:
                   </label>
                   <select
@@ -2187,7 +2187,7 @@ export default function SubscriptionsPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>
                     3. OPERATIONAL ADMIN NOTES (OPTIONAL):
                   </label>
                   <input
@@ -2210,7 +2210,7 @@ export default function SubscriptionsPage({
                     backgroundColor: '#DC2626',
                     color: '#FFFFFF',
                     border: 'none',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: 'pointer',
                     display: 'flex',
@@ -2232,7 +2232,7 @@ export default function SubscriptionsPage({
                       backgroundColor: '#FEF3C7',
                       color: '#D97706',
                       border: '1px solid #FDE68A',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: '0.82rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -2252,7 +2252,7 @@ export default function SubscriptionsPage({
                       backgroundColor: '#ECFDF5',
                       color: '#047857',
                       border: '1px solid #A7F3D0',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: '0.82rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -2301,7 +2301,7 @@ export default function SubscriptionsPage({
                     <X size={20} />
                   </div>
                   <div>
-                    <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                    <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
                       Cancel Subscription Plan
                     </h3>
                     <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -2319,7 +2319,7 @@ export default function SubscriptionsPage({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
                     Select Cancellation Reason (Type):
                   </label>
                   <select
@@ -2344,7 +2344,7 @@ export default function SubscriptionsPage({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
                     Additional Notes / Specific Reason (Optional):
                   </label>
                   <textarea
@@ -2379,7 +2379,7 @@ export default function SubscriptionsPage({
                     backgroundColor: '#F3F4F6',
                     color: '#374151',
                     border: 'none',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: 'pointer'
                   }}
@@ -2395,7 +2395,7 @@ export default function SubscriptionsPage({
                     backgroundColor: '#DC2626',
                     color: '#FFFFFF',
                     border: 'none',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: isSubmittingCancel ? 'not-allowed' : 'pointer'
                   }}
@@ -2438,7 +2438,7 @@ export default function SubscriptionsPage({
                     <Sparkles size={20} />
                   </div>
                   <div>
-                    <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                    <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
                       Reactivate Subscription Plan
                     </h3>
                     <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -2456,7 +2456,7 @@ export default function SubscriptionsPage({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
                     Reason / Note for Reactivating:
                   </label>
                   <input
@@ -2490,7 +2490,7 @@ export default function SubscriptionsPage({
                     backgroundColor: '#F3F4F6',
                     color: '#374151',
                     border: 'none',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: 'pointer'
                   }}
@@ -2506,7 +2506,7 @@ export default function SubscriptionsPage({
                     backgroundColor: '#047857',
                     color: '#FFFFFF',
                     border: 'none',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: isSubmittingReactivate ? 'not-allowed' : 'pointer'
                   }}
@@ -2531,7 +2531,7 @@ export default function SubscriptionsPage({
       {/* Registry Title Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, margin: 0, color: '#111827' }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, margin: 0, color: '#111827' }}>
             Customer Subscriptions Registry
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -2544,7 +2544,7 @@ export default function SubscriptionsPage({
           borderRadius: '16px',
           backgroundColor: '#ECFDF5',
           color: '#047857',
-          fontWeight: 800,
+          fontWeight: 700,
           fontSize: '0.75rem',
           border: '1px solid #A7F3D0'
         }}>
@@ -2569,10 +2569,10 @@ export default function SubscriptionsPage({
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               SUBSCRIBED CUSTOMERS
             </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#047857', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#047857', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
               {subscribedCustomersCount}
             </div>
           </div>
@@ -2595,10 +2595,10 @@ export default function SubscriptionsPage({
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               TOTAL ACTIVE PLANS
             </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0284C7', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#0284C7', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
               {totalActivePlansCount}
             </div>
           </div>
@@ -2621,10 +2621,10 @@ export default function SubscriptionsPage({
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               CUSTOMERS ON VACATION
             </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#D97706', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#D97706', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
               {vacationCustomersCount}
             </div>
           </div>
@@ -2647,10 +2647,10 @@ export default function SubscriptionsPage({
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               EXPIRED / INACTIVE PLANS
             </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#DC2626', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
+            <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#DC2626', marginTop: '2px', fontFamily: 'var(--font-title)' }}>
               {expiredCustomersCount}
             </div>
           </div>
@@ -2692,7 +2692,7 @@ export default function SubscriptionsPage({
                   border: '1px solid #E5E7EB',
                   backgroundColor: statusFilter === s.id ? '#047857' : '#FFFFFF',
                   color: statusFilter === s.id ? '#FFFFFF' : '#374151',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.78rem',
                   cursor: 'pointer',
                 }}
@@ -2711,7 +2711,7 @@ export default function SubscriptionsPage({
                 border: `1px dashed ${showUnpaid ? '#D97706' : '#D1D5DB'}`,
                 backgroundColor: showUnpaid ? '#FEF3C7' : '#FFFFFF',
                 color: showUnpaid ? '#92400E' : '#6B7280',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 cursor: 'pointer',
               }}
@@ -2736,7 +2736,7 @@ export default function SubscriptionsPage({
                   border: '1px solid #E5E7EB',
                   backgroundColor: frequencyFilter === f.id ? '#0284C7' : '#FFFFFF',
                   color: frequencyFilter === f.id ? '#FFFFFF' : '#374151',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.78rem',
                   cursor: 'pointer',
                 }}
@@ -2778,7 +2778,7 @@ export default function SubscriptionsPage({
                 border: 'none',
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
                 cursor: 'pointer',
               }}
@@ -2793,13 +2793,13 @@ export default function SubscriptionsPage({
           <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #E5E7EB', backgroundColor: '#F9FAFB' }}>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>CUSTOMER NAME &amp; CONTACT</th>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>ACTIVE PLANS</th>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>SUBSCRIBED PRODUCTS</th>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>COMBINED DAILY DROP</th>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>DAILY RATE</th>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>OVERALL STATUS</th>
-                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textAlign: 'left' }}>ACTIONS</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>CUSTOMER NAME &amp; CONTACT</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>ACTIVE PLANS</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>SUBSCRIBED PRODUCTS</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>COMBINED DAILY DROP</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>DAILY RATE</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>OVERALL STATUS</th>
+                <th style={{ padding: '0.85rem 1rem', fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textAlign: 'left' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -2815,7 +2815,7 @@ export default function SubscriptionsPage({
                         borderRadius: '50%',
                         animation: 'spinSub 0.8s linear infinite'
                       }} />
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#047857' }}>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#047857' }}>
                         Syncing &amp; Fetching Subscription Plans &amp; Customer Schedules...
                       </div>
                       <style>{`@keyframes spinSub { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
@@ -2844,7 +2844,7 @@ export default function SubscriptionsPage({
                             borderRadius: '50%',
                             backgroundColor: '#047857',
                             color: '#FFFFFF',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             fontSize: '0.85rem',
                             display: 'flex',
                             alignItems: 'center',
@@ -2853,7 +2853,7 @@ export default function SubscriptionsPage({
                             {initial}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 800, color: '#111827', fontSize: '0.88rem' }}>{c.name}</div>
+                            <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem' }}>{c.name}</div>
                             <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '1px' }}>
                               📞 {c.phone} • ID: {c.id}
                             </div>
@@ -2868,7 +2868,7 @@ export default function SubscriptionsPage({
                           borderRadius: '6px',
                           backgroundColor: '#ECFDF5',
                           color: '#047857',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           fontSize: '0.78rem'
                         }}>
                           {c.activePlansCount} Active Plan(s)
@@ -2881,12 +2881,12 @@ export default function SubscriptionsPage({
                       </td>
 
                       {/* Combined Daily Drop */}
-                      <td style={{ verticalAlign: 'middle', padding: '0.85rem 1rem', fontWeight: 800, color: '#111827', fontSize: '0.85rem' }}>
+                      <td style={{ verticalAlign: 'middle', padding: '0.85rem 1rem', fontWeight: 700, color: '#111827', fontSize: '0.85rem' }}>
                         {c.dailyUnitsTotal} Units/day
                       </td>
 
                       {/* Daily Rate */}
-                      <td style={{ verticalAlign: 'middle', padding: '0.85rem 1rem', fontWeight: 800, color: '#047857', fontSize: '0.88rem' }}>
+                      <td style={{ verticalAlign: 'middle', padding: '0.85rem 1rem', fontWeight: 700, color: '#047857', fontSize: '0.88rem' }}>
                         ₹{c.dailyRate}/day
                       </td>
 
@@ -2898,7 +2898,7 @@ export default function SubscriptionsPage({
                           color: c.status === 'Active Delivery' ? '#047857' : c.status === 'On Vacation' ? '#B45309' : '#6B7280',
                           borderRadius: '12px',
                           fontSize: '0.75rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           display: 'inline-block'
                         }}>
                           {c.status}
@@ -2915,7 +2915,7 @@ export default function SubscriptionsPage({
                             backgroundColor: '#047857',
                             color: '#FFFFFF',
                             border: 'none',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontSize: '0.78rem',
                             cursor: 'pointer',
                             whiteSpace: 'nowrap'
@@ -2991,7 +2991,7 @@ export default function SubscriptionsPage({
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#111827' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button
@@ -3044,7 +3044,7 @@ export default function SubscriptionsPage({
                 <Trash2 size={20} />
               </div>
               <div>
-                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+                <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
                   Delete History Entry
                 </h3>
                 <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -3054,7 +3054,7 @@ export default function SubscriptionsPage({
             </div>
 
             <div style={{ backgroundColor: '#F9FAFB', padding: '1rem', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#111827' }}>
                 {deleteHistoryModal.log.reason || 'Skipped delivery'}
               </div>
               <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '2px' }}>
@@ -3063,11 +3063,11 @@ export default function SubscriptionsPage({
             </div>
 
             {deleteCountdown > 0 ? (
-              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', marginBottom: '1.25rem' }}>
                 ⚠️ Action options enabled in {deleteCountdown} seconds...
               </div>
             ) : (
-              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '0.85rem', borderRadius: '12px', backgroundColor: '#ECFDF5', color: '#047857', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', marginBottom: '1.25rem' }}>
                 ✓ Verified. Select your deletion action below:
               </div>
             )}
@@ -3082,7 +3082,7 @@ export default function SubscriptionsPage({
                   backgroundColor: deleteCountdown > 0 ? '#F3F4F6' : '#EFF6FF',
                   color: deleteCountdown > 0 ? '#9CA3AF' : '#2563EB',
                   border: deleteCountdown > 0 ? '1px solid #E5E7EB' : '1px solid #BFDBFE',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: deleteCountdown > 0 ? 'not-allowed' : 'pointer',
                   textAlign: 'center'
@@ -3100,7 +3100,7 @@ export default function SubscriptionsPage({
                   backgroundColor: deleteCountdown > 0 ? '#F3F4F6' : '#DC2626',
                   color: deleteCountdown > 0 ? '#9CA3AF' : '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: deleteCountdown > 0 ? 'not-allowed' : 'pointer',
                   textAlign: 'center'
@@ -3162,7 +3162,7 @@ export default function SubscriptionsPage({
                   <X size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                  <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
                     Cancel Subscription Plan
                   </h3>
                   <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -3180,7 +3180,7 @@ export default function SubscriptionsPage({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
                   Select Cancellation Reason (Type):
                 </label>
                 <select
@@ -3205,7 +3205,7 @@ export default function SubscriptionsPage({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
                   Additional Notes / Specific Reason (Optional):
                 </label>
                 <textarea
@@ -3240,7 +3240,7 @@ export default function SubscriptionsPage({
                   backgroundColor: '#F3F4F6',
                   color: '#374151',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}
@@ -3256,7 +3256,7 @@ export default function SubscriptionsPage({
                   backgroundColor: '#DC2626',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: isSubmittingCancel ? 'not-allowed' : 'pointer'
                 }}
@@ -3299,7 +3299,7 @@ export default function SubscriptionsPage({
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
+                  <h3 style={{ fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1.25rem', margin: 0, color: '#111827' }}>
                     Reactivate Subscription Plan
                   </h3>
                   <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0 0' }}>
@@ -3317,7 +3317,7 @@ export default function SubscriptionsPage({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>
                   Reason / Note for Reactivating:
                 </label>
                 <input
@@ -3351,7 +3351,7 @@ export default function SubscriptionsPage({
                   backgroundColor: '#F3F4F6',
                   color: '#374151',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}
@@ -3367,7 +3367,7 @@ export default function SubscriptionsPage({
                   backgroundColor: '#047857',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: isSubmittingReactivate ? 'not-allowed' : 'pointer'
                 }}

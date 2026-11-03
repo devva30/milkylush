@@ -75,7 +75,7 @@ export default function DispatchRegisterPartnerModal({
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1000,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
-      fontFamily: "'Poppins', sans-serif"
+      fontFamily: "var(--font-body)"
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
         backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '1.5rem',
@@ -83,7 +83,7 @@ export default function DispatchRegisterPartnerModal({
       }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserPlus size={20} style={{ color: '#044E35' }} /> Register Delivery Partner
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
@@ -92,7 +92,7 @@ export default function DispatchRegisterPartnerModal({
         </div>
 
         {/* Auto Hub Banner */}
-        <div style={{ padding: '0.65rem 1rem', borderRadius: '10px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.8rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ padding: '0.65rem 1rem', borderRadius: '10px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.8rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <MapPin size={16} /> Auto-assigned to logged admin hub: <span>{hubName}</span>
         </div>
 
@@ -106,7 +106,7 @@ export default function DispatchRegisterPartnerModal({
                 value={formRiderId}
                 onChange={(e) => setFormRiderId(e.target.value)}
                 required
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginTop: '4px', outline: 'none', fontWeight: 700, color: '#044E35' }}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginTop: '4px', outline: 'none', fontWeight: 600, color: '#044E35' }}
               />
             </div>
             <div>
@@ -161,7 +161,7 @@ export default function DispatchRegisterPartnerModal({
 
           {/* VEHICLE & IDENTITY DOCUMENTS SECTION */}
           <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '0.85rem', marginTop: '0.2rem' }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#044E35', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#044E35', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
               <Truck size={16} /> Vehicle & Driving License Registration
             </div>
             
@@ -216,7 +216,7 @@ export default function DispatchRegisterPartnerModal({
 
           {/* RECOGNITION BADGE SECTION */}
           <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '0.85rem', marginTop: '0.2rem' }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#D97706', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#D97706', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
               <BadgeCheck size={16} /> Initial Partner Recognition Tier
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -267,7 +267,7 @@ export default function DispatchRegisterPartnerModal({
             <button
               type="submit"
               disabled={isSaving}
-              style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#044E35', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+              style={{ flex: 1, padding: '0.65rem', borderRadius: '8px', backgroundColor: '#044E35', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontWeight: 600 }}
             >
               {isSaving ? 'Onboarding...' : 'Onboard Partner'}
             </button>

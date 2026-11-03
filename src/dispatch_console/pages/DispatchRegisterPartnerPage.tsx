@@ -119,7 +119,7 @@ export default function DispatchRegisterPartnerPage({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Top Action Header */}
       <div>
@@ -133,7 +133,7 @@ export default function DispatchRegisterPartnerPage({
             borderRadius: '10px',
             backgroundColor: '#FFFFFF',
             border: '1px solid #E2E8F0',
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: '0.82rem',
             color: '#475569',
             cursor: 'pointer',
@@ -142,7 +142,7 @@ export default function DispatchRegisterPartnerPage({
         >
           <ArrowLeft size={16} /> Back to Delivery Partners
         </button>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>
           ➕ Register New Delivery Partner
         </h2>
         <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '2px 0 0 0' }}>
@@ -159,7 +159,7 @@ export default function DispatchRegisterPartnerPage({
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
             
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Full Name *</label>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Full Name *</label>
               <input
                 type="text"
                 value={formName}
@@ -171,7 +171,7 @@ export default function DispatchRegisterPartnerPage({
             </div>
 
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Phone Number *</label>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Phone Number *</label>
               <input
                 type="text"
                 value={formPhone}
@@ -183,7 +183,7 @@ export default function DispatchRegisterPartnerPage({
             </div>
 
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Email Address *</label>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Email Address *</label>
               <input
                 type="email"
                 value={formEmail}
@@ -195,7 +195,7 @@ export default function DispatchRegisterPartnerPage({
             </div>
 
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Secret Password *</label>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Secret Password *</label>
               <input
                 type="text"
                 value={formPassword}
@@ -207,7 +207,7 @@ export default function DispatchRegisterPartnerPage({
             </div>
 
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Residential Address</label>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Residential Address</label>
               <textarea
                 rows={3}
                 value={formAddress}
@@ -219,7 +219,7 @@ export default function DispatchRegisterPartnerPage({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
               <div>
-                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Vehicle Reg. Number</label>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Vehicle Reg. Number</label>
                 <input
                   type="text"
                   value={formVehicleNumber}
@@ -230,7 +230,7 @@ export default function DispatchRegisterPartnerPage({
               </div>
 
               <div>
-                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Vehicle Type</label>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Vehicle Type</label>
                 <select
                   value={formVehicleType}
                   onChange={(e) => setFormVehicleType(e.target.value)}
@@ -246,7 +246,7 @@ export default function DispatchRegisterPartnerPage({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
               <div>
-                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Driving License</label>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Driving License</label>
                 <input
                   type="text"
                   value={formLicenseNumber}
@@ -257,7 +257,7 @@ export default function DispatchRegisterPartnerPage({
               </div>
 
               <div>
-                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>License Validity</label>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>License Validity</label>
                 <input
                   type="text"
                   value={formLicenseValidity}
@@ -269,7 +269,7 @@ export default function DispatchRegisterPartnerPage({
             </div>
 
             <div>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Assigned Operations Hub (Auto-Assigned)</label>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>Assigned Operations Hub (Auto-Assigned)</label>
               <div style={{
                 width: '100%',
                 padding: '0.7rem',
@@ -278,7 +278,7 @@ export default function DispatchRegisterPartnerPage({
                 fontSize: '0.88rem',
                 marginTop: '6px',
                 backgroundColor: '#F8FAFC',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: '#0F172A',
                 display: 'flex',
                 alignItems: 'center',
@@ -294,7 +294,7 @@ export default function DispatchRegisterPartnerPage({
               style={{
                 backgroundColor: '#044E35',
                 color: '#FFFFFF',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.9rem',
                 padding: '0.8rem',
                 borderRadius: '10px',
@@ -314,7 +314,7 @@ export default function DispatchRegisterPartnerPage({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           <div style={{ backgroundColor: '#FFFBEB', borderRadius: '16px', padding: '1.25rem', border: '1px solid #FDE68A' }}>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#92400E', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#92400E', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
               💡 Registration Tips
             </h4>
             <ul style={{ margin: '10px 0 0 0', paddingLeft: '18px', fontSize: '0.8rem', color: '#78350F', lineHeight: '1.5' }}>
@@ -325,7 +325,7 @@ export default function DispatchRegisterPartnerPage({
           </div>
 
           <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid #E2E8F0' }}>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
               <ShieldCheck size={18} style={{ color: '#047857' }} /> Security & Access
             </h4>
             <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '6px', lineHeight: '1.4' }}>
@@ -360,7 +360,7 @@ export default function DispatchRegisterPartnerPage({
                 <CheckCircle size={24} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#111827', margin: 0 }}>
                   Partner Account Registered!
                 </h3>
                 <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>
@@ -371,10 +371,10 @@ export default function DispatchRegisterPartnerPage({
 
             {/* Credentials Card Preview */}
             <div style={{ backgroundColor: '#F8FAFC', border: '1px dashed #047857', borderRadius: '12px', padding: '1.15rem', margin: '1rem 0' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 🆔 RIDER LOG-IN CREDENTIALS
               </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E293B', marginTop: '8px' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1E293B', marginTop: '8px' }}>
                 Rider ID: <span style={{ color: '#047857' }}>{createdPartner.staffCode}</span>
               </div>
               <div style={{ fontSize: '0.84rem', color: '#334155', marginTop: '4px' }}>
@@ -397,7 +397,7 @@ export default function DispatchRegisterPartnerPage({
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   padding: '0.65rem', borderRadius: '10px', backgroundColor: '#25D366', color: '#FFFFFF',
-                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                  fontWeight: 600, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
                 }}
               >
                 <Send size={16} /> WhatsApp Share
@@ -409,7 +409,7 @@ export default function DispatchRegisterPartnerPage({
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   padding: '0.65rem', borderRadius: '10px', backgroundColor: '#047857', color: '#FFFFFF',
-                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                  fontWeight: 600, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
                 }}
               >
                 <Copy size={16} /> Copy Credentials
@@ -421,7 +421,7 @@ export default function DispatchRegisterPartnerPage({
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   padding: '0.65rem', borderRadius: '10px', backgroundColor: '#3B82F6', color: '#FFFFFF',
-                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                  fontWeight: 600, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
                 }}
               >
                 <MessageSquare size={16} /> SMS Text
@@ -433,7 +433,7 @@ export default function DispatchRegisterPartnerPage({
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   padding: '0.65rem', borderRadius: '10px', backgroundColor: '#6366F1', color: '#FFFFFF',
-                  fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                  fontWeight: 600, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
                 }}
               >
                 <Mail size={16} /> Send Email
@@ -445,7 +445,7 @@ export default function DispatchRegisterPartnerPage({
               onClick={() => { setCreatedPartner(null); onBack(); }}
               style={{
                 width: '100%', marginTop: '1rem', padding: '0.65rem', borderRadius: '10px',
-                backgroundColor: '#F1F5F9', color: '#475569', fontWeight: 700, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
+                backgroundColor: '#F1F5F9', color: '#475569', fontWeight: 600, fontSize: '0.84rem', border: 'none', cursor: 'pointer'
               }}
             >
               Done & Return to Riders List

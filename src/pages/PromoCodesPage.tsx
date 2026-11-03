@@ -141,11 +141,11 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
 
   return (
     <DataState loading={couponsQuery.loading} error={couponsQuery.error} onRetry={couponsQuery.retry} loadingLabel="Loading promo codes…">
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left', fontFamily: "var(--font-body)" }}>
       
       {/* Page Header */}
       <div>
-        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.65rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
           🎟️ Promo Codes &amp; Coupons Management
         </h2>
         <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '2px' }}>
@@ -156,7 +156,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
       {/* Card 1: Create Custom Promo Code Form */}
       <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Ticket size={20} style={{ color: '#047857' }} /> Create New Promo Code / Coupon
           </h3>
           <span style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>
@@ -169,7 +169,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 1. PROMO CODE NAME *
               </label>
               <input 
@@ -177,18 +177,18 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                 placeholder="e.g. WELCOME100, MILK50" 
                 value={newCodeName}
                 onChange={(e) => setNewCodeName(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none', backgroundColor: '#F9FAFB' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 600, outline: 'none', backgroundColor: '#F9FAFB' }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 2. DISCOUNT TYPE *
               </label>
               <select 
                 value={newDiscountType}
                 onChange={(e) => setNewDiscountType(e.target.value as any)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none', backgroundColor: '#FFFFFF', fontWeight: 700 }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.85rem', outline: 'none', backgroundColor: '#FFFFFF', fontWeight: 600 }}
               >
                 <option value="flat">Flat Rupee Discount (₹)</option>
                 <option value="percentage">Percentage Discount (%)</option>
@@ -196,7 +196,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 3. DISCOUNT VALUE ({newDiscountType === 'flat' ? '₹' : '%'}) *
               </label>
               <input 
@@ -204,12 +204,12 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                 placeholder={newDiscountType === 'flat' ? 'e.g. 50' : 'e.g. 15'}
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none', color: '#047857' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 600, outline: 'none', color: '#047857' }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 4. MIN CART AMOUNT (₹) *
               </label>
               <input 
@@ -217,7 +217,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                 placeholder="e.g. 200" 
                 value={newMinCart}
                 onChange={(e) => setNewMinCart(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 600, outline: 'none' }}
               />
             </div>
 
@@ -226,7 +226,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 5. VALIDITY DURATION (DAYS)
               </label>
               <input 
@@ -239,7 +239,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 6. APPLICABLE PURCHASE TYPE *
               </label>
               <select 
@@ -254,13 +254,13 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', display: 'block', marginBottom: '4px' }}>
                 🎯 TARGET SPECIFIC PRODUCT
               </label>
               <select 
                 value={newTargetProductId}
                 onChange={(e) => setNewTargetProductId(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5', fontSize: '0.85rem', outline: 'none', fontWeight: 700, color: '#047857' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #A7F3D0', backgroundColor: '#ECFDF5', fontSize: '0.85rem', outline: 'none', fontWeight: 600, color: '#047857' }}
               >
                 <option value="all">📦 All Catalog Products (Default)</option>
                 {products.map((p) => (
@@ -272,7 +272,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 7. TOTAL MAX USAGE LIMIT *
               </label>
               <input 
@@ -280,12 +280,12 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                 placeholder="e.g. 100 uses total" 
                 value={newMaxUsageLimit}
                 onChange={(e) => setNewMaxUsageLimit(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 600, outline: 'none' }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#111827', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', display: 'block', marginBottom: '4px' }}>
                 8. LIMIT PER CUSTOMER *
               </label>
               <input 
@@ -293,7 +293,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                 placeholder="e.g. 1 use per customer" 
                 value={newPerUserLimit}
                 onChange={(e) => setNewPerUserLimit(e.target.value)}
-                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 700, outline: 'none' }}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '0.88rem', fontWeight: 600, outline: 'none' }}
               />
             </div>
 
@@ -309,7 +309,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                 backgroundColor: '#047857',
                 color: '#FFFFFF',
                 fontSize: '0.88rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -327,7 +327,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
       {/* Card 2: Active Promo Codes Table */}
       <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             🎟️ Active Promo Codes Registry ({promoCodes.length})
           </h3>
         </div>
@@ -349,13 +349,13 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
             <tbody>
               {promoCodes.map((item) => (
                 <tr key={item.code} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#047857' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#047857' }}>
                     {item.code}
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#111827' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#111827' }}>
                     {item.discountOffer}
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#374151', fontWeight: 700 }}>
+                  <td style={{ padding: '0.85rem 1rem', color: '#374151', fontWeight: 600 }}>
                     ₹{item.minCart}
                   </td>
                   <td style={{ padding: '0.85rem 1rem', color: '#4B5563', fontSize: '0.8rem', textTransform: 'capitalize' }}>
@@ -370,7 +370,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <span style={{
                       fontSize: '0.72rem',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: item.status === 'active' ? '#059669' : '#6B7280',
                       backgroundColor: item.status === 'active' ? '#DCFCE7' : '#F3F4F6',
                       padding: '3px 10px',
@@ -386,7 +386,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                         style={{
                           padding: '0.35rem 0.75rem',
                           fontSize: '0.78rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           borderRadius: '8px',
                           backgroundColor: '#ECFDF5',
                           color: '#047857',
@@ -405,7 +405,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                         style={{
                           padding: '0.35rem 0.75rem',
                           fontSize: '0.78rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           borderRadius: '8px',
                           backgroundColor: '#FFFFFF',
                           color: '#374151',
@@ -425,7 +425,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
                         style={{
                           padding: '0.35rem 0.75rem',
                           fontSize: '0.78rem',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           borderRadius: '8px',
                           backgroundColor: '#FEE2E2',
                           color: '#DC2626',
@@ -450,7 +450,7 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
       {/* Card 3: Redemption Audit Logs */}
       <div style={{ backgroundColor: '#FFFFFF', padding: '1.5rem', borderRadius: '16px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>
             📜 Customer Code Redemptions &amp; Usage Audit Log ({redemptionLogs.length})
           </h3>
         </div>
@@ -469,13 +469,13 @@ export default function PromoCodesPage(_props: PromoCodesPageProps) {
             <tbody>
               {redemptionLogs.map((log, idx) => (
                 <tr key={log.id || idx} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#111827' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#111827' }}>
                     {log.customerName} ({log.contact})
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#047857' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#047857' }}>
                     {log.appliedCode}
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#059669' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#059669' }}>
                     ₹{log.discountSaved}
                   </td>
                   <td style={{ padding: '0.85rem 1rem', color: '#4B5563', fontSize: '0.8rem' }}>

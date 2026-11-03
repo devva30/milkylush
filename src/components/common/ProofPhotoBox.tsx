@@ -30,7 +30,7 @@ export function ProofPhotoBox({ hubId, deliveryId, hasProofPhoto, riderNote, onZ
       {url ? (
         <img src={url} alt="Doorstep delivery proof" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
-        <div style={{ color: '#6B7280', fontSize: '0.85rem', fontWeight: 700, textAlign: 'center', padding: 16 }}>
+        <div style={{ color: '#6B7280', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center', padding: 16 }}>
           {photo.loading && hasProofPhoto ? 'Loading photo…' : hasProofPhoto ? 'Photo deleted (older than 30 days)' : 'No doorstep photo for this delivery'}
         </div>
       )}
@@ -43,7 +43,7 @@ export function ProofPhotoBox({ hubId, deliveryId, hasProofPhoto, riderNote, onZ
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF',
             color: Number(gps![1]) <= 25 ? '#15803D' : '#B45309', padding: '0.35rem 0.85rem', borderRadius: 9999,
-            fontSize: '0.78rem', fontWeight: 800, boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            fontSize: '0.78rem', fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
           }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: Number(gps![1]) <= 25 ? '#16A34A' : '#F59E0B', display: 'inline-block' }} />
             {gpsText}
