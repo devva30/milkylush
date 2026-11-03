@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import { HUBS, useHubContext } from '../../context/HubContext';
-import { analyseRows } from '../../utils/contactImport';
+import { analyseRows, normalizeIndianMobile } from '../../utils/contactImport';
 import { loadContactFile, type LoadedSheet } from '../../utils/contactFile';
 import {
   fetchApprovedTemplates,
@@ -39,7 +39,7 @@ interface WhatsAppMarketingPageProps {
 }
 
 export default function WhatsAppMarketingPage({ selectedTab, users = [] }: WhatsAppMarketingPageProps) {
-  const [targetAudience, setTargetAudience] = useState<'all' | 'active_subs' | 'inactive' | 'custom' | 'upload'>('active_subs');
+  const [targetAudience, setTargetAudience] = useState<'all' | 'active_subs' | 'inactive' | 'custom' | 'upload' | 'typed'>('active_subs');
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
 
@@ -113,6 +113,34 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
       .catch((err) => { if (current) setTemplateInfoError(err?.message || 'Could not check this template'); });
     return () => { current = false; };
   }, [selectedTemplate]);
+
+  // Numbers typed or pasted in by hand: one per line, or separated by commas.
+  // A line may also carry a name, e.g. "Ravi, 9876543210".
+  const [typedText, setTypedText] = useState('');
+  const typed = useMemo(() => {
+    const seen = new Set<string>();
+    const contacts: { name: string; phone: string }[] = [];
+    const bad: string[] = [];
+    let repeated = 0;
+    for (const line of typedText.split(/\r?\n/)) {
+      const parts = line.split(/[,;\t]+/).map((x) => x.trim()).filter(Boolean);
+      const phones: string[] = [];
+      const names: string[] = [];
+      for (const part of parts) {
+        const phone = normalizeIndianMobile(part);
+        if (phone) phones.push(phone);
+        else if (/[A-Za-z]/.test(part)) names.push(part);
+        else bad.push(part);
+      }
+      if (phones.length === 0 && names.length > 0) bad.push(names.join(' '));
+      for (const phone of phones) {
+        if (seen.has(phone)) { repeated++; continue; }
+        seen.add(phone);
+        contacts.push({ name: phones.length === 1 && names.length ? names.join(' ') : 'Customer', phone });
+      }
+    }
+    return { contacts, bad, repeated };
+  }, [typedText]);
 
   // A contact list uploaded from a file. Held in memory for this one send, never saved.
   const [upload, setUpload] = useState<LoadedSheet | null>(null);
@@ -207,6 +235,9 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   }, [reachable, customerSearch]);
 
   const recipients = useMemo(() => {
+    if (targetAudience === 'typed') {
+      return typed.contacts.map((c, i) => ({ id: `typed-${i}`, name: c.name, phone: c.phone }));
+    }
     if (targetAudience === 'upload') {
       return (imported?.contacts ?? []).map((c, i) => ({ id: `upload-${i}`, name: c.name, phone: c.phone }));
     }
@@ -219,14 +250,14 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
         return true;
       })
       .map(({ id, name, phone }) => ({ id, name, phone }));
-  }, [reachable, targetAudience, pickedIds, imported]);
+  }, [reachable, targetAudience, pickedIds, imported, typed]);
 
   const togglePicked = (id: string) =>
     setPickedIds((current) =>
       current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
     );
 
-  const overUploadLimit = targetAudience === 'upload' && recipients.length > BROADCAST_MAX_UPLOAD;
+  const overUploadLimit = (targetAudience === 'upload' || targetAudience === 'typed') && recipients.length > BROADCAST_MAX_UPLOAD;
   const templateBlocked = Boolean(templateInfo && templateInfo.bodyVariables > 1);
   const canSend =
     !sending &&
@@ -234,7 +265,7 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
     recipients.length > 0 &&
     !templateBlocked &&
     !overUploadLimit &&
-    (targetAudience !== 'upload' || consent);
+    ((targetAudience !== 'upload' && targetAudience !== 'typed') || consent);
 
   const runBroadcast = async (list: BroadcastRecipient[], confirmText: string, keep: BroadcastResult[] = []) => {
     if (!selectedTemplate || list.length === 0) return;
@@ -273,7 +304,11 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
   const handleBroadcast = () =>
     runBroadcast(
       recipients,
-      targetAudience === 'upload'
+      targetAudience === 'typed'
+        ? `Send the "${selectedTemplate}" template to ${recipients.length} number(s) you typed in?
+
+These are real messages and each one is chargeable.`
+        : targetAudience === 'upload'
         ? `Send the "${selectedTemplate}" template to ${recipients.length} people from ${upload?.fileName ?? 'your file'}?\n\n` +
             `These are real messages and each one is chargeable. It will take about ${estimateBroadcastMinutes(recipients.length)} minute(s), ` +
             `and this tab must stay open until it finishes.`
@@ -631,11 +666,14 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                   <option value="all">All Registered MilkyLush App Users</option>
                   <option value="inactive">Inactive / Paused Subscribers</option>
                   <option value="custom">Choose specific customers…</option>
+                  <option value="typed">Type in numbers…</option>
                   <option value="upload">Upload a list from a file (Excel or CSV)…</option>
                 </select>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                   {targetAudience === 'custom'
                     ? `${recipients.length} customer(s) selected.`
+                    : targetAudience === 'typed'
+                      ? `${recipients.length} number(s) entered.`
                     : targetAudience === 'upload'
                       ? imported
                         ? `${recipients.length} people from your file.`
@@ -643,6 +681,42 @@ export default function WhatsAppMarketingPage({ selectedTab, users = [] }: Whats
                       : `${recipients.length} customer(s) in this segment have a valid WhatsApp number.`}
                 </div>
               </div>
+
+              {targetAudience === 'typed' && (
+                <div style={{ border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', backgroundColor: 'var(--bg-main)' }}>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                    Type or paste one or more mobile numbers, one per line or separated by commas. You can add a name
+                    before a number, like “Ravi, 9876543210”. Indian mobile numbers only; nothing is saved.
+                  </div>
+                  <textarea
+                    data-testid="typed-numbers"
+                    value={typedText}
+                    disabled={sending}
+                    onChange={(e) => { setTypedText(e.target.value); setResults(null); }}
+                    rows={5}
+                    placeholder={'9876543210\nRavi, 98765 43211\n+91 98765 43212'}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.85rem', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                  {typedText.trim() && (
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+                      <span style={{ color: '#047857' }}>{typed.contacts.length} valid number(s)</span>
+                      {typed.repeated > 0 && <span style={{ color: '#92400E' }}> · {typed.repeated} repeated removed</span>}
+                      {typed.bad.length > 0 && (
+                        <span style={{ color: '#B91C1C' }}> · not valid: {typed.bad.slice(0, 4).join(', ')}{typed.bad.length > 4 ? '…' : ''}</span>
+                      )}
+                    </div>
+                  )}
+                  {overUploadLimit && (
+                    <div style={{ fontSize: '0.78rem', color: '#B91C1C', fontWeight: 700 }}>
+                      One send is limited to {BROADCAST_MAX_UPLOAD} numbers.
+                    </div>
+                  )}
+                  <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '0.76rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+                    <input type="checkbox" data-testid="consent-typed" checked={consent} disabled={sending} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: '2px' }} />
+                    <span>I confirm these people have agreed to receive WhatsApp messages from MilkyLush.</span>
+                  </label>
+                </div>
+              )}
 
               {targetAudience === 'upload' && (
                 <div style={{ border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', backgroundColor: 'var(--bg-main)' }}>
