@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MapPin, Sun, Moon, Bell, Menu, Search, LogOut, RefreshCw } from 'lucide-react';
 import { HUBS } from '../context/HubContext';
 import NotificationCenter from './NotificationCenter';
+import InstallAppButton from './InstallAppButton';
 import type { Order, Subscription } from '../types';
 
 interface HeaderProps {
@@ -171,6 +172,8 @@ export default function Header({
 
       {/* Right: Theme Toggle, Notifications, Admin Profile Pill & Logout */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+
+        <InstallAppButton compact />
 
         {/* Refresh Portal Data Button */}
         <button 

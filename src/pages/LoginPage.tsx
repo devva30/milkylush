@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowRight, Check, MapPin } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { useHubContext } from '../context/HubContext';
+import InstallAppButton from '../components/InstallAppButton';
 
 interface LoginPageProps {
   onLoginSuccess: (username: string, hubId: string) => void;
@@ -394,6 +395,10 @@ export default function LoginPage({ onLoginSuccess, showToast, selectedHubId, on
         }}>
           <ShieldCheck size={14} style={{ color: '#047857' }} />
           <span>MilkyLush Operations Console</span>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.9rem' }}>
+          <InstallAppButton />
         </div>
 
       </div>
